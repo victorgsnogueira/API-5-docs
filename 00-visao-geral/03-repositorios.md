@@ -136,5 +136,10 @@ mostra "sem dado". Ver [Limitações da fonte](../03-dados/04-limitacoes-da-font
 **Proveniência.** O produto é [multifonte](../03-dados/01-fontes.md): toda resposta diz
 de que fonte veio o dado e quando foi extraído.
 
+**Branches e commits.** Um padrão para o projeto inteiro: ver
+[Padrão de branches](../07-justificativas/01-branches.md) e
+[Padrão de commits](../07-justificativas/02-commits.md). Commits sempre em inglês, em
+todos os repositórios.
+
 **CI/CD em todos.** Cada repositório tem seu pipeline, inclusive este.
 Ver [DevOps e infraestrutura](../06-operacao/03-devops-e-infra.md).

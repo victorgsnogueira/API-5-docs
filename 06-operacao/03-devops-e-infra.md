@@ -12,6 +12,8 @@
 
 | Item | Decisão |
 |---|---|
+| **Estratégia de branch** | feature branching, uma branch por US — ver [Padrão de branches](../07-justificativas/01-branches.md) |
+| **Padrão de commit** | convenção semântica, em inglês — ver [Padrão de commits](../07-justificativas/02-commits.md) |
 | **Hospedagem** | VPS na **Hostinger** |
 | **Orquestração / deploy** | **Coolify** |
 | Deploy | automático |
@@ -154,7 +156,6 @@ deixa o produto exibindo dado velho **com aparência de dado atual**.
 | Backup | dump agendado + destino externo à VPS | antes da primeira carga que doa perder |
 | Gestão de segredos | variáveis do Coolify | imediato — nada de segredo no repositório |
 | Ambientes | só produção, ou produção + staging? | antes de configurar o Coolify |
-| Estratégia de branch | trunk-based, GitHub Flow | agora, define o gatilho do CI |
 | Documentação | esta wiki + Swagger + README por repo | contínuo |
 
 ## Regras que valem desde já

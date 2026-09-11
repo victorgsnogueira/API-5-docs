@@ -37,6 +37,7 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 | Dev de dados / ETL | [Fontes](03-dados/01-fontes.md) → [ETL e NLP](02-arquitetura/05-etl-e-nlp.md) → [Limitações](03-dados/04-limitacoes-da-fonte.md) |
 | DevOps | [DevOps e infraestrutura](06-operacao/03-devops-e-infra.md) → [Ambiente local](06-operacao/01-ambiente-local.md) |
 | SM / documentação | [Repositórios](00-visao-geral/03-repositorios.md) → [Decisões e riscos](06-operacao/02-decisoes-e-riscos.md) |
+| Qualquer um, antes do primeiro commit | [Padrão de branches](07-justificativas/01-branches.md) → [Padrão de commits](07-justificativas/02-commits.md) |
 
 ---
 
@@ -77,6 +78,11 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 - [Ambiente local](06-operacao/01-ambiente-local.md) — subir tudo na sua máquina
 - [Decisões e riscos](06-operacao/02-decisoes-e-riscos.md) — registro de decisões e o que está aberto
 - [DevOps e infraestrutura](06-operacao/03-devops-e-infra.md) — CI/CD, Coolify, monitoramento
+
+### 07 · Justificativas
+Os padrões e as ferramentas do projeto, e por que foram escolhidos.
+- [Padrão de branches](07-justificativas/01-branches.md) — `main`, uma branch por US, uma por task
+- [Padrão de commits](07-justificativas/02-commits.md) — convenção semântica, em inglês
 
 ---
 
