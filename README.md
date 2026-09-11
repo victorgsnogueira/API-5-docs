@@ -10,6 +10,10 @@ processo em portais de tribunal.
 **Escopo:** TJSP, TJRJ e TJMG. **Fontes:** múltiplas (DataJud, PANGEA, repositórios de
 tribunal, doutrina). **Stack:** .NET 8 + React + Postgres, em VPS Hostinger com Coolify.
 
+Esta wiki é o repositório `API-5-docs`; o código vive em
+[outros repositórios](00-visao-geral/03-repositorios.md), clonados lado a lado.
+Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse arranjo.
+
 ---
 
 ## Leia isto antes de começar a codar
@@ -80,7 +84,7 @@ tribunal, doutrina). **Stack:** .NET 8 + React + Postgres, em VPS Hostinger com 
 
 | Frente | Estado |
 |---|---|
-| Telas (design) | ✅ mockups fechados em [`Docs/Telas/`](Telas/) |
+| Telas (design) | ✅ mockups fechados em [`Telas/`](Telas/) |
 | Escopo, fontes e convenções | ✅ definidos — ver [Decisões](06-operacao/02-decisoes-e-riscos.md) |
 | Modelagem do DW | 🔴 **não existe** — a do protótipo não serve |
 | Backend .NET (`API5-Backend`) | 🔴 solução criada, camadas em branco |

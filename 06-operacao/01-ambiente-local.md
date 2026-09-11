@@ -4,14 +4,27 @@
 
 ```
 D:/Desenvolvimento/fatec/API/API-5/
-├── API-5/          documentação (repo)
-├── API5-Backend/   backend .NET 8 (repo)
-├── API5-Frontend/  frontend React (repo, vazio)
-├── Docs/           esta wiki
-└── prototipo/      protótipo antigo (repo) — ⚠ não é referência
+├── API-5/          documentação do SM   (repo)
+├── API5-Backend/   backend .NET 8       (repo)
+├── API5-Frontend/  frontend React       (repo, vazio)
+├── Docs/           esta wiki            (repo)
+└── prototipo/      protótipo antigo     (repo) — ⚠ não é referência
 ```
 
-Os quatro são repositórios git **independentes**. A pasta que os contém não é um repo.
+São **cinco repositórios git independentes**. A pasta que os contém não é um repo — é só
+a convenção de tê-los lado a lado, que os caminhos citados na wiki pressupõem.
+
+Para montar o ambiente do zero:
+
+```bash
+mkdir API-5 && cd API-5
+git clone https://github.com/Concord-API/API-5.git
+git clone https://github.com/Concord-API/API5-Backend.git
+git clone https://github.com/Concord-API/API5-Frontend.git
+git clone https://github.com/victorgsnogueira/API-5-docs.git Docs
+```
+
+O protótipo só se você [precisar consultá-lo](#protótipo-antigo--só-se-você-precisar-consultá-lo).
 
 ---
 

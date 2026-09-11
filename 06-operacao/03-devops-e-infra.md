@@ -103,10 +103,13 @@ push / pull request
         └── na main: publica e dispara deploy no Coolify
 ```
 
-### `API-5` (documentação)
+### `API-5-docs` (esta wiki)
 
-Lint de markdown e **verificação de links quebrados**. Wiki com link morto envelhece
-rápido.
+Lint de markdown e **verificação de links e âncoras quebrados**. Wiki com link morto
+envelhece rápido, e as páginas se referenciam muito entre si.
+
+Não precisa de deploy — o GitHub já renderiza. Se um dia a wiki virar site (MkDocs,
+Docusaurus), aí sim entra no Coolify como estático.
 
 ## Testes de integridade do DW — requisito explícito
 

@@ -1,6 +1,6 @@
 # Telas
 
-Três telas. Os mockups fechados estão em [`Docs/Telas/`](../Telas/); as regras
+Três telas. Os mockups fechados estão em [`Telas/`](../Telas/); as regras
 visuais estão em [Design system](../04-design/01-design-system.md).
 
 ---
