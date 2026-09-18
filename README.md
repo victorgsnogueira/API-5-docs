@@ -21,8 +21,9 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 | Aviso | Onde |
 |---|---|
 | ⚠ O `prototipo/` **não é fonte de verdade** — nem o código, nem o contrato, nem a modelagem | [Protótipo](05-prototipo/01-prototipo-referencia.md) |
-| ⚠ A **modelagem do DW ainda não existe** — a do protótipo foi feita sem auditoria | [Modelo dimensional](03-dados/02-modelo-dimensional.md) |
-| ⚠ Boa parte dos mockups **não tem fonte de dados** confirmada | [Limitações da fonte](03-dados/04-limitacoes-da-fonte.md) |
+| ✅ A **modelagem do DW existe e está carregada** — 463.016 linhas de fato | [Modelo dimensional](03-dados/02-modelo-dimensional.md) |
+| 🔴 **"Favorável" sem dizer a quem inverte a leitura** — leia antes de exibir percentual | [Polaridade do resultado](03-dados/05-polaridade-do-resultado.md) |
+| ⚠ O que depende de **inteiro teor** segue sem fonte — os 4 tribunais estão bloqueados | [Limitações da fonte](03-dados/04-limitacoes-da-fonte.md) |
 | ⚠ O backend é escrito **em inglês**; os dados ficam em português | [Idioma](02-arquitetura/02-backend-dotnet.md#idioma) |
 
 ---
@@ -34,7 +35,7 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 | Novo no time | [Problema e solução](00-visao-geral/01-problema-e-solucao.md) → [Glossário](00-visao-geral/02-glossario.md) → [Repositórios](00-visao-geral/03-repositorios.md) |
 | Dev backend | [Visão macro](02-arquitetura/01-visao-macro.md) → [Backend .NET](02-arquitetura/02-backend-dotnet.md) → [Modelo dimensional](03-dados/02-modelo-dimensional.md) |
 | Dev frontend | [Telas](01-produto/02-telas.md) → [Design system](04-design/01-design-system.md) → [Frontend React](02-arquitetura/03-frontend-react.md) |
-| Dev de dados / ETL | [Fontes](03-dados/01-fontes.md) → [ETL e NLP](02-arquitetura/05-etl-e-nlp.md) → [Limitações](03-dados/04-limitacoes-da-fonte.md) |
+| Dev de dados / ETL | [Fontes](03-dados/01-fontes.md) → [ETL e NLP](02-arquitetura/05-etl-e-nlp.md) → [Limitações](03-dados/04-limitacoes-da-fonte.md) → [Polaridade](03-dados/05-polaridade-do-resultado.md) |
 | DevOps | [DevOps e infraestrutura](06-operacao/03-devops-e-infra.md) → [Ambiente local](06-operacao/01-ambiente-local.md) |
 | SM / documentação | [Repositórios](00-visao-geral/03-repositorios.md) → [Decisões e riscos](06-operacao/02-decisoes-e-riscos.md) |
 | Qualquer um, antes do primeiro commit | [Padrão de branches](07-justificativas/01-branches.md) → [Padrão de commits](07-justificativas/02-commits.md) |
@@ -64,9 +65,10 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 
 ### 03 · Dados
 - [Fontes de dados](03-dados/01-fontes.md) — DataJud, PANGEA, JusBrasil, tribunais, doutrina
-- [Modelo dimensional](03-dados/02-modelo-dimensional.md) — método e proposta · **a auditar**
+- [Modelo dimensional](03-dados/02-modelo-dimensional.md) — esquema implementado · checklist respondido
 - [Agregados OLAP](03-dados/03-agregados-olap.md) — as consultas que alimentam cada tela
 - [Limitações da fonte](03-dados/04-limitacoes-da-fonte.md) — **o que não dá para prometer**
+- [Polaridade do resultado](03-dados/05-polaridade-do-resultado.md) — **leitura obrigatória antes de exibir qualquer percentual**
 
 ### 04 · Design
 - [Design system](04-design/01-design-system.md) — tipografia, cor, forma, componentes

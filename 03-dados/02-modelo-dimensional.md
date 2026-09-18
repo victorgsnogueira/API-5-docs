@@ -1,13 +1,28 @@
 # Modelo dimensional
 
-> ## ⚠ Nada aqui está fechado
+> ## ✅ Esquema implementado e carregado — 15/09/2026
 >
-> A modelagem existente no `prototipo/` foi criada **sem auditoria alguma** e não serve
-> de base. Esta página descreve o **método** e registra uma **proposta inicial** — que
-> precisa ser auditada, discutida e provavelmente refeita antes de virar migration.
+> Deixou de ser proposta. Existe um esquema rodando com **463.016 linhas de
+> fato**, e as decisões que esta página listava como em aberto foram tomadas:
 >
-> O que é sólido aqui é a *disciplina* (definir grão, separar fato de dimensão, resolver
-> N:N com ponte). O que é provisório é cada tabela e cada coluna.
+> | Decisão | Status |
+> |---|---|
+> | **Grão do fato** | ✅ **movimentação processual** (Opção A) — o DataJud entrega o array `movimentos`, que é a fonte de eventos que a Opção A pressupunha |
+> | Chave natural do fato | ✅ `(processo, movimento, timestamp)` — carga idempotente verificada rodando o mesmo lote duas vezes |
+> | `dim_topic` | ✅ assunto da TPU (Opção A), **mais** uma camada de tema semântico por cima (`dim_theme`) |
+> | `dim_movement.result_category` | ✅ 6 códigos conferidos contra a TPU/CNJ; os outros 257 entram como neutros |
+> | Precedentes e doutrina no modelo | ✅ `dim_doctrine` + `bridge_topic_doctrine` implementadas. Precedente segue sem fonte |
+> | Proveniência | ✅ `source` + `source_url` + `extracted_at` em toda linha carregada |
+>
+> **Nova exigência descoberta na carga:**
+> [polaridade do resultado](05-polaridade-do-resultado.md) — `dim_movement`
+> e `dim_case_class` ganharam colunas que esta página não previa.
+>
+> A implementação está em `scraping/sql/` (spike), não no `Ratio.Etl` oficial em
+> .NET. O esquema é o mesmo; o host é que ainda vai ser portado.
+>
+> A modelagem do `prototipo/` continua **não servindo de base** — nada dela foi
+> aproveitado.
 
 ## O método, antes das tabelas
 
@@ -49,16 +64,23 @@ desfecho.
 | Fato bem menor e alinhado à pergunta do produto | perde tempo entre etapas e taxa de recurso |
 | Consulta mais direta | se a definição de "o que é julgamento" mudar, recarrega tudo |
 
-### Como decidir
+### ✅ Decidido: Opção A (movimentação), com agregado por cima
 
-A pergunta a responder: **o produto vai medir tramitação (tempo, recursos) ou só
-resultado?** Os mockups atuais só mostram resultado — o que apontaria para B. Mas
-"tempo médio até a decisão" é uma métrica que advogado pede, e ela exige A.
+A recomendação foi seguida. O que confirmou a escolha, na prática:
 
-Recomendação: **A**, com uma camada agregada por cima que produz o resultado vigente
-por processo. É a opção que não fecha porta. Mas isso é recomendação, não decisão
-tomada — registrar em [Decisões e riscos](../06-operacao/02-decisoes-e-riscos.md) quando
-o time bater o martelo.
+- o DataJud entrega o array `movimentos` por processo — a fonte de eventos que a
+  Opção A pressupõe **existe**;
+- média de **43,8 movimentos por processo**: 18.378 processos renderam 463.016
+  linhas de fato. Volume alto, como o contra previa, mas Postgres absorve sem
+  esforço;
+- a camada `case_current_result` resolve o "resultado vigente por processo", e é
+  sobre ela que todos os agregados de tema rodam.
+
+Houve um período em que a Opção B (grão = decisão) foi adotada, enquanto o
+DataJud estava fora do escopo e a única fonte possível seria um repositório de
+jurisprudência. A tabela `fact_case_decision` desse desenho **continua existindo
+e vazia**, pronta para quando houver inteiro teor. Não são versões concorrentes:
+são grãos diferentes para fontes diferentes.
 
 ## Proposta inicial de esquema
 
@@ -148,18 +170,63 @@ reforma:
 Essa última é uma lacuna real da proposta atual: ela modela **processos**, e os mockups
 pedem também **precedentes** e **doutrina** ligados ao tema.
 
-## Checklist de auditoria — antes da primeira migration
+## Esquema como implementado
 
-- [ ] O grão está declarado por escrito e o time concorda?
-- [ ] Cada dimensão tem chave natural clara e estável?
-- [ ] Toda relação N:N passa por ponte?
-- [ ] Há coluna de proveniência (fonte + data de carga) em tudo que é carregado?
-- [ ] A carga é idempotente? Qual é a chave natural que garante isso?
-- [ ] Precedentes e doutrina cabem no modelo, ou faltam entidades?
-- [ ] O modelo responde a todas as perguntas das telas? (percorrer mockup a mockup)
-- [ ] Existe alguma métrica que o modelo torna impossível de calcular?
-- [ ] Dimensões mudam ao longo do tempo? Precisamos de historização (SCD)?
-- [ ] Quem fora do time consegue ler o esquema e entender o domínio?
+```
+                    dim_date
+                        │
+  dim_court ────────┐   │   ┌────── dim_judging_body
+                    ▼   ▼   ▼
+ dim_case ──────> fact_case_event <────── dim_movement
+    │  │                                      │
+    │  │ bridge_case_topic                    ├─ outcome_sk (dim_decision_outcome)
+    │  ▼                                      └─ polarity_reference  ← novo
+    │ dim_topic (assunto TPU, 447)
+    │     │  bridge_theme_topic        ┌── dim_doctrine (52.696)
+    │     ▼                            │      ▲
+    │  dim_theme (408) ────────────────┘  bridge_topic_doctrine
+    │
+    └─ dim_case_class ─ claimant_type  ← novo
+```
+
+Agregados por cima: `case_current_result` → `theme_summary` · `theme_by_year` ·
+`theme_by_court` · `theme_strength` (+ equivalentes no grão de assunto).
+
+## Checklist de auditoria — respondido
+
+- [x] **O grão está declarado por escrito?** Sim: uma linha = uma movimentação.
+- [x] **Cada dimensão tem chave natural clara e estável?** Sim — número CNJ,
+      código da TPU, sigla do tribunal, nome do assunto, DOI/URL do artigo.
+- [x] **Toda relação N:N passa por ponte?** Sim: `bridge_case_topic`,
+      `bridge_theme_topic`, `bridge_topic_doctrine`.
+- [x] **Proveniência em tudo que é carregado?** Sim, e há teste que falha se
+      faltar.
+- [x] **A carga é idempotente?** Sim — `natural_key` no fato e
+      `UNIQUE(source, payload_hash)` no raw. Verificado reprocessando o mesmo lote.
+- [x] **Precedentes e doutrina cabem?** Doutrina sim. **Precedente qualificado
+      continua sem entidade e sem fonte** (dependia do PANGEA).
+- [ ] **O modelo responde a todas as perguntas das telas?** Não: falta tudo que
+      depende de inteiro teor (fundamentos, citação de acórdão, valor, relator).
+- [x] **Alguma métrica ficou impossível de calcular?** Sim, e é consequência do
+      grão: **tempo entre etapas e taxa de recurso** são calculáveis (o grão de
+      evento permite), mas **valor da condenação** não — o fato não tem medida
+      numérica, e adicioná-la depende de fonte que não existe.
+- [ ] **Dimensões mudam ao longo do tempo? Precisa de SCD?** Ainda não tratado.
+      Órgão julgador é renomeado, assunto da TPU é revisado pelo CNJ. Hoje o
+      upsert **sobrescreve**, sem histórico. Risco conhecido, não endereçado.
+- [x] **Quem fora do time lê o esquema e entende o domínio?** Os nomes seguem o
+      [vocabulário PT→EN](../02-arquitetura/02-backend-dotnet.md#idioma), e as
+      migrations têm comentário explicando cada decisão não óbvia.
+
+### O que a carga mostrou que o checklist não perguntava
+
+- **Completude do dado varia por tribunal** — o TJMG entrega `dataHora` nulo em
+  100% dos movimentos. Um contrato de API igual não garante dado igual.
+- **Resultado precisa de polaridade** — saber que a pretensão foi acolhida não
+  basta; é preciso saber **de quem**. Ver
+  [Polaridade do resultado](05-polaridade-do-resultado.md).
+
+Ambos viraram colunas e constraints, não observações soltas.
 
 ## Referências de método
 

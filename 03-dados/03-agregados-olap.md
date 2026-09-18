@@ -1,8 +1,21 @@
 # Agregados OLAP
 
-> ⚠ **Proposta, não esquema fechado.** Depende diretamente do
-> [modelo dimensional](02-modelo-dimensional.md), que ainda está em aberto. As views
-> descritas aqui são um desenho plausível a auditar junto com ele.
+> ## ✅ Implementados — 15/09/2026
+>
+> A cadeia proposta aqui foi construída e roda sobre a carga real. Mudou uma
+> coisa importante no contrato das colunas:
+>
+> | Antes (proposta) | Agora (implementado) |
+> |---|---|
+> | `favorable_count` | `claim_upheld_count` |
+> | `unfavorable_count` | `claim_rejected_count` |
+> | mérito e recurso somados | colunas separadas: `claim_*` e `appeal_*` |
+> | — | `dominant_claimant`, `claimant_breakdown`, `claim_polarity_label` |
+>
+> **A palavra "favorável" saiu do schema**, e há um teste que falha se ela
+> voltar. Motivo em [Polaridade do resultado](05-polaridade-do-resultado.md):
+> "favorável" sem dizer a quem faz o produto exibir a conclusão invertida em
+> matéria penal.
 
 ## Por que agregar de antemão
 
@@ -111,19 +124,32 @@ caso só é ruído de vara, não divergência.
 
 ---
 
+## Agregados no grão de TEMA — novos
+
+A cadeia original parava no assunto. Com a
+[camada semântica](../02-arquitetura/05-etl-e-nlp.md#uso-1--agrupar-assuntos-em-tema-maior-valor-começar-por-aqui),
+existe um nível acima, que é o que a tela consome:
+
+```
+case_current_result
+      ├──> topic_summary · topic_by_year · topic_by_court · topic_by_judging_body
+      └──> theme_summary · theme_by_year · theme_by_court · theme_strength
+```
+
+`theme_strength` é a [nota de força](../01-produto/04-forca-do-entendimento.md),
+com os componentes e a polaridade abertos.
+
 ## O que ainda falta desenhar
 
-As views acima cobrem **processos**. Os mockups também pedem agregação sobre entidades
-que o modelo atual nem tem:
+| Bloco de tela | Agregado necessário | Depende de | Estado |
+|---|---|---|---|
+| *Doutrina invocada* (citações) | doutrina × tema | fonte de doutrina | 🟢 **feito** — 9.186 ligações |
+| *Fundamentos invocados* | fundamento × tema × resultado | inteiro teor + NLP | 🔴 |
+| *Jurisprudência qualificada* | precedente × tema × aderência | PANGEA ou equivalente | 🔴 |
+| Mediana de valor, P25/P75 | medida numérica no fato | inteiro teor | 🔴 |
 
-| Bloco de tela | Agregado necessário | Depende de |
-|---|---|---|
-| *Fundamentos invocados* (frequência × taxa de acolhimento) | fundamento × tema × resultado | inteiro teor + NLP |
-| *Jurisprudência qualificada* (citado em, seguido) | precedente × tema × aderência | PANGEA ou equivalente |
-| *Doutrina invocada* (citações) | doutrina × tema | fonte de doutrina |
-| Mediana de valor, P25/P75 | medida numérica no fato | inteiro teor |
-
-Nenhum deles é difícil de agregar; todos dependem de dado que ainda não temos. Ver
+Os três que faltam dependem do **inteiro teor**, que é a lacuna estrutural que
+sobrou depois da investigação de fontes. Ver
 [Fontes](01-fontes.md) e [Limitações](04-limitacoes-da-fonte.md).
 
 Note que **mediana e percentil** não são agregações triviais em view materializada

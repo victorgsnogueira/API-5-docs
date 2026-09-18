@@ -39,12 +39,19 @@ e o desafio avalia modelagem dimensional e pipeline, não a marca do banco.
 
 ## Extensões exigidas
 
-| Extensão | Para quê |
-|---|---|
-| `unaccent` | o usuário digita "inscricao" e precisa achar "inscrição" |
-| `pg_trgm` | similaridade por trigrama — rede de segurança para erro de digitação |
+| Extensão | Para quê | Estado |
+|---|---|---|
+| `unaccent` | o usuário digita "inscricao" e precisa achar "inscrição" | ✅ instalada |
+| `pg_trgm` | similaridade por trigrama — rede de segurança para erro de digitação | ✅ instalada |
+| `vector` (pgvector) | embeddings da [camada semântica de tema](../02-arquitetura/05-etl-e-nlp.md#uso-1--agrupar-assuntos-em-tema-maior-valor-começar-por-aqui) | ✅ instalada, 53.143 vetores |
 
-Ambas entram na primeira migration.
+As três entram na primeira migration. `vector` não estava prevista: entrou quando
+o agrupamento semântico saiu do papel — guardar os embeddings no próprio banco é
+o que torna o agrupamento reproduzível e auditável sem reprocessar texto.
+
+> **Nota de ambiente.** A imagem usada é `pgvector/pgvector:pg16` (o Postgres 16
+> oficial + a extensão já compilada), com locale **ICU `pt-BR`** — o `ORDER BY`
+> com acento foi verificado na prática.
 
 ## Configuração relevante
 

@@ -55,7 +55,25 @@ houver), usando embeddings ou uma LLM para rotular o cluster.
 | Captura tese emergente | rótulo gerado por modelo precisa de curadoria |
 | Separa teses dentro de um mesmo assunto | custo de inferência e latência no ETL |
 
-## Recomendação
+## ✅ Implementado: A com B por cima (15/09/2026)
+
+A recomendação abaixo foi seguida à risca. Resultado: **447 assuntos da TPU →
+408 temas**, dos quais 32 vieram de agrupamento semântico (consolidando 71
+assuntos) e 376 foram mantidos 1:1.
+
+`dim_topic` (assunto bruto) **não foi destruída** — `dim_theme` é uma camada
+acima, ligada por `bridge_theme_topic`. A pergunta "de onde saiu esse tema?" tem
+resposta em SQL, e há teste que falha se algum tema perder o lastro.
+
+Detalhes do método, dos erros do algoritmo e da curadoria:
+[ETL e NLP](../02-arquitetura/05-etl-e-nlp.md#uso-1--agrupar-assuntos-em-tema-maior-valor-começar-por-aqui).
+
+⚠ **O contra da Opção A continua valendo.** Os mockups mostram cinco teses para
+uma consulta; o agrupamento por embedding junta variação de **redação**, não
+separa **teses** dentro de um mesmo assunto. Para isso seria preciso a ementa —
+que depende do inteiro teor, hoje sem fonte.
+
+## Recomendação (seguida)
 
 **Fazer A primeiro, B em cima de A** — e nunca substituir um pelo outro:
 
@@ -79,21 +97,26 @@ Discussão da camada semântica: [ETL e NLP](../02-arquitetura/05-etl-e-nlp.md).
 Levantado a partir das telas. Nada disso está implementado — nomes em inglês, porque
 o [backend é em inglês](../02-arquitetura/02-backend-dotnet.md#idioma):
 
-| Campo | Origem | Uso na tela |
-|---|---|---|
-| `code` | chave do tema | identificador na URL |
-| `name` | rótulo (**valor em português**) | título |
-| `subjectArea` | classificação de matéria | tag CONSUMIDOR / BANCÁRIO / QUANTUM |
-| `summary` | prosa curta, gerada e curada | as duas linhas do resultado |
-| `caseCount` | contagem distinta via ponte | "12.418 processos" |
-| `judgedCount` | processos com resultado apurado | denominador de toda métrica |
-| `courtCount` | contagem distinta | "3 tribunais" e componente de cobertura |
-| `granted` / `denied` | agregado por tema | barra de alinhamento, "% favorável" |
-| `periodStart` / `periodEnd` | ano mín./máx. | "2021 — 2026" |
-| `lastDecisionDate` | máx. da data de decisão | "última decisão 21.08.2026" |
-| `strengthScore` | calculado | [nota /100](04-forca-do-entendimento.md) |
-| `provenance` | fonte + data de extração | rodapé — o produto é multifonte |
-| `relevance` | ranking da busca | ordenação (não exibido) |
+| Campo | Origem | Uso na tela | Estado |
+|---|---|---|---|
+| `code` | chave do tema | identificador na URL | ✅ |
+| `name` | rótulo (**valor em português**) | título | ✅ 408 temas |
+| `subjectArea` | classificação de matéria | tag CONSUMIDOR / BANCÁRIO / QUANTUM | ✅ 94,1% |
+| `summary` | prosa curta, gerada e curada | as duas linhas do resultado | 🔴 NLP Uso 3, não feito |
+| `caseCount` | contagem distinta via ponte | "12.418 processos" | ✅ |
+| `judgedCount` | processos com resultado apurado | denominador de toda métrica | ✅ |
+| `courtCount` | contagem distinta | "3 tribunais" e componente de cobertura | ✅ |
+| ~~`granted` / `denied`~~ → **`claimUpheld` / `claimRejected`** | agregado por tema | barra de alinhamento | ✅ **renomeado** |
+| **`claimPolarityLabel`** | autor dominante da classe | **obrigatório junto do percentual** | ✅ **campo novo** |
+| `periodStart` / `periodEnd` | ano mín./máx. | "2021 — 2026" | ✅ |
+| `lastDecisionDate` | máx. da data de decisão | "última decisão 21.08.2026" | ✅ |
+| `strengthScore` | calculado | [nota /100](04-forca-do-entendimento.md) | ✅ |
+| `provenance` | fonte + data de extração | rodapé — o produto é multifonte | ✅ |
+| `relevance` | ranking da busca | ordenação (não exibido) | 🔴 |
+
+**`claimPolarityLabel` é campo novo e não opcional.** Sem ele a barra de
+alinhamento diz "98% favorável" para um tema penal em que isso significa
+condenação. Ver [Polaridade do resultado](../03-dados/05-polaridade-do-resultado.md).
 
 ## Regras invioláveis
 

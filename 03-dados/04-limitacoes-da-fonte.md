@@ -68,9 +68,36 @@ O desfecho existe **apenas** como código de movimentação da TPU (219/220/221)
 
 **Não bloqueia** — é o que a categoria de resultado na dimensão de movimentação
 resolve. Mas cria o ponto mais frágil do projeto: um código mal classificado corrompe
-silenciosamente todo o favorável/desfavorável, sem sintoma visível. Daí a regra: só
+silenciosamente toda a apuração de resultado, sem sintoma visível. Daí a regra: só
 entra código conferido contra a API; na dúvida, categoria neutra, e categoria neutra não
 entra na métrica.
+
+> **✅ Implementado.** 6 códigos conferidos contra a tabela oficial da TPU/CNJ —
+> 219/220/221 (mérito) e 237/238/239 (recurso). Os outros **257 códigos** vistos
+> na carga entraram como `Neutral, code_verified = false`: contam para volume e
+> série temporal, mas **não** para apuração de resultado.
+
+> **🔴 E revelou um problema que esta página não previa.** O código diz se a
+> **pretensão** foi acolhida — não quem ganhou. Em matéria penal, "Procedência"
+> é **condenação**. Além disso, mérito e recurso têm polaridades **diferentes** e
+> não podem ser somados. Página dedicada:
+> **[Polaridade do resultado](05-polaridade-do-resultado.md)** — leitura
+> obrigatória antes de exibir qualquer percentual.
+
+### 5b · Completude do dado varia por tribunal
+
+Novo, e não previsto: **100% das 265.088 movimentações do TJMG** coletadas do
+DataJud têm `dataHora` **nulo**. TJSP e TJRJ não têm o problema.
+
+**Bloqueia** o TJMG inteiro na tabela fato — sem timestamp não há evento, e
+inventar data violaria o [D-11](../06-operacao/02-decisoes-e-riscos.md#d-11--nada-de-dado-inventado).
+
+**Consequência:** o escopo declarado é de três tribunais, a base efetiva tem
+dois. A interface precisa dizer isso, e a nota de força sofre no componente de
+cobertura.
+
+**Lição para todo conector novo:** verificar completude **campo a campo por
+tribunal**. Um contrato de API igual não garante dado igual.
 
 ### 6 · CPF / CNPJ das partes
 
@@ -100,13 +127,32 @@ Não existe "o site do governo": cada tribunal resolve *deep link* de um jeito �
 resolve. Com o escopo em três, são três casos a tratar.
 
 Observado abrindo a URL e **inspecionando o conteúdo** (o código HTTP engana: a página
-de erro do e-SAJ também devolve 200). Vale reverificar:
+de erro do e-SAJ também devolve 200).
 
-| Tribunal | Sistema | Resultado |
+> ### ⚠ Reverificado em 15/09/2026 — o formato antigo **quebrou**
+>
+> A recomendação de reverificar estava certa. O conjunto de parâmetros que esta
+> página registrava **não funciona mais**: devolve **200** com *"O tipo de
+> pesquisa informado é inválido"*. Como a página de erro também é 200, checar
+> status code não detecta nada — exatamente a armadilha descrita acima.
+>
+> **Faltavam dois parâmetros.** O formato que funciona hoje exige também
+> `dadosConsulta.localPesquisa.cdLocal` e `dadosConsulta.valorConsultaNuUnificado`.
+
+| Tribunal | Sistema | Resultado (verificado 15/09/2026) |
 |---|---|---|
-| TJ-SP | e-SAJ, GET com parâmetros | **abre o processo** — classe, assunto e vara conferidos na página |
-| TJ-RJ | SPA Angular | ignora o parâmetro da URL |
-| TJ-MG | PJe/JSF | exige POST com sessão |
+| TJ-SP 1º grau | e-SAJ `cpopg/search.do`, GET | ✅ **abre o processo** — `0000017-52.1994.8.26.0097` devolveu "Execução Fiscal / Foro de Buritama / 1ª Vara", e a classe **bate com o DataJud** |
+| TJ-SP 2º grau | e-SAJ `cposg/search.do`, GET | ✅ **abre** — `0000590-16.2021.8.26.0333` devolveu "Apelação Criminal / 2º Grau / Encerrado" |
+| TJ-RJ | SPA | ignora o parâmetro da URL → `portal` |
+| TJ-MG | PJe/JSF | exige POST com sessão → `portal` |
+
+**Verificação cruzada, não só HTTP 200:** o teste compara o dado da página com o
+que o DataJud diz do mesmo processo. É a única forma de saber que o link abriu o
+processo *certo*.
+
+O e-SAJ também aplica limite de taxa — uma das consultas de teste voltou com
+*"Foram identificadas múltiplas consultas simultâneas"*. Gerar o link é barato;
+**validar links em lote não é**, e não deve entrar no ETL.
 
 Daí as três camadas de resposta, que a interface precisa distinguir:
 

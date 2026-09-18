@@ -44,8 +44,9 @@ Minas Gerais.
 recorte torna viável mapear deep link, investigar repositório de jurisprudência e rodar
 carga completa em janela razoável.
 
-**Custo.** A interface **precisa declarar o escopo** — quem lê "82% favorável" assumindo
-cobertura nacional tira conclusão errada. Também obriga a
+**Custo.** A interface **precisa declarar o escopo** — quem lê um percentual assumindo
+cobertura nacional tira conclusão errada. Pior na prática: a base efetiva hoje tem
+**dois** tribunais, não três (R-12). Também obriga a
 [recalibrar o componente de cobertura](../01-produto/04-forca-do-entendimento.md#cobertura)
 da nota de força.
 
@@ -137,10 +138,13 @@ extração.
 **Decisão.** Só entra no mapa da TPU código cujo nome foi verificado contra a API. Na
 dúvida, categoria neutra — e categoria neutra não conta.
 
-**Por quê.** Um código mal classificado corromperia todo o favorável/desfavorável do
+**Por quê.** Um código mal classificado corromperia toda a apuração de resultado do
 produto **sem sintoma visível**.
 
 **Custo.** Subcontagem em vez de erro. É a direção certa de errar.
+
+**✅ Aplicado:** 6 códigos conferidos contra a TPU/CNJ; **257 entraram como
+neutros**. A regra rendeu mais exclusão do que inclusão, como esperado.
 
 ---
 
@@ -172,21 +176,119 @@ cada número seja auditável.
 
 ---
 
+### D-13 · Grão do fato: movimentação processual (Opção A)
+
+**Decisão.** Uma linha de `fact_case_event` = uma movimentação. O resultado
+vigente por processo sai de um agregado por cima (`case_current_result`).
+
+**Por quê.** O DataJud entrega o array `movimentos`, que é a fonte de eventos que
+a Opção A pressupunha. Não fecha porta: permite tempo entre etapas e taxa de
+recurso, que a Opção B perderia.
+
+**Custo.** Volume alto — média de **43,8 movimentos por processo**; 18.378
+processos renderam 463.016 linhas. Postgres absorve sem esforço.
+
+**Nota.** `fact_case_decision` (grão = decisão publicada) existe e está vazia,
+para quando houver inteiro teor. São grãos diferentes para fontes diferentes,
+não versões concorrentes.
+
+---
+
+### D-14 · Cobertura da nota de força satura em 3 tribunais
+
+**Decisão.** `N = 3` — todos os tribunais do escopo declarado. Resolve o R-08,
+que era bloqueante.
+
+**Por quê.** Cobertura mede "a tese aparece em quantos tribunais do universo
+coberto", e o universo declarado do produto é três.
+
+**Custo.** `N` precisa mudar se STF/STJ entrarem. Por isso vive em
+`dw.strength_config`, não cravado na fórmula.
+
+---
+
+### D-15 · A palavra "favorável" não existe no schema
+
+**Decisão.** Contagens de resultado se chamam **pretensão acolhida/rejeitada**
+(`claim_upheld` / `claim_rejected`), sempre acompanhadas de **quem é o autor**.
+Mérito e recurso nunca são somados.
+
+**Por quê.** Descoberto na primeira carga real: em matéria penal — a **maior
+área da base** — "procedência" é condenação. "98% favorável" faria um advogado
+ler exatamente o contrário do que o dado diz.
+
+**Custo.** Contrato de API mais verboso: todo percentual carrega um rótulo de
+polaridade junto. É o preço de não induzir o usuário a erro.
+
+Ver [Polaridade do resultado](../03-dados/05-polaridade-do-resultado.md).
+
+---
+
+### D-16 · Doutrina ligada a tema por método híbrido, não só embedding
+
+**Decisão.** A associação doutrina↔assunto exige proximidade semântica **e**
+presença léxica dos termos distintivos. Limiar e score gravados em cada linha.
+
+**Por quê.** Embedding puro ligou artigos de *filosofia moral* ao tema *dano
+moral* com score **maior** que os artigos corretos. Subir o limiar não
+resolveria — o erro pontuava mais alto que o acerto.
+
+**Custo.** Cobertura caiu de 67,6% para 13,7%. É a direção certa de errar:
+artigo sem tema é recuperável, artigo no tema errado não é (mesma lógica do D-10).
+
+---
+
 ## Riscos
 
-Ordenados por impacto.
+Ordenados por impacto. **Status revisado em 15/09/2026**, após a primeira carga
+real.
 
-### R-01 · A maior parte do mockup não tem fonte de dados 🔴
+### R-01 · Blocos do mockup sem fonte 🟠 *(era 🔴 — reduzido, não eliminado)*
 
-Citação de acórdão, fundamentos invocados, jurisprudência qualificada, doutrina, valor
-fixado e relator — **nenhum tem lastro no DataJud**, e nenhuma fonte alternativa está
-confirmada. É o risco central do projeto.
+**Resolvido:** a **doutrina** deixou de ser lacuna (52.696 artigos, 9.186 ligados
+a tema, via DOAJ/SciELO/OAI-PMH).
 
-**Mitigação.** Decidir por bloco, e cedo: PANGEA, repositório de tribunal, NLP, ou **fora
-do escopo**. Ver [Limitações da fonte](../03-dados/04-limitacoes-da-fonte.md).
+**Continua sem fonte, e agora com motivo confirmado:** citação de acórdão,
+fundamentos invocados, valor fixado e relator — todos dependem de **inteiro
+teor**, e a investigação mostrou que **os quatro tribunais testados estão
+bloqueados** (TJSP e TJMG por captcha, TJRJ por Termos de Uso, STJ por WAF).
+Jurisprudência qualificada dependia do PANGEA, não investigado.
+
+Relator tem agora uma confirmação dura: **não existe no payload do DataJud**.
+
+**Mitigação.** As opções viraram concretas: ofício ao TJRJ (única barreira
+puramente contratual), convênio institucional, resolução automatizada de captcha
+(**decisão da coordenação, não de desenvolvedor**), ou remover do escopo.
 
 **Sinal de alerta:** alguém implementar um desses blocos com dado de demonstração e ele
 chegar à apresentação.
+
+---
+
+### R-12 · Base efetiva tem 2 tribunais, não 3 🟠 *(novo)*
+
+100% das 265.088 movimentações do TJMG vindas do DataJud têm `dataHora` **nulo**.
+Sem timestamp não há evento, e inventar data violaria o D-11 — então o TJMG
+ficou fora da tabela fato.
+
+**Impacto direto:** o componente de cobertura da nota trava, e a distribuição
+ficou **0 temas "Consolidados"**. A interface declara escopo de três tribunais
+enquanto a base tem dois.
+
+**Mitigação.** Declarar a cobertura efetiva na tela; reprocessar se o TJMG
+corrigir o campo (os processos já estão no `raw`); e **todo conector novo checa
+completude campo a campo por tribunal**.
+
+---
+
+### R-13 · Dimensões sem historização (SCD) 🟡 *(novo)*
+
+Órgão julgador é renomeado, assunto da TPU é revisado pelo CNJ. Hoje o upsert
+**sobrescreve** o atributo, sem guardar histórico. Um agregado recalculado depois
+de uma renomeação muda retroativamente, sem rastro.
+
+**Mitigação.** Não endereçado. Decidir se alguma dimensão precisa de SCD tipo 2
+antes que a base fique grande demais para migrar.
 
 ### R-02 · Três frentes em branco e nenhuma base reaproveitável 🔴
 
@@ -198,15 +300,17 @@ começa do zero em código.
 uma fonte, um recorte pequeno, uma tela — antes de ampliar. Fatiar por fluxo vertical,
 não por camada.
 
-### R-03 · Modelagem do DW ainda não existe 🔴
+### R-03 · Modelagem do DW ✅ *(era 🔴 — resolvido)*
 
-O esquema do protótipo está fora, e não há substituto. Tudo depende disso: ETL, API,
-telas, chatbot e os testes de integridade que o desafio exige.
+O esquema existe, está carregado e o checklist de auditoria foi percorrido. Grão
+declarado (D-13), pontes no lugar, proveniência em toda linha, carga idempotente
+verificada. **463.016 linhas de fato.**
 
-**Mitigação.** Sessão de modelagem com o time, começando pela declaração do
-[grão](../03-dados/02-modelo-dimensional.md#decisão-2--o-grão-duas-opções-em-aberto), e
-percorrendo o [checklist de auditoria](../03-dados/02-modelo-dimensional.md#checklist-de-auditoria--antes-da-primeira-migration)
-antes da primeira migration. É o maior desbloqueio disponível hoje.
+**Restam dois itens do checklist:** o modelo não responde às perguntas que
+dependem de inteiro teor (R-01), e não há historização de dimensão (R-13).
+
+⚠ **O esquema está no spike `scraping/`, não no `Ratio.Etl` oficial em .NET.**
+A modelagem é a mesma; o host é que falta portar.
 
 ### R-04 · Fontes candidatas não verificadas 🟠
 
@@ -217,21 +321,24 @@ repositórios dos tribunais não têm formato padronizado.
 [Fontes](../03-dados/01-fontes.md). Nenhum bloco de tela pode ser planejado sobre fonte
 não verificada.
 
-### R-05 · Granularidade do tema 🟠
+### R-05 · Granularidade do tema 🟠 *(mitigado em parte)*
 
-Tema = assunto da TPU não separa as cinco teses que o mockup mostra para uma mesma
-consulta.
+A camada semântica foi construída: 447 assuntos → 408 temas, com o lastro da TPU
+preservado.
 
-**Mitigação.** Camada semântica **em cima** do assunto TPU, preservando o lastro. Ver
-[O que é um tema](../01-produto/03-tema-modelo-conceitual.md).
+**Mas o risco não sumiu.** O agrupamento por embedding junta variação de
+**redação** ("Indenização por Dano Moral" / "Indenizaçao por Dano Moral"); ele
+**não separa teses** dentro de um mesmo assunto, que é o que o mockup mostra.
+Para isso seria preciso a ementa — que depende do inteiro teor (R-01).
 
-### R-06 · Escopo de NLP indefinido 🟠
+### R-06 · Escopo de NLP ✅ *(era 🟠 — definido e implementado)*
 
-"Normalizar com NLP usando alguma LLM" é intenção, não plano. Três usos possíveis, com
-custos muito diferentes, e um deles bloqueado por falta de texto.
+Escolhido e feito o **Uso 1** (agrupar assuntos em tema), mais um Uso 4 que não
+estava previsto (ligar doutrina a tema). O guarda-corpo está travado por teste:
+uma consulta recalcula a contagem direto do fato e falha se o agregado divergir.
 
-**Mitigação.** Escolher **um** uso (recomendação: agrupamento em tema) e cravar o
-guarda-corpo: o modelo não conta. Ver [ETL e NLP](../02-arquitetura/05-etl-e-nlp.md).
+**Uso 2** (extrair do inteiro teor) segue bloqueado por R-01. **Uso 3** (redigir
+o resumo) não foi feito.
 
 ### R-07 · DevOps é requisito e ainda não existe 🟠
 
@@ -242,13 +349,14 @@ valem nota. Nada está configurado.
 semana de código. Containerizar no fim do projeto é onde os prazos morrem. Ver
 [DevOps](03-devops-e-infra.md).
 
-### R-08 · Nota de força precisa ser recalibrada para três tribunais 🟠
+### R-08 · Recalibração da nota de força ✅ *(era 🟠 — decidido)*
 
-O componente de cobertura saturava em 6 tribunais. Com escopo em três, ele nunca chega
-ao topo e comprime a nota inteira.
+`N = 3` (D-14), parametrizado em `dw.strength_config`. A nota está implementada
+com os componentes abertos.
 
-**Mitigação.** Recalibrar antes de exibir qualquer nota. Ver
-[Força do entendimento](../01-produto/04-forca-do-entendimento.md#cobertura).
+⚠ **Mas a compressão continua**, por outro motivo: com o TJMG fora da base
+(R-12), quase todo tema vê 1–2 tribunais. Resultado: **0 temas "Consolidados"**.
+É o dado, não a fórmula.
 
 ### R-09 · Dependência de fonte externa instável 🟡
 
