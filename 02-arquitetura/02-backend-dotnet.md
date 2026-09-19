@@ -189,7 +189,7 @@ A adicionar:
 | `Pgvector` | Infrastructure | tipo `vector` no Npgsql — só se a API consultar embedding (busca semântica, chatbot) |
 | `Serilog.AspNetCore` | Api | log estruturado |
 | `AspNetCore.HealthChecks.NpgSql` | Api | `/health/ready` |
-| `Shouldly`, `NSubstitute` | testes | asserção e dublê — ver [TDD](../07-justificativas/03-tdd.md#backend--net) |
+| `Moq` (≥ 4.20.70) | testes | dublê; asserção é o `Assert` do xUnit — ver [TDD](../07-justificativas/03-tdd.md#backend--net) |
 | `Microsoft.AspNetCore.Mvc.Testing` | `Ratio.Api.Tests` | API em memória |
 | `Testcontainers.PostgreSql` | `Ratio.Infrastructure.Tests` | Postgres real (`pgvector/pgvector:pg16`) no teste |
 

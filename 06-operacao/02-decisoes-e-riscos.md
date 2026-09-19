@@ -275,7 +275,7 @@ fora de repositório — [R-15](#r-15--o-pipeline-de-carga-não-está-versionado
 ### D-18 · TDD no backend e no frontend
 
 **Decisão.** Todo código de produção, nos dois repositórios de aplicação, nasce de um
-teste que falhou antes. Backend: xUnit + Shouldly + NSubstitute + Testcontainers
+teste que falhou antes. Backend: xUnit (com o `Assert` nativo) + Moq + Testcontainers
 (Postgres real). Frontend: Vitest + Testing Library + MSW. *(19/09/2026)*
 
 **Por quê.** Os erros mais caros encontrados até aqui — "favorável" invertendo temas

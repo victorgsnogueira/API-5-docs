@@ -40,13 +40,17 @@ Três regras que tornam o ciclo real, e não teatro:
 |---|---|---|
 | Framework de teste | **xUnit** | ✅ referenciado (2.5.3 — atualizar) |
 | Cobertura | **coverlet** | ✅ referenciado |
-| Asserção legível | **Shouldly** | a adicionar |
-| Dublê de teste | **NSubstitute** | a adicionar |
+| Asserção | **`Assert` do próprio xUnit** | ✅ já vem com o xUnit |
+| Dublê de teste | **Moq** | a adicionar |
 | Teste de API em memória | **`Microsoft.AspNetCore.Mvc.Testing`** (`WebApplicationFactory`) | a adicionar |
 | Postgres real em teste | **Testcontainers** (`Testcontainers.PostgreSql`) com a imagem `pgvector/pgvector:pg16` | a adicionar |
 
-> **Por que Shouldly e não FluentAssertions.** A partir da v8 o FluentAssertions passou
-> a ter licença comercial. Shouldly é MIT e cobre o mesmo uso.
+> **Sem biblioteca de asserção extra.** O `Assert` do xUnit (`Assert.Equal`,
+> `Assert.DoesNotContain`, `Assert.Throws`…) cobre o que o projeto precisa. Não
+> adicione FluentAssertions — a partir da v8 ele tem licença comercial.
+
+> **Moq: fixe versão ≥ 4.20.70.** A 4.20.0 embutiu o SponsorLink (coleta de e-mail
+> no build); foi removido nas versões seguintes.
 
 > **Por que Testcontainers e não SQLite/in-memory.** O produto depende de coisas que só o
 > Postgres tem: `unaccent`, `pg_trgm`, `vector`, views materializadas, `FILTER (WHERE …)`.
@@ -60,7 +64,7 @@ A pirâmide segue as camadas da [solução](../02-arquitetura/02-backend-dotnet.
 | Camada | Tipo de teste | Projeto | Toca banco? |
 |---|---|---|---|
 | `Ratio.Domain` | unitário puro — cálculo da nota de força, polaridade, regras | `Ratio.Application.Tests` | não |
-| `Ratio.Application` | unitário — casos de uso com repositório substituído (NSubstitute) | `Ratio.Application.Tests` | não |
+| `Ratio.Application` | unitário — casos de uso com repositório substituído (Moq) | `Ratio.Application.Tests` | não |
 | `Ratio.Infrastructure` | integração — repositório contra Postgres em Testcontainers | `Ratio.Infrastructure.Tests` | **sim** |
 | `Ratio.Api` | integração — HTTP em memória com `WebApplicationFactory` | `Ratio.Api.Tests` *(a criar)* | opcional |
 
@@ -78,9 +82,27 @@ public class PolarityLabelTests
     {
         var label = PolarityLabel.For(ClaimantType.Prosecution);
 
-        label.ShouldNotContain("favorável");
-        label.ShouldBe("acolhimento da pretensão acusatória (procedência = condenação)");
+        Assert.DoesNotContain("favorável", label);
+        Assert.Equal("acolhimento da pretensão acusatória (procedência = condenação)", label);
     }
+}
+```
+
+E com dublê, num caso de uso da Application:
+
+```csharp
+[Fact]
+public async Task Unknown_topic_returns_not_found()
+{
+    var repository = new Mock<ITopicRepository>();
+    repository.Setup(r => r.GetByCodeAsync(999, It.IsAny<CancellationToken>()))
+              .ReturnsAsync((TopicDetail?)null);
+    var useCase = new GetTopicDetail(repository.Object);
+
+    var result = await useCase.ExecuteAsync(999, CancellationToken.None);
+
+    Assert.True(result.IsNotFound);
+    repository.Verify(r => r.GetByCodeAsync(999, It.IsAny<CancellationToken>()), Times.Once);
 }
 ```
 
