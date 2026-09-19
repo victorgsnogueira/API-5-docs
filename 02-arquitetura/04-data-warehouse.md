@@ -42,18 +42,42 @@ e o desafio avalia modelagem dimensional e pipeline, não a marca do banco.
 Inventário do contêiner `api5-dw` — o **banco da carga** —, conferido direto no
 catálogo do Postgres (`pg_extension`, `pg_database`, `pg_settings`) em 19/09/2026.
 
-### Carga × produção
+### Carga × produção — os três bancos
 
-Os dois bancos **não são iguais**, de propósito
-([D-25](../06-operacao/02-decisoes-e-riscos.md#d-25--produção-sem-pgvector-embeddings-ficam-na-carga)):
+O projeto tem **três bancos**, e eles **não são iguais**, de propósito
+([D-28](../06-operacao/02-decisoes-e-riscos.md#d-28--três-bancos-carga-homologação-e-produção), [D-25](../06-operacao/02-decisoes-e-riscos.md#d-25--produção-sem-pgvector-embeddings-ficam-na-carga)):
 
-| | Banco da carga (`api5-dw`) | Produção (cliente) |
-|---|---|---|
-| Onde | contêiner, na máquina de quem roda a carga | **PostgreSQL 16 nativo em Windows Server** |
-| Schemas | `raw`, `staging`, `dw`, `nlp` | **só `dw`** |
-| Extensões | `vector`, `pg_trgm`, `unaccent` | **`pg_trgm`, `unaccent`** — sem pgvector |
-| Embeddings | sim — é onde o NLP trabalha | **não** |
-| Locale | ICU `pt-BR` | ICU `pt-BR` |
+```
+   CARGA  (api5-dw)                  raw · staging · nlp · dw   + pgvector
+      │  coleta → NLP → agregados → 24 testes
+      │
+      │  scraping/scripts/publish_dw.sh   (pg_dump -n dw → pg_restore)
+      ├──────────────────────────► HOMOLOGAÇÃO (ratio-homolog)    só dw, sem pgvector
+      │                                 rede Tailscale · a API e o time usam este
+      │
+      └──── dump no pacote de versão ──► PRODUÇÃO (cliente)       só dw, sem pgvector
+                                        Windows Server · a TI do cliente restaura
+```
+
+| | Carga (`api5-dw`) | Homologação (`ratio-homolog`) | Produção (cliente) |
+|---|---|---|---|
+| Para quê | coletar, normalizar, rodar NLP, validar | simular a produção | o sistema de verdade |
+| Onde | contêiner `pgvector/pgvector:pg16` | contêiner `postgres:16`, porta `5433`, na rede Tailscale | **PostgreSQL 16 nativo em Windows Server** |
+| Schemas | `raw`, `staging`, `nlp`, `dw` | **só `dw`** | **só `dw`** |
+| Extensões | `vector`, `pg_trgm`, `unaccent` | `pg_trgm`, `unaccent` | `pg_trgm`, `unaccent` |
+| Embeddings | sim — é onde o NLP trabalha | não | não |
+| Locale | ICU `pt-BR` | ICU `pt-BR` | ICU `pt-BR` |
+| `default_text_search_config` | `english` ⚠ | **`portuguese`** | **`portuguese`** (fixar na instalação) |
+| Usuários | `dw_admin` (superusuário) | `ratio_loader` (dono do `dw`) · `ratio_api` (**só `SELECT`**) | idem |
+| Quem acessa | só quem roda a carga | o time e a API em desenvolvimento, pela Tailscale | funcionários do cliente, via API |
+| Como muda | a cada rodada da carga | só por `publish_dw.sh`, **depois** dos 24 testes | a cada pacote de versão |
+
+**A API nunca aponta para o banco da carga.** Ele tem superusuário, dado cru e carga pela
+metade. A API — em dev, homologação ou produção — lê só um banco com o `dw` publicado,
+como `ratio_api`.
+
+**Testes não são um quarto banco.** O Testcontainers sobe um `postgres:16` descartável
+por execução.
 
 Os embeddings só servem para **produzir** o dado (clusterizar assuntos, ligar doutrina a
 tema). O resultado — `dim_theme`, `bridge_theme_topic`, `bridge_topic_doctrine` com o

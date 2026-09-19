@@ -196,7 +196,7 @@ produziu a base atual.
    4 REVISAR      curadoria humana        clusters novos aceitos/rejeitados por nome
    5 AGREGAR      REFRESH MATERIALIZED    na ordem de dependência
    6 VALIDAR      24 testes de integridade   ── qualquer linha retornada = PARA
-   7 SUBIR        pg_dump ──► pg_restore  local ──► produção
+   7 PUBLICAR     publish_dw.sh           carga ──► homologação; dump ──► pacote de produção
    8 REGISTRAR    data, fontes, contagens   no README da carga e na Decisões
 ```
 
@@ -243,17 +243,26 @@ da TPU, não quebra.
 
 ### Subir para produção
 
-A carga roda **na máquina de quem opera**, contra o Postgres local; produção só recebe o
-resultado validado:
+A carga roda no banco da carga; homologação e produção só recebem o resultado validado
+([os três bancos](04-data-warehouse.md#carga--produção--os-três-bancos)).
+
+**Homologação** — um comando:
 
 ```bash
-# local — depois do passo 6 passar
-docker exec api5-dw pg_dump -U dw_admin -d api5_dw -Fc -n dw -f /tmp/dw.dump
-docker cp api5-dw:/tmp/dw.dump ./dw.dump
-
-# produção — restore do schema dw inteiro, numa transação
-pg_restore --clean --if-exists --single-transaction -n dw -d "$PROD_URL" dw.dump
+RATIO_LOADER_PASSWORD=... bash scraping/scripts/publish_dw.sh ratio-homolog
 ```
+
+O script faz o `pg_dump -n dw` da carga, o `pg_restore --clean --single-transaction` no
+destino, reaplica o `SELECT` do `ratio_api`, **roda os 24 testes no destino** e sai com
+erro se algum não vier vazio.
+
+**Produção** — o mesmo dump vai no pacote de versão, e a TI do cliente restaura:
+
+```bash
+pg_restore --clean --if-exists --no-owner --no-privileges --single-transaction -d ratio dw.dump
+```
+
+seguido do mesmo `GRANT` para o `ratio_api`.
 
 - **Só o schema `dw` sobe.** `raw`, `staging` e `nlp` (embeddings) são área de
   trabalho, ficam locais (o `raw` é o que permite reprocessar sem voltar às fontes —

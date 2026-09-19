@@ -408,7 +408,7 @@ Windows e entregá-lo no pacote, sem nenhum uso.
 
 **Consequência.** Os embeddings foram movidos para o schema `nlp` (migration `018`),
 que nunca sobe. Verificado: o dump do `dw` restaura num Postgres 16 sem pgvector com os
-24 testes de integridade vazios. Ver [Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção).
+24 testes de integridade vazios. Ver [Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção--os-três-bancos).
 
 **Custo.** Busca semântica em tempo de requisição (busca por significado, chatbot) fica
 fora. Se entrar, esta decisão é revertida e o pgvector para Windows volta a ser problema.
@@ -435,6 +435,32 @@ migrations do pipeline de carga.
 identificador. É a exceção à regra de código em inglês ([D-06](#d-06--código-em-inglês-retorno-da-api-em-português)).
 O resto continua em inglês: componentes, funções, o nome do parâmetro de rota e as
 rotas da **API** (`/api/topics`).
+
+---
+
+### D-28 · Três bancos: carga, homologação e produção
+
+**Decisão.** *(19/09/2026)*
+
+| Banco | Tem | Quem usa |
+|---|---|---|
+| **Carga** (`api5-dw`) | `raw`, `staging`, `nlp`, `dw` + pgvector | só quem roda a carga |
+| **Homologação** (`ratio-homolog`, `postgres:16`) | só `dw`, sem pgvector | o time e a API em desenvolvimento, pela Tailscale |
+| **Produção** (cliente) | só `dw`, sem pgvector, Postgres nativo Windows | funcionários do cliente |
+
+A homologação é **separada** da carga e só muda por `scraping/scripts/publish_dw.sh`,
+que publica o `dw` e roda os 24 testes no destino.
+
+**Por quê.**
+- a homologação precisa testar **o mesmo caminho da produção** — restaurar o dump num
+  Postgres sem pgvector. Se a API lesse o banco da carga, um erro de restore só
+  apareceria no cliente;
+- a API só enxerga o `dw`, com um usuário que só lê; o banco da carga tem superusuário e
+  dado cru;
+- carga pela metade nunca aparece para quem está usando a homologação.
+
+**Custo.** Um contêiner a mais e um passo a mais (`publish_dw.sh`) a cada carga.
+Testes não contam como banco: são descartáveis (Testcontainers).
 
 ---
 
@@ -645,6 +671,7 @@ dado do caso dele.
 | Migrar para .NET 10 agora? | dev backend | R-14 |
 | Controle de migration aplicada: tabela própria ou DbUp lendo os SQL? | dev backend | primeira migration nova |
 | ~~Acesso a dados: Dapper ou EF Core?~~ | ✅ Dapper (D-26) | — |
+| ~~Quantos bancos o projeto tem?~~ | ✅ três: carga, homologação, produção (D-28) | — |
 | Com que frequência rodar a carga manual? | time | frescor do dado exibido |
 | ~~Só produção, ou produção + staging no Coolify?~~ | substituída: produção é o cliente (D-21) | — |
 | ~~A VPS Hostinger + Coolify continua, como homologação?~~ | ✅ não — simulação em rede Tailscale (D-24) | — |

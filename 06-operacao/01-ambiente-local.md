@@ -54,7 +54,7 @@ dotnet test          # o ciclo do TDD — ver 07-justificativas/03-tdd.md
 
 O banco da carga roda em contêiner (Postgres 16 + pgvector, porque o NLP grava
 embeddings) com locale ICU `pt-BR`. Produção não tem pgvector — ver
-[Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção). Inventário completo do que está instalado em
+[Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção--os-três-bancos). Inventário completo do que está instalado em
 [Data Warehouse](../02-arquitetura/04-data-warehouse.md#o-que-está-instalado-no-banco).
 
 ```bash
@@ -88,6 +88,21 @@ inteira, ou restaura um dump de quem já tem a base:
 docker cp dw.dump api5-dw:/tmp/dw.dump
 docker exec api5-dw pg_restore -U dw_admin -d api5_dw --clean --if-exists -n dw /tmp/dw.dump
 ```
+
+### Só vai desenvolver API ou frontend?
+
+**Não precisa do banco da carga.** Aponte para a **homologação**, pela rede Tailscale do
+time, com o usuário somente leitura:
+
+```
+Host=<nome-da-máquina-na-tailnet>;Port=5433;Database=ratio;Username=ratio_api;Password=<pedir ao time>
+```
+
+É o mesmo `dw` que vai para produção, sem pgvector e sem superusuário — se a API
+funciona ali, funciona no cliente. Senha nunca vai para o repositório nem para esta wiki.
+
+Para trabalhar offline, suba um `postgres:16` local e restaure o dump do `dw` (~15 MB)
+do mesmo jeito que o [`publish_dw.sh`](../02-arquitetura/05-etl-e-nlp.md#subir-para-produção) faz.
 
 ### Rodar a carga
 
