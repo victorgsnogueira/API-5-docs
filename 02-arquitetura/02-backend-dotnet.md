@@ -1,7 +1,16 @@
 # Backend .NET
 
-Repositório `API5-Backend`, solução `Ratio/Ratio.slnx`, **.NET 8**, `Nullable` e
-`ImplicitUsings` habilitados em todos os projetos.
+Repositório `API5-Backend`, solução `Ratio/Ratio.slnx`, **ASP.NET Core** sobre
+**.NET 8**, `Nullable` e `ImplicitUsings` habilitados em todos os projetos.
+
+> ⚠ **O .NET 8 sai de suporte em 10/11/2026** — antes do fim do projeto. O .NET 10 é
+> a LTS vigente (suporte até nov/2028). Migrar é trocar `net8.0` por `net10.0` nos
+> `.csproj` enquanto a solução ainda é scaffold; depois custa mais. Ver
+> [R-14](../06-operacao/02-decisoes-e-riscos.md#r-14--net-8-sai-de-suporte-durante-o-projeto-).
+
+**O backend é só a API de leitura.** A carga do DW é um
+[processo manual](05-etl-e-nlp.md#carga-manual--o-processo), fora do backend — ver
+[D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada).
 
 ## Por que .NET
 
@@ -14,22 +23,43 @@ acesso a banco para dentro dele.
 
 ## Idioma
 
-> **Todo o backend é escrito em inglês** — classes, métodos, variáveis, tabelas,
-> colunas, rotas, campos JSON, mensagens de log, comentários e commits.
+> **Todo o código é escrito em inglês** — classes, métodos, variáveis, tabelas,
+> colunas, rotas, chaves do JSON, mensagens de log, comentários, testes e commits.
 >
-> **Os dados permanecem em português**, porque o domínio é o direito brasileiro. O
-> valor de um campo `topic.name` é `"Inscrição indevida em cadastro de inadimplentes"`,
-> e continua assim.
+> **Tudo o que a API devolve para ser lido é em português** — os dados, os rótulos,
+> as mensagens de erro e de validação.
 
-A linha divisória é simples: **identificador é inglês, conteúdo é português.**
+A linha divisória: **chave é código (inglês), valor é retorno (português).**
+
+| O quê | Idioma | Exemplo |
+|---|---|---|
+| Identificador C#, tabela, coluna | inglês | `TopicSummary`, `dw.fact_case_event` |
+| Rota | inglês | `GET /api/topics/{code}/decisions` |
+| **Chave** do JSON | inglês (camelCase) | `"strengthScore"`, `"polarityLabel"` |
+| **Valor** de dado | português | `"name": "Inscrição indevida em cadastro de inadimplentes"` |
+| Rótulo / enum exposto ao usuário | português | `"level": "Divergente"` |
+| Motivo de dado ausente | português | `"reason": "O DataJud não publica o relator."` |
+| **Erro** (`ProblemDetails.title` / `detail`) | português | `"title": "Tema não encontrado"` |
+| Mensagem de validação | português | `"O parâmetro 'limit' deve estar entre 1 e 100."` |
+| Log | inglês | `"Topic {Code} not found"` — log é para o time, não para o usuário |
+| Swagger — descrição das rotas | português | é documentação de quem consome a API |
+
+**Por que as chaves ficam em inglês:** elas são código dos dois lados — viram
+propriedade C# e tipo TypeScript. Traduzi-las obrigaria a manter dois vocabulários
+para a mesma coisa. Já tudo o que o frontend **exibe** chega pronto em português, e o
+frontend não traduz nada — é o que garante que a tela e a API digam a mesma frase
+(ver a regra do [rótulo de polaridade](../03-dados/05-polaridade-do-resultado.md)).
 
 ```csharp
-// certo
-public sealed record TopicSummary(int Code, string Name, int Cases, int Judged);
-// name = "Atraso de voo"        ← dado, fica em português
+// certo — identificador em inglês, retorno em português
+public sealed record TopicSummary(int Code, string Name, int Cases, string StrengthLevel);
+// Name = "Atraso de voo"   StrengthLevel = "Em formação"
+
+return Problem(title: "Tema não encontrado", statusCode: 404);
 
 // errado
 public sealed record ResumoTema(int Codigo, string Nome, int Processos);
+return Problem(title: "Topic not found");     // o usuário lê isso
 ```
 
 ### Vocabulário do domínio — PT → EN
@@ -91,12 +121,14 @@ Ratio.Infrastructure ──> Application, Domain
    │          └── Ratio.Infrastructure.Tests  (xUnit)
    │
 Ratio.Api  ──> Application, Infrastructure     (ASP.NET Core Web API)
-Ratio.Etl  ──> Application, Infrastructure     (console app, OutputType=Exe)
+   ▲
+   └── Ratio.Api.Tests  (xUnit + WebApplicationFactory)   ← a criar
+
+Ratio.Etl  ──> Application, Infrastructure     ⚠ sem papel desde o D-17
 ```
 
 Dependências invertem para dentro: a Application define a **porta** (interface), a
-Infrastructure fornece o **adaptador**. A Api e o Etl são apenas hosts — dois pontos de
-entrada para o mesmo núcleo.
+Infrastructure fornece o **adaptador**. A Api é o host.
 
 ### Responsabilidade de cada projeto
 
@@ -104,45 +136,42 @@ entrada para o mesmo núcleo.
 |---|---|---|
 | `Ratio.Domain` | `Topic`, `Case`, `CaseEvent`, `DecisionOutcome`, o cálculo do `StrengthScore` | SQL, HTTP, atributos de framework |
 | `Ratio.Application` | casos de uso (`SearchTopics`, `GetTopicDetail`, `ListDecisions`), DTOs, interfaces de repositório | Npgsql, `HttpClient` |
-| `Ratio.Infrastructure` | repositórios sobre Postgres, clientes das fontes externas, migrations | regra de negócio |
+| `Ratio.Infrastructure` | repositórios de leitura sobre Postgres | regra de negócio, DDL, cliente de fonte externa |
 | `Ratio.Api` | controllers, DI, CORS, Swagger, health checks | consulta SQL |
-| `Ratio.Etl` | orquestração da carga: ler config, iterar fontes, gravar, atualizar agregados | regra de transformação (essa vive na Application) |
+| `Ratio.Etl` | ⚠ sem papel desde o [D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) — recomendação: remover | — |
 
 ### Multifonte na estrutura
 
-O produto consome [várias fontes](../03-dados/01-fontes.md), e elas vão entrar em
-tempos diferentes. Desenhe para isso desde o começo:
-
-```csharp
-// Ratio.Application — a porta
-public interface ICaseSource
-{
-    string Name { get; }                                  // "datajud", "pangea", …
-    IAsyncEnumerable<RawCase> FetchAsync(SourceQuery query, CancellationToken ct);
-}
-```
-
-Cada fonte é uma implementação em `Ratio.Infrastructure`. O `Ratio.Etl` itera as fontes
-registradas; acrescentar uma fonte é registrar uma classe, não reescrever o pipeline.
+O produto consome [várias fontes](../03-dados/01-fontes.md), mas **a API não fala com
+nenhuma delas**: fontes são problema da [carga](05-etl-e-nlp.md). O multifonte chega à
+API como **proveniência** — toda resposta diz de que fonte e de quando é o dado, lida das
+colunas `source` / `extracted_at` que toda linha do DW carrega.
 
 ---
 
 ## Estado atual e primeiras tarefas
 
-Todos os projetos existem; nenhum tem código de verdade.
+Todos os projetos existem; nenhum tem código de verdade (um commit, `initial commit`).
 
+- [ ] **Subir para .NET 10** enquanto é scaffold ([R-14](../06-operacao/02-decisoes-e-riscos.md#r-14--net-8-sai-de-suporte-durante-o-projeto-)).
 - [ ] **Remover o scaffold `WeatherForecast`** (`Ratio.Api/WeatherForecast.cs` e
       `Controllers/WeatherForecastController.cs`) antes que apareça no Swagger.
-- [ ] Substituir os `Class1.cs` de Domain, Application e Infrastructure.
-- [ ] Definir connection string em `appsettings.json` + variável de ambiente (o
-      `appsettings.json` atual só tem `Logging` e `AllowedHosts`).
-- [ ] Configurar CORS com **lista explícita** de origens, nunca `*`.
-- [ ] Escolher e configurar o acesso a dados (ver abaixo).
-- [ ] Adicionar runner de migration (DbUp ou FluentMigrator).
+- [ ] Substituir os `Class1.cs` e `UnitTest1.cs` — **o primeiro código de cada camada
+      nasce de um teste** ([TDD](../07-justificativas/03-tdd.md)).
+- [ ] **Decidir o destino do `Ratio.Etl`** — a carga passou a ser manual e vive fora do
+      backend ([D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada)).
+      Recomendação: remover o projeto da solução.
+- [ ] Criar `Ratio.Api.Tests` (testes HTTP com `WebApplicationFactory`).
+- [ ] Connection string por variável de ambiente (`ConnectionStrings__Ratio`).
+- [ ] CORS com **lista explícita** de origens, nunca `*`.
+- [ ] `ProblemDetails` com `title`/`detail` em português para todo erro.
 - [ ] Expor `/health` e `/health/ready` para o [monitoramento e o Coolify](../06-operacao/03-devops-e-infra.md).
-- [ ] Configurar log estruturado (Serilog) — pré-requisito de observabilidade.
+- [ ] Log estruturado (Serilog) — pré-requisito de observabilidade.
+- [ ] Workflow de CI — **não existe `.github/` no repo**: build + test.
 
-## Pacotes já referenciados
+## Pacotes
+
+Já referenciados:
 
 | Pacote | Onde | Versão |
 |---|---|---|
@@ -151,23 +180,43 @@ Todos os projetos existem; nenhum tem código de verdade.
 | `Microsoft.NET.Test.Sdk` | testes | 17.8.0 |
 | `coverlet.collector` | testes | 6.0.0 |
 
-**Faltando:** driver Postgres (`Npgsql`), runner de migration, Serilog, e a decisão
-entre Dapper e EF Core.
+A adicionar:
+
+| Pacote | Onde | Para quê |
+|---|---|---|
+| `Npgsql` | Infrastructure | driver Postgres |
+| `Dapper` | Infrastructure | acesso a dados (ver abaixo) |
+| `Pgvector` | Infrastructure | tipo `vector` no Npgsql — só se a API consultar embedding (busca semântica, chatbot) |
+| `Serilog.AspNetCore` | Api | log estruturado |
+| `AspNetCore.HealthChecks.NpgSql` | Api | `/health/ready` |
+| `Shouldly`, `NSubstitute` | testes | asserção e dublê — ver [TDD](../07-justificativas/03-tdd.md#backend--net) |
+| `Microsoft.AspNetCore.Mvc.Testing` | `Ratio.Api.Tests` | API em memória |
+| `Testcontainers.PostgreSql` | `Ratio.Infrastructure.Tests` | Postgres real (`pgvector/pgvector:pg16`) no teste |
 
 ### Acesso a dados — recomendação
 
-**Dapper (ou Npgsql direto), não EF Core.** A carga de trabalho é ~100% leitura de
+**Dapper (ou Npgsql direto), não EF Core.** A carga de trabalho é **100% leitura** de
 agregados com SQL analítico que precisamos controlar. Um ORM adiciona uma camada de
 tradução entre você e a consulta. EF Core faria sentido com escrita transacional rica —
-não há: a única escrita é o ETL, em lote.
+não há: a API não escreve, e a carga é feita por fora
+([D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada)).
+
+**O schema não é da API.** Tabelas e views do DW são criadas pelas migrations SQL do
+pipeline de carga; a API só as lê. Não use EF Migrations nem crie tabela a partir do
+backend. O usuário de banco da API deve ter **só `SELECT`** no schema `dw`.
 
 ---
 
 ## Contrato da API
 
-**A definir.** O contrato do protótipo **não** serve de base — ver
-[Protótipo](../05-prototipo/01-prototipo-referencia.md). O que segue é o esqueleto
-derivado das telas, em inglês, para o time preencher.
+O esqueleto abaixo foi derivado das telas. Chaves em inglês, valores em português
+([Idioma](#idioma)).
+
+> **Referência executável.** O [protótipo de dados de set/2026](../05-prototipo/01-prototipo-referencia.md#protótipo-de-dados--setembro2026)
+> (`prototipo-prod - versao 202609/api/main.py`) implementa estas rotas contra o DW
+> real — inclusive `polarityLabel`, `strengthScore.components`, `unavailable` e
+> `provenance`. Serve para ver o **formato** e as **consultas SQL** que funcionam; o
+> código em Python não é para portar linha a linha.
 
 Somente `GET` na camada de consulta.
 
@@ -195,6 +244,8 @@ na entrega:
 | `summary` (as duas linhas de prosa) | resultado |
 | `lastDecisionDate` | resultado e detalhamento |
 | `strengthScore` **com os componentes abertos** | selo — ver [Força](../01-produto/04-forca-do-entendimento.md) |
+| `outcome.polarityLabel` — o **texto** que acompanha o percentual | barra de alinhamento — ver [Polaridade](../03-dados/05-polaridade-do-resultado.md) |
+| `unavailable` — para cada bloco sem fonte, o **motivo** em português | blocos vazios da Base analítica |
 | contagem por tribunal | painel de filtros |
 | `sourceLink` com o tipo do link | amostra auditável |
 | `provenance` (fonte + data de extração) | rodapé de toda tela |
@@ -206,7 +257,9 @@ dizer de onde o dado veio e quando foi extraído**.
 
 ## Convenções
 
-- **Inglês no código, português no dado.** Ver [Idioma](#idioma).
+- **Inglês no código, português no retorno.** Ver [Idioma](#idioma).
+- **TDD.** Nenhum código de produção sem um teste falhando que o peça. Ver
+  [TDD](../07-justificativas/03-tdd.md).
 - **Nada de dado inventado.** Onde a fonte não tem, devolva vazio. É preferível a
   interface mostrar "sem dado" a mostrar dado que a fonte não entrega.
 - **Nenhuma métrica calculada no frontend.** Se um número aparece na tela, veio pronto

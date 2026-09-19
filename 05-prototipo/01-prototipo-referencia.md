@@ -129,3 +129,25 @@ voltar para a wiki ou para o código novo.
 Trate `prototipo/` como um **caderno de campo**: útil para saber onde o terreno é
 irregular, inútil como planta da casa. Leia antes de integrar uma fonte, releia quando
 uma chamada ao DataJud falhar de um jeito estranho — e não copie e cole nada.
+
+---
+
+## Protótipo de dados — setembro/2026
+
+Outra coisa, com outro propósito. Pasta `prototipo-prod - versao 202609/`, na pasta de
+trabalho (fora de repositório).
+
+| | Protótipo antigo (`prototipo/`) | Protótipo de dados (`…versao 202609/`) |
+|---|---|---|
+| Para quê | primeira tentativa de produto | **ver o dado real do DW numa tela** |
+| Banco | modelagem própria, sem auditoria | **o DW oficial** (`api5-dw`), só leitura |
+| Contrato | divergente | o [contrato documentado](../02-arquitetura/02-backend-dotnet.md#contrato-da-api), em inglês, com retorno em português |
+| Vale como referência? | ❌ | ✅ para **formato de resposta, consultas SQL e comportamento do dado na tela** |
+| Vale como código a portar? | ❌ | ❌ — API em FastAPI; web em React Router + CSS puro, não na stack oficial |
+
+O que ele revelou sobre o dado (entidades HTML cruas na doutrina, temas com um tribunal
+só, o tamanho real dos blocos sem fonte) está no `README.md` dele.
+
+Rodar: `api/` com `python -m uvicorn main:app --port 5000`; `web/` com `npm run dev`
+(porta 5173). Precisa do `api5-dw` de pé.
+

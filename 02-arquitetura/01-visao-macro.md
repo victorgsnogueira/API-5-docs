@@ -4,24 +4,25 @@
 
 ```
 ┌─ 1 · FONTES (multifonte) ───────────────────────────────────────────┐
-│  DataJud/CNJ      metadado processual em massa                      │
-│  PANGEA / PDPJ    precedentes qualificados      (a investigar)      │
-│  Repositórios do TJSP · TJRJ · TJMG   inteiro teor  (a investigar)  │
-│  Doutrina         artigo com link · referência de livro (a definir) │
-│  … outras fontes ainda não listadas                                 │
+│  DataJud/CNJ      metadado processual em massa          ✅ carregado │
+│  Doutrina         DOAJ · SciELO · OAI-PMH, artigo com link  ✅       │
+│  Repositórios do TJSP · TJRJ · TJMG   inteiro teor   🔴 bloqueados  │
+│  PANGEA / PDPJ    precedentes qualificados           (a investigar) │
 │                        escopo: SP · RJ · MG                         │
 └──────────────────────────┬──────────────────────────────────────────┘
-                           │  batch (as fontes não são tempo real)
-┌─ 2 · ETL ─────────────────▼─────────────────────────────────────────┐
-│  Extract    um conector por fonte, atrás de uma mesma porta         │
-│  Transform  achatar · traduzir códigos · normalizar em tema (NLP)   │
+                           │  batch MANUAL — rodado à mão, fora da VPS
+┌─ 2 · CARGA ───────────────▼─────────────────────────────────────────┐
+│  Extract    um coletor por fonte ──► raw (JSONB)                    │
+│  Transform  achatar ──► staging · traduzir códigos · polaridade     │
+│  Normalize  NLP: embeddings · temas + curadoria · doutrina↔tema     │
 │  Load       upsert idempotente, com proveniência em toda linha      │
-│                                    projeto: Ratio.Etl (console app) │
+│  Validate   24 testes de integridade ── só sobe se todos passarem   │
+│                          pasta scraping/ — Python + SQL  (D-17)     │
 └──────────────────────────┬──────────────────────────────────────────┘
-                           │
+                           │  pg_dump / pg_restore do schema dw
 ┌─ 3 · DATA WAREHOUSE ──────▼─────────────────────────────────────────┐
-│  Postgres · modelagem dimensional                                   │
-│  ⚠ o esquema ainda NÃO está fechado — ver 03-dados                  │
+│  Postgres 16 + pgvector · ICU pt-BR · modelagem dimensional         │
+│  grão = movimentação processual (D-13) · 463.016 linhas de fato     │
 └──────────────────────────┬──────────────────────────────────────────┘
                            │  atualizado ao fim de cada carga
 ┌─ 4 · AGREGADOS OLAP ──────▼─────────────────────────────────────────┐
@@ -30,8 +31,8 @@
 └──────────────────────────┬──────────────────────────────────────────┘
                            │
 ┌─ 5 · APLICAÇÃO ───────────▼─────────────────────────────────────────┐
-│  API       ASP.NET Core 8 · Ratio.Api        (código em inglês)     │
-│  Web       React                                                     │
+│  API       ASP.NET Core · Ratio.Api   só leitura · retorno em PT    │
+│  Web       React · TanStack Router · shadcn/ui · Tailwind            │
 │  Chatbot   LLM com tool use sobre os mesmos agregados  (roadmap)    │
 └──────────────────────────┬──────────────────────────────────────────┘
                            │
@@ -61,18 +62,21 @@ razoável.
 A interface precisa **declarar esse escopo** — um usuário que assume cobertura nacional
 tira conclusão errada.
 
-### Batch, não streaming
+### Batch manual, não agendado
 
-As fontes não são tempo real (o DataJud tem defasagem de horas a dias). Carga agendada,
-reprocessando janelas que se sobrepõem — daí a **idempotência ser requisito**.
+As fontes não são tempo real (o DataJud tem defasagem de horas a dias) e o produto
+mostra tendência, não notícia. A carga é **manual** ([D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada)):
+roda à mão, passa por curadoria humana e por testes de integridade, e só então sobe
+para produção. Cada rodada reprocessa janelas que se sobrepõem — daí a **idempotência
+ser requisito**.
 
 ### Agregados pré-calculados
 
 A tela de tema abre com várias agregações sobre a tabela fato. Rodar isso a cada request
 deixaria a página lenta, e o dado só muda quando o ETL roda.
 
-**Consequência:** o dado exibido é tão fresco quanto a última carga. A interface declara
-a data de extração — os mockups já fazem isso.
+**Consequência:** o dado exibido é tão fresco quanto a última carga manual. A interface
+declara a data de extração — os mockups já fazem isso.
 
 ### Busca full-text no próprio Postgres
 
@@ -81,8 +85,9 @@ subir um Elasticsearch só para o campo de busca, nesta escala.
 
 ### API somente leitura no domínio
 
-O único caminho de gravação de dado de domínio é o ETL. Simplifica autenticação, CORS e
-permissão de banco. A exceção aparente é a rota do chatbot, que não grava domínio.
+O único caminho de gravação de dado de domínio é a carga manual. Simplifica
+autenticação, CORS e permissão de banco — o usuário de banco da API só tem `SELECT`. A
+exceção aparente é a rota do chatbot, que não grava domínio.
 
 ### O chatbot consome os mesmos agregados
 
@@ -90,41 +95,46 @@ Não é um caminho alternativo até o banco: é uma interface de linguagem natur
 consultas que as telas já usam. É isso que garante que ele responda os mesmos números
 que a tela mostra. Ver [Chatbot](../01-produto/05-chatbot.md).
 
-### Código em inglês, dado em português
+### Código em inglês, retorno em português
 
-Backend inteiro em inglês — identificadores, tabelas, rotas, campos JSON. Os **valores**
-seguem em português, porque o domínio é o direito brasileiro. Vocabulário de tradução em
+Todo o código em inglês — identificadores, tabelas, rotas, chaves do JSON. Tudo o que a
+API **devolve para ser lido** — dados, rótulos, erros — em português, porque o domínio é
+o direito brasileiro e o usuário é advogado e juiz. Detalhe em
 [Backend .NET](02-backend-dotnet.md#idioma).
+
+### TDD
+
+Backend e frontend são escritos por TDD. Ver [TDD](../07-justificativas/03-tdd.md).
 
 ## Contrato entre as camadas
 
 | Fronteira | Contrato |
 |---|---|
-| Fonte → ETL | resposta bruta achatada em um DTO antes de tocar o banco |
-| ETL → DW | SQL com upsert; nenhuma regra de negócio no banco além dos agregados |
+| Fonte → carga | payload cru em `raw`, achatado em `staging` antes de tocar o modelo |
+| Carga → DW | SQL com upsert; nenhuma regra de negócio no banco além dos agregados; sobe por `pg_restore` só depois dos testes |
 | DW → API | os agregados são a interface; a API não agrega sobre o fato em tempo de request |
-| API → Web | JSON em inglês, métricas pré-calculadas, proveniência em toda resposta |
+| API → Web | chaves em inglês, valores e mensagens em português, métricas pré-calculadas, proveniência em toda resposta |
 | API → Chatbot | as mesmas consultas, expostas como ferramentas parametrizadas |
 
 ## Onde cada peça mora
 
 | Camada | Repositório | Projeto / pasta |
 |---|---|---|
-| ETL | `API5-Backend` | `Ratio.Etl`, lógica em `Ratio.Application` |
-| Migrations | `API5-Backend` | `Ratio.Infrastructure` |
+| Carga (coleta, NLP, testes de integridade) | ⚠ sem repo — pasta `scraping/` ([R-15](../06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-)) | `scripts/` |
+| Migrations do DW | idem | `sql/` |
 | API | `API5-Backend` | `Ratio.Api` |
-| Web | `API5-Frontend` | — |
+| Web | `API5-Frontend` | `ratio/apps/web` + `ratio/packages/ui` |
 | Infra / deploy | a definir | ver [DevOps](../06-operacao/03-devops-e-infra.md) |
 
 ## Infraestrutura
 
 | Item | Escolha |
 |---|---|
-| Banco | Postgres (com `unaccent` e `pg_trgm`) |
+| Banco | Postgres 16 (`pgvector/pgvector:pg16`) com `vector`, `pg_trgm`, `unaccent` — ver [Data Warehouse](04-data-warehouse.md#o-que-está-instalado-no-banco) |
 | Contêineres | Docker — tudo containerizável é requisito do Coolify |
 | Hospedagem | VPS **Hostinger** |
 | Deploy | **Coolify**, automático |
-| CI/CD | obrigatório, ferramenta a definir |
+| CI/CD | GitHub Actions (frontend já tem; backend falta) |
 | Monitoramento | obrigatório, ferramenta a definir |
 
 Detalhes e pendências: [DevOps e infraestrutura](../06-operacao/03-devops-e-infra.md).

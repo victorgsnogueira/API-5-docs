@@ -9,6 +9,8 @@ D:/Desenvolvimento/fatec/API/API-5/     ← pasta de trabalho (não é repo)
 ├── API5-Backend/   backend .NET 8            Concord-API/API5-Backend
 ├── API5-Frontend/  frontend React            Concord-API/API5-Frontend
 ├── Docs/           esta wiki                 victorgsnogueira/API-5-docs
+├── scraping/       pipeline de carga do DW   ⚠ SEM repositório (R-15)
+├── prototipo-prod - versao 202609/   protótipo de dados   (sem repositório)
 └── prototipo/      protótipo antigo ⚠        victorgsnogueira/prototipo
 ```
 
@@ -75,7 +77,7 @@ Solução `Ratio.slnx`, sete projetos em Clean Architecture:
 | `Ratio.Application` | casos de uso, portas (interfaces); depende só do Domain | `Class1.cs` vazio |
 | `Ratio.Infrastructure` | acesso ao Postgres, clientes das fontes, migrations | `Class1.cs` vazio |
 | `Ratio.Api` | ASP.NET Core Web API + Swashbuckle (Swagger) | scaffold `WeatherForecast` |
-| `Ratio.Etl` | console app da carga (agendável) | `Program.cs` scaffold |
+| `Ratio.Etl` | ⚠ sem papel desde o [D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) — recomendação: remover | `Program.cs` scaffold |
 | `Ratio.Application.Tests` | xUnit sobre Application e Domain | `UnitTest1.cs` |
 | `Ratio.Infrastructure.Tests` | xUnit sobre Infrastructure | `UnitTest1.cs` |
 
@@ -92,10 +94,23 @@ antes que ele vaze para o Swagger de produção.
 | | |
 |---|---|
 | Remoto | `Concord-API/API5-Frontend` |
-| Estado | **vazio** — sem nenhum commit |
+| Estado | scaffold — monorepo Turborepo (`ratio/apps/web` + `ratio/packages/ui`), tokens do design system, três rotas vazias, CI de lint/typecheck/build |
 
-Ponto de partida: [Frontend React](../02-arquitetura/03-frontend-react.md) e o
+Stack: React 19 · Vite · TypeScript · TanStack Router · shadcn/ui · Tailwind v4.
+Detalhe em [Frontend React](../02-arquitetura/03-frontend-react.md) e
 [Design system](../04-design/01-design-system.md).
+
+---
+
+## scraping — pipeline de carga do DW
+
+| | |
+|---|---|
+| Remoto | ⚠ **nenhum** — pasta local ([R-15](../06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-)) |
+| Estado | ✅ funcional — produziu a base atual |
+| Conteúdo | `sql/` migrations do DW e testes de integridade · `scripts/` coletores, transformação e NLP |
+
+A carga do DW é manual e roda daqui. Ver [Carga manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo).
 
 ---
 
@@ -116,14 +131,15 @@ Ver [Protótipo — o que é e o que não é](../05-prototipo/01-prototipo-refer
 
 ## Convenções entre repositórios
 
-**Idioma.** O **backend inteiro é escrito em inglês** — classes, métodos, tabelas,
-colunas, rotas, campos JSON, logs e commits. Os **dados tratados permanecem em
-português**, porque o domínio é o direito brasileiro: `topic.name` vale
-`"Atraso de voo"`. Vocabulário de tradução PT→EN em
-[Backend .NET](../02-arquitetura/02-backend-dotnet.md#idioma).
+**Idioma.** **Todo o código é escrito em inglês** — backend, frontend e pipeline:
+classes, componentes, tabelas, colunas, rotas, chaves do JSON, logs, testes e commits.
+**Tudo o que a API devolve para ser lido é em português** — dados, rótulos, mensagens
+de erro. `topic.name` vale `"Atraso de voo"`; um 404 diz `"Tema não encontrado"`.
+Detalhe e vocabulário PT→EN em [Backend .NET](../02-arquitetura/02-backend-dotnet.md#idioma).
+Esta wiki é escrita em português.
 
-O frontend acompanha o contrato da API (inglês) e exibe rótulos em português para o
-usuário final. Esta wiki é escrita em português.
+**Desenvolvimento.** [TDD](../07-justificativas/03-tdd.md) no backend e no frontend:
+nenhum código de produção sem um teste que falhou antes.
 
 **Contrato.** O backend é a única fonte de verdade do formato JSON. O frontend não
 recalcula métrica: se um número aparece na tela, ele veio pronto da API — inclusive a

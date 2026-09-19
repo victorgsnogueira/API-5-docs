@@ -6,12 +6,16 @@
 D:/Desenvolvimento/fatec/API/API-5/
 ├── API-5/          documentação do SM   (repo)
 ├── API5-Backend/   backend .NET 8       (repo)
-├── API5-Frontend/  frontend React       (repo, vazio)
+├── API5-Frontend/  frontend React       (repo)
 ├── Docs/           esta wiki            (repo)
+├── scraping/       pipeline de carga do DW   ⚠ FORA de repositório
+├── prototipo-prod - versao 202609/   protótipo de dados (fora de repositório)
 └── prototipo/      protótipo antigo     (repo) — ⚠ não é referência
 ```
 
-São **cinco repositórios git independentes**. A pasta que os contém não é um repo — é só
+São **cinco repositórios git independentes**, mais duas pastas soltas. A `scraping/` é
+o pipeline que produziu o DW — **não está versionada** em lugar nenhum
+([R-15](02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-)). A pasta que os contém não é um repo — é só
 a convenção de tê-los lado a lado, que os caminhos citados na wiki pressupõem.
 
 Para montar o ambiente do zero:
@@ -32,7 +36,9 @@ O protótipo só se você [precisar consultá-lo](#protótipo-antigo--só-se-voc
 
 ### Pré-requisitos
 
-.NET SDK 8, Docker Desktop. Visual Studio 2022 ou VS Code com C# Dev Kit.
+.NET SDK 8 (10 quando o [R-14](02-decisoes-e-riscos.md#r-14--net-8-sai-de-suporte-durante-o-projeto-) for resolvido),
+Docker Desktop (os testes de integração sobem Postgres via Testcontainers). Visual Studio
+2022 ou VS Code com C# Dev Kit.
 
 ### Comandos
 
@@ -41,56 +47,85 @@ cd API5-Backend/Ratio
 dotnet restore
 dotnet build
 dotnet run --project Ratio.Api
-dotnet test
+dotnet test          # o ciclo do TDD — ver 07-justificativas/03-tdd.md
 ```
 
 ### Banco
 
-Suba um Postgres local em contêiner. **Não use a porta 5432** se você já tem um Postgres
-instalado na máquina:
+O DW roda em contêiner, na **mesma imagem de produção** (Postgres 16 + pgvector) e com
+locale ICU `pt-BR`. Inventário completo do que está instalado em
+[Data Warehouse](../02-arquitetura/04-data-warehouse.md#o-que-está-instalado-no-banco).
 
 ```bash
-docker run -d --name ratio-db -p 5433:5432 -e POSTGRES_DB=ratio -e POSTGRES_USER=ratio -e POSTGRES_PASSWORD=ratio -e LANG=pt_BR.utf8 postgres:16-alpine
+docker run -d --name api5-dw --restart unless-stopped -p 5432:5432 -v api5_dw_data:/var/lib/postgresql/data -e POSTGRES_DB=api5_dw -e POSTGRES_USER=dw_admin -e POSTGRES_PASSWORD=<senha> -e POSTGRES_INITDB_ARGS="--locale-provider=icu --icu-locale=pt-BR --encoding=UTF8 --locale=C.utf8" pgvector/pgvector:pg16
 ```
+
+Depois, aplicar as migrations (criam schemas e extensões `vector`, `pg_trgm`,
+`unaccent`):
+
+```bash
+for f in scraping/sql/0*.sql; do docker exec -i api5-dw psql -U dw_admin -d api5_dw -v ON_ERROR_STOP=1 < "$f"; done
+```
+
+> Se já houver um Postgres instalado na máquina ocupando a 5432, publique em outra
+> porta (`-p 5433:5432`) e ajuste a connection string.
 
 Connection string para desenvolvimento:
 
 ```
-Host=localhost;Port=5433;Database=ratio;Username=ratio;Password=ratio
+Host=localhost;Port=5432;Database=api5_dw;Username=dw_admin;Password=<senha>
 ```
 
 **Por variável de ambiente, nunca em `appsettings.json` versionado** — é a mesma
 disciplina que o [Coolify](03-devops-e-infra.md) exige em produção.
 
-Não há connection string configurada ainda; ver
-[Backend .NET](../02-arquitetura/02-backend-dotnet.md#estado-atual-e-primeiras-tarefas).
-
-### Rodar o ETL
-
-`Ratio.Etl` é console app:
+**Banco vazio?** Ou roda a [carga manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo)
+inteira, ou restaura um dump de quem já tem a base:
 
 ```bash
-dotnet run --project Ratio.Etl
+docker cp dw.dump api5-dw:/tmp/dw.dump
+docker exec api5-dw pg_restore -U dw_admin -d api5_dw --clean --if-exists -n dw /tmp/dw.dump
 ```
 
-Ele **não** roda junto com a API, de propósito — ver
-[ETL](../02-arquitetura/05-etl-e-nlp.md#agendamento).
+### Rodar a carga
+
+Não é mais o `Ratio.Etl`. A carga é o pipeline Python em `scraping/`, rodado à mão —
+passo a passo em [Carga manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo).
+
+Pré-requisitos: **Python 3.12** e
+
+```bash
+pip install psycopg2-binary requests beautifulsoup4 lxml sentence-transformers scikit-learn numpy
+```
+
+O `sentence-transformers` baixa o modelo (`paraphrase-multilingual-MiniLM-L12-v2`,
+~470 MB) na primeira execução e depois roda offline, em CPU.
+
+> No Windows use `python -u` nos coletores longos — sem isso a saída fica em buffer e o
+> log parece travado.
 
 ---
 
 ## Frontend React
 
-Repositório vazio. Para começar:
+### Pré-requisitos
+
+Node **20+** e npm 11.
+
+### Comandos
 
 ```bash
-cd API5-Frontend
-npm create vite@latest . -- --template react-ts
+cd API5-Frontend/ratio
 npm install
-npm run dev
+npm run dev          # http://localhost:5173
+npm run lint
+npm run typecheck
+npm run build
 ```
 
-Sobe em `http://localhost:5173`. Acrescente essa origem à lista explícita de CORS do
-backend. Estrutura sugerida: [Frontend React](../02-arquitetura/03-frontend-react.md).
+É um monorepo Turborepo: os comandos na raiz `ratio/` rodam em todos os workspaces
+(`apps/web`, `packages/ui`). Acrescente `http://localhost:5173` à lista explícita de CORS
+do backend. Estrutura e stack: [Frontend React](../02-arquitetura/03-frontend-react.md).
 
 ---
 
@@ -126,12 +161,17 @@ O que o backend .NET vai precisar. Nada disso está configurado ainda:
 
 | Variável | Para quê |
 |---|---|
-| `ConnectionStrings__Ratio` | Postgres |
+| `ConnectionStrings__Ratio` | Postgres — em produção, o papel **somente leitura** `ratio_api` |
 | `Cors__AllowedOrigins` | lista explícita, nunca `*` |
-| `DataJud__ApiKey` | chave pública do CNJ, sobrescritível |
-| `Etl__Courts` | `tjsp,tjrj,tjmg` |
-| `Etl__Subjects` | códigos de assunto da TPU do recorte |
-| `Etl__LimitPerCombination` | teto por combinação |
+
+Frontend:
+
+| Variável | Para quê |
+|---|---|
+| `VITE_API_URL` | URL da API — embutida no build |
+
+A chave do DataJud e os parâmetros de recorte (tribunais, assuntos, teto) são do
+**pipeline de carga**, não do backend — hoje são argumentos dos scripts.
 
 Em produção, todas injetadas pelo [Coolify](03-devops-e-infra.md). **Nenhum segredo no
 repositório.**
@@ -142,10 +182,12 @@ repositório.**
 
 | Sintoma | Causa provável | Solução |
 |---|---|---|
-| API sobe mas `/health/ready` falha | banco vazio ou inacessível | conferir connection string e se a carga rodou |
+| API sobe mas `/health/ready` falha | banco vazio ou inacessível | conferir connection string; restaurar um dump |
+| `docker` não conecta (`dockerDesktopLinuxEngine`) | Docker Desktop fechado | abrir o Docker Desktop e `docker start api5-dw` |
 | Porta 5433 ocupada | outro contêiner ou Postgres local | trocar a porta publicada |
 | Frontend com erro de CORS | origem fora da lista | acrescentar em `Cors__AllowedOrigins` e reiniciar a API |
-| Migration nova não aplicou | runner não configurado | ver [DevOps](03-devops-e-infra.md) |
+| Migration nova não aplicou | não há controle de versão aplicada | aplicar o arquivo com `psql -v ON_ERROR_STOP=1` |
 | Busca não acha com acento | `unaccent` não instalado | conferir se a migration de extensões rodou |
-| ETL falhando intermitente | limite de taxa do DataJud | esperado; o cliente precisa de retry com backoff |
+| Coletor do DataJud falhando intermitente (504/429) | limite de taxa | esperado; o coletor tem retry com backoff — rode de novo, é idempotente |
+| Coletor parece travado no Windows | saída em buffer | `python -u` |
 | Contêiner do protótipo brigando por porta | ele ficou de pé | `docker compose down` na pasta dele |

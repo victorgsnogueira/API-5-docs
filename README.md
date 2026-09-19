@@ -8,7 +8,9 @@ consultam **como um tema costuma ser decidido**, em vez de garimpar processo a
 processo em portais de tribunal.
 
 **Escopo:** TJSP, TJRJ e TJMG. **Fontes:** múltiplas (DataJud, PANGEA, repositórios de
-tribunal, doutrina). **Stack:** .NET 8 + React + Postgres, em VPS Hostinger com Coolify.
+tribunal, doutrina). **Stack:** ASP.NET Core + React (TanStack Router, shadcn/ui,
+Tailwind) + Postgres 16/pgvector, em VPS Hostinger com Coolify. **TDD** no backend e no
+frontend. **Carga manual** do DW.
 
 Esta wiki é o repositório `API-5-docs`; o código vive em
 [outros repositórios](00-visao-geral/03-repositorios.md), clonados lado a lado.
@@ -24,7 +26,9 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 | ✅ A **modelagem do DW existe e está carregada** — 463.016 linhas de fato | [Modelo dimensional](03-dados/02-modelo-dimensional.md) |
 | 🔴 **"Favorável" sem dizer a quem inverte a leitura** — leia antes de exibir percentual | [Polaridade do resultado](03-dados/05-polaridade-do-resultado.md) |
 | ⚠ O que depende de **inteiro teor** segue sem fonte — os 4 tribunais estão bloqueados | [Limitações da fonte](03-dados/04-limitacoes-da-fonte.md) |
-| ⚠ O backend é escrito **em inglês**; os dados ficam em português | [Idioma](02-arquitetura/02-backend-dotnet.md#idioma) |
+| ⚠ Código **em inglês**; tudo o que a API devolve (dados, rótulos, erros) **em português** | [Idioma](02-arquitetura/02-backend-dotnet.md#idioma) |
+| 🧪 **TDD**: nenhum código de produção sem um teste que falhou antes | [TDD](07-justificativas/03-tdd.md) |
+| ⚠ A carga do DW é **manual** e a pasta `scraping/` **não está versionada** | [D-17](06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) · [R-15](06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-) |
 
 ---
 
@@ -38,7 +42,7 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 | Dev de dados / ETL | [Fontes](03-dados/01-fontes.md) → [ETL e NLP](02-arquitetura/05-etl-e-nlp.md) → [Limitações](03-dados/04-limitacoes-da-fonte.md) → [Polaridade](03-dados/05-polaridade-do-resultado.md) |
 | DevOps | [DevOps e infraestrutura](06-operacao/03-devops-e-infra.md) → [Ambiente local](06-operacao/01-ambiente-local.md) |
 | SM / documentação | [Repositórios](00-visao-geral/03-repositorios.md) → [Decisões e riscos](06-operacao/02-decisoes-e-riscos.md) |
-| Qualquer um, antes do primeiro commit | [Padrão de branches](07-justificativas/01-branches.md) → [Padrão de commits](07-justificativas/02-commits.md) |
+| Qualquer um, antes do primeiro commit | [Padrão de branches](07-justificativas/01-branches.md) → [Padrão de commits](07-justificativas/02-commits.md) → [TDD](07-justificativas/03-tdd.md) |
 
 ---
 
@@ -58,10 +62,10 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 
 ### 02 · Arquitetura
 - [Visão macro](02-arquitetura/01-visao-macro.md) — as camadas, da fonte à tela
-- [Backend .NET](02-arquitetura/02-backend-dotnet.md) — camadas, idioma, contrato da API
-- [Frontend React](02-arquitetura/03-frontend-react.md) — estrutura, rotas, consumo da API
-- [Data Warehouse](02-arquitetura/04-data-warehouse.md) — por que Postgres, e o que isso custa
-- [ETL e NLP](02-arquitetura/05-etl-e-nlp.md) — conectores, normalização e onde a LLM entra
+- [Backend .NET](02-arquitetura/02-backend-dotnet.md) — camadas, idioma, pacotes, contrato da API
+- [Frontend React](02-arquitetura/03-frontend-react.md) — stack real do repo, estrutura, rotas, regras
+- [Data Warehouse](02-arquitetura/04-data-warehouse.md) — por que Postgres, e **tudo o que está instalado nele**
+- [ETL e NLP](02-arquitetura/05-etl-e-nlp.md) — normalização campo a campo, NLP, **processo da carga manual**
 
 ### 03 · Dados
 - [Fontes de dados](03-dados/01-fontes.md) — DataJud, PANGEA, JusBrasil, tribunais, doutrina
@@ -85,27 +89,30 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 Os padrões e as ferramentas do projeto, e por que foram escolhidos.
 - [Padrão de branches](07-justificativas/01-branches.md) — `main`, uma branch por US, uma por task
 - [Padrão de commits](07-justificativas/02-commits.md) — convenção semântica, em inglês
+- [TDD](07-justificativas/03-tdd.md) — o padrão de desenvolvimento, backend e frontend
 
 ---
 
-## Estado atual (2026-09-02)
+## Estado atual (2026-09-19)
 
 | Frente | Estado |
 |---|---|
 | Telas (design) | ✅ mockups fechados em [`Telas/`](Telas/) |
 | Escopo, fontes e convenções | ✅ definidos — ver [Decisões](06-operacao/02-decisoes-e-riscos.md) |
-| Modelagem do DW | 🔴 **não existe** — a do protótipo não serve |
-| Backend .NET (`API5-Backend`) | 🔴 solução criada, camadas em branco |
-| Frontend React (`API5-Frontend`) | 🔴 repositório vazio |
-| ETL | 🔴 não iniciado |
-| Fontes além do DataJud | 🔴 não verificadas |
-| NLP / normalização em tema | 🔴 não iniciado |
+| Modelagem do DW | ✅ implementada e carregada — 463.016 linhas de fato |
+| Carga (coleta + normalização) | ✅ funcional, **manual** — ⚠ pasta `scraping/` sem repositório |
+| NLP / normalização em tema | ✅ 447 assuntos → 408 temas; doutrina ligada a tema |
+| Fontes além do DataJud | 🟠 doutrina ✅; jurisprudência dos tribunais bloqueada |
+| Backend .NET (`API5-Backend`) | 🔴 scaffold, sem CI — e .NET 8 sai de suporte em 11/2026 |
+| Frontend React (`API5-Frontend`) | 🟠 scaffold com design system e CI; nenhuma tela |
+| Testes | 🟠 24 testes de integridade do DW; TDD definido, nenhum teste de código ainda |
 | Chatbot | 🔴 roadmap |
-| CI/CD, deploy, monitoramento | 🔴 não configurado |
+| Deploy, monitoramento | 🔴 não configurado |
 
 ## Próximos desbloqueios, em ordem
 
-1. **Fechar o grão e a modelagem do DW** — trava tudo o mais ([R-03](06-operacao/02-decisoes-e-riscos.md#r-03--modelagem-do-dw-ainda-não-existe-)).
-2. **Spike por fonte** — PANGEA, repositórios do TJSP/TJRJ/TJMG, doutrina.
-3. **Um fluxo vertical fino** — uma fonte, um recorte, uma tela, ponta a ponta.
-4. **`Dockerfile` + pipeline de build**, na mesma semana em que o código começa.
+1. **Versionar o pipeline de carga** — hoje é o único lugar onde o schema do DW existe ([R-15](06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-)).
+2. **Subir o backend para .NET 10** enquanto é scaffold ([R-14](06-operacao/02-decisoes-e-riscos.md#r-14--net-8-sai-de-suporte-durante-o-projeto-)).
+3. **Configurar os testes** — Vitest no frontend, pacotes de teste no backend — antes da primeira linha de código ([TDD](07-justificativas/03-tdd.md)).
+4. **Um fluxo vertical fino** — `GET /api/topics` + tela de resultados, ponta a ponta, por TDD.
+5. **`Dockerfile` + CI do backend**, na mesma semana em que o código começa.

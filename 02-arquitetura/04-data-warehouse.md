@@ -37,54 +37,167 @@ e o desafio avalia modelagem dimensional e pipeline, não a marca do banco.
 > roda o mesmo SQL analítico, e cabe como camada de exploração ao lado do Postgres.
 > Mas isso é otimização; não faça antes de ter o pipeline de pé.
 
-## Extensões exigidas
+## O que está instalado no banco
 
-| Extensão | Para quê | Estado |
+Inventário do contêiner `api5-dw`, conferido direto no catálogo do Postgres
+(`pg_extension`, `pg_database`, `pg_settings`) em 19/09/2026. **É este o banco que
+produção precisa reproduzir.**
+
+### Imagem e versão
+
+| Item | Valor |
+|---|---|
+| Imagem | **`pgvector/pgvector:pg16`** — Postgres oficial + pgvector já compilado |
+| Postgres | **16.15** (Debian 12 / bookworm) |
+| Tamanho atual | ~844 MB (463.016 linhas de fato + 52.696 artigos + embeddings) |
+
+> **Não use `postgres:16-alpine`.** A imagem oficial não traz o pgvector, e compilar a
+> extensão depois é trabalho à toa. Produção, dev e o Testcontainers dos
+> [testes](../07-justificativas/03-tdd.md) usam **a mesma imagem**.
+
+### Extensões instaladas
+
+| Extensão | Versão | Para quê | Onde é usada |
+|---|---|---|---|
+| **`vector`** (pgvector) | 0.8.6 | embeddings da [camada semântica](05-etl-e-nlp.md#uso-1--agrupar-assuntos-em-tema--maior-valor-começar-por-aqui) | `dim_topic.embedding` e `dim_doctrine.embedding`, **`vector(384)`** — 447 + 52.696 vetores |
+| **`pg_trgm`** | 1.6 | similaridade por trigrama — tolera erro de digitação na busca | índices GIN em `dim_doctrine.title`, `dim_doctrine.subject_area`, `fact_case_decision.summary`; `similarity()` na busca de temas |
+| **`unaccent`** | 1.1 | "inscricao" acha "inscrição" | busca de temas |
+| `plpgsql` | 1.0 | linguagem de função (padrão do Postgres) | — |
+
+As três primeiras estão em `scraping/sql/001_schemas_extensions.sql`. `vector` não
+estava prevista: entrou quando o agrupamento semântico saiu do papel — guardar os
+embeddings no próprio banco é o que torna o agrupamento reproduzível e auditável sem
+reprocessar texto. O pgvector também traz `halfvec`, `sparsevec` e os métodos de
+índice **HNSW** e **IVFFlat** — disponíveis, ainda não usados.
+
+### Disponíveis na imagem, não instaladas
+
+Vêm no `contrib` da imagem; basta `CREATE EXTENSION`. Nenhuma é necessária hoje.
+
+| Extensão | Quando instalar |
+|---|---|
+| **`pg_stat_statements`** | **recomendada** para o [monitoramento](../06-operacao/03-devops-e-infra.md#monitoramento--a-definir): mostra quais consultas da API são lentas. Exige `shared_preload_libraries = 'pg_stat_statements'` e restart |
+| `btree_gin` / `btree_gist` | se um índice composto precisar misturar coluna comum com trigrama/JSONB |
+| `pgcrypto` | se algum dia houver hash ou UUID gerado no banco |
+| `citext`, `fuzzystrmatch`, `intarray`, `uuid-ossp`, `pg_prewarm` | sem uso previsto |
+
+PostGIS **não** vem na imagem — e não há dado geográfico que o justifique.
+
+### Locale e texto
+
+| Item | Valor | Por quê |
 |---|---|---|
-| `unaccent` | o usuário digita "inscricao" e precisa achar "inscrição" | ✅ instalada |
-| `pg_trgm` | similaridade por trigrama — rede de segurança para erro de digitação | ✅ instalada |
-| `vector` (pgvector) | embeddings da [camada semântica de tema](../02-arquitetura/05-etl-e-nlp.md#uso-1--agrupar-assuntos-em-tema-maior-valor-começar-por-aqui) | ✅ instalada, 53.143 vetores |
+| Provedor de locale | **ICU**, `pt-BR` | `ORDER BY` respeita acento e ordena "Ação" junto de "Acao" — verificado na prática |
+| `LC_COLLATE` / `LC_CTYPE` | `C.utf8` | base do cluster; a ordenação vem do ICU |
+| Encoding | `UTF8` | |
+| Collations ICU disponíveis | `pt-BR-x-icu`, `pt-x-icu`, … | para `COLLATE` explícito quando precisar |
+| Configuração de full-text `portuguese` | ✅ disponível | stemming em português |
+| `default_text_search_config` | ⚠ **`english`** | ver abaixo |
+| Fuso (`TimeZone`) | `UTC` | o banco grava em UTC; converter para `America/Sao_Paulo` só na exibição |
 
-As três entram na primeira migration. `vector` não estava prevista: entrou quando
-o agrupamento semântico saiu do papel — guardar os embeddings no próprio banco é
-o que torna o agrupamento reproduzível e auditável sem reprocessar texto.
+Criado com:
 
-> **Nota de ambiente.** A imagem usada é `pgvector/pgvector:pg16` (o Postgres 16
-> oficial + a extensão já compilada), com locale **ICU `pt-BR`** — o `ORDER BY`
-> com acento foi verificado na prática.
+```
+POSTGRES_INITDB_ARGS="--locale-provider=icu --icu-locale=pt-BR --encoding=UTF8 --locale=C.utf8"
+```
+
+> A imagem Debian não tem o locale de sistema `pt_BR.utf8` — por isso ICU, e não
+> `LANG=pt_BR.utf8` (que a versão anterior desta página recomendava e não funciona).
+
+> ⚠ **`to_tsvector()` sem configuração usa inglês.** O padrão do cluster é `english`.
+> Sempre passe a configuração explicitamente — `to_tsvector('portuguese', …)` — ou
+> fixe no banco: `ALTER DATABASE api5_dw SET default_text_search_config = 'portuguese';`.
+> Hoje nenhuma consulta usa full-text (a busca é `unaccent` + `ILIKE` + `similarity()`),
+> então nada quebrou — mas vai quebrar no primeiro `tsvector` escrito sem a config.
+
+### Schemas e objetos
+
+| Schema | Conteúdo | Tabelas | Índices |
+|---|---|---|---|
+| `raw` | payload cru (JSONB) por fonte — `datajud_case`, `doctrine_article`, `tjmg_decision` | 3 | 12 (inclui GIN no `payload`) |
+| `staging` | DTO achatado — `case_event`, `case_decision`, `doctrine_article` | 3 | 8 |
+| `dw` | modelo dimensional: 2 fatos, 10 dimensões, 4 pontes, `strength_config` | 17 | 55 |
+| `dw` | **9 views materializadas** — `case_current_result`, `topic_summary`, `topic_by_year`, `topic_by_court`, `topic_by_judging_body`, `theme_summary`, `theme_by_year`, `theme_by_court`, `theme_strength` | — | índice único em cada (permite `REFRESH … CONCURRENTLY`) |
+| `public` | só as extensões | — | — |
+
+Detalhe das tabelas: [Modelo dimensional](../03-dados/02-modelo-dimensional.md). Das
+views: [Agregados OLAP](../03-dados/03-agregados-olap.md).
+
+### Índice vetorial — ainda não
+
+Os embeddings **não têm índice HNSW/IVFFlat**. Com ~53 mil vetores de 384 dimensões e
+uso só na carga (clusterizar, ligar doutrina), a busca exata é rápida o bastante e dá o
+resultado **exato**, que é o que a curadoria precisa. Criar o índice quando a busca
+semântica entrar no caminho de uma requisição (busca por significado, chatbot):
+
+```sql
+CREATE INDEX ON dw.dim_doctrine USING hnsw (embedding vector_cosine_ops);
+```
+
+### Parâmetros do servidor
+
+Todos no **padrão da imagem**:
+
+| Parâmetro | Valor | Nota |
+|---|---|---|
+| `shared_buffers` | 128 MB | subir para ~25% da RAM da VPS em produção |
+| `work_mem` | 4 MB | baixo para `REFRESH` dos agregados; na carga, `SET work_mem = '256MB'` na sessão |
+| `maintenance_work_mem` | 64 MB | idem para `CREATE INDEX` |
+| `max_connections` | 100 | sobra — a API usa pool |
+| `shared_preload_libraries` | vazio | precisa de `pg_stat_statements` para monitorar |
+
+### Contêiner local
+
+| Item | Valor |
+|---|---|
+| Nome | `api5-dw` |
+| Banco / usuário | `api5_dw` / `dw_admin` (**superusuário** — só para dev) |
+| Porta | `5432` no host |
+| Volume | `api5_dw_data` → `/var/lib/postgresql/data` |
+| Reinício | `unless-stopped` |
+
+Comando de criação em [Ambiente local](../06-operacao/01-ambiente-local.md#banco).
+
+### Papéis — o que falta para produção
+
+Hoje existe **um único usuário, superusuário**. Em produção:
+
+| Papel | Permissão | Quem usa |
+|---|---|---|
+| `ratio_api` | `USAGE` + `SELECT` no schema `dw`, nada mais | a API (`ConnectionStrings__Ratio`) |
+| `ratio_loader` | dono dos schemas `raw`, `staging`, `dw` | o `pg_restore` da [carga manual](05-etl-e-nlp.md#subir-para-produção) |
+
+A API é somente leitura por desenho; o banco deve garantir isso, não só o código.
 
 ## Configuração relevante
 
 | Item | Valor | Motivo |
 |---|---|---|
-| `LANG` | `pt_BR.utf8` | faz `ORDER BY` respeitar acento na ordenação de temas |
-| Porta no host, em dev | não use 5432 | evita conflito com um Postgres já instalado na máquina |
+| Locale | ICU `pt-BR` na criação do banco | `ORDER BY` com acento |
 | Configuração | por variável de ambiente | requisito do [Coolify](../06-operacao/03-devops-e-infra.md) |
 
-> **Migrations precisam de runner de verdade.** Aplicar SQL via
-> `docker-entrypoint-initdb.d` só funciona quando o volume está vazio — não serve para
-> evoluir esquema com dado dentro. Escolher DbUp ou FluentMigrator, com controle de
-> versão aplicada, e rodar no pipeline. Ver
-> [DevOps](../06-operacao/03-devops-e-infra.md).
+> **Migrations são SQL numerado** (`scraping/sql/001…017`), aplicadas em ordem com
+> `psql -v ON_ERROR_STOP=1`. Aplicar via `docker-entrypoint-initdb.d` só funciona com
+> volume vazio — não serve para evoluir esquema com dado dentro. Falta um controle de
+> "qual migration já rodou" (tabela de versão, ou DbUp lendo os mesmos arquivos).
 
-> **Backup é obrigatório.** O banco fica na mesma VPS da aplicação. Um DW perdido é uma
-> recarga de dias contra fontes com limite de taxa.
+> **Backup é obrigatório** — e com a carga manual ele tem duas partes: o `dump` do
+> schema `dw` que sobe para produção, e o **`raw` local**, que é o que permite
+> reprocessar sem voltar às fontes com limite de taxa.
 
 ## Camadas dentro do banco
 
 ```
+raw → staging      área de trabalho da carga — fica local, não sobe para produção
+      │
 tabelas base        fato + dimensões + pontes
-      │             gravadas pelo ETL, nunca lidas direto pela API para agregar
+      │             gravadas pela carga manual, nunca lidas direto pela API para agregar
       ▼
 agregados           resultado vigente -> resumo por tema · por ano · por tribunal · por órgão
-      │             atualizados ao fim de cada carga
+      │             atualizados ao fim de cada carga (REFRESH MATERIALIZED VIEW)
       ▼
 API / chatbot       leem só os agregados
 ```
-
-> ⚠ **O esquema ainda não está fechado.** Ver
-> [Modelo dimensional](../03-dados/02-modelo-dimensional.md) — a modelagem que existe
-> no protótipo foi feita sem auditoria e não serve de base.
 
 Detalhe das tabelas: [Modelo dimensional](../03-dados/02-modelo-dimensional.md).
 Detalhe das views: [Agregados OLAP](../03-dados/03-agregados-olap.md).

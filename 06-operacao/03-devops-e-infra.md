@@ -14,6 +14,8 @@
 |---|---|
 | **Estratégia de branch** | feature branching, uma branch por US — ver [Padrão de branches](../07-justificativas/01-branches.md) |
 | **Padrão de commit** | convenção semântica, em inglês — ver [Padrão de commits](../07-justificativas/02-commits.md) |
+| **Padrão de desenvolvimento** | **TDD**, backend e frontend — ver [TDD](../07-justificativas/03-tdd.md) |
+| **Carga do DW** | **manual**, fora da VPS; produção recebe o dump validado — ver [D-17](02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) |
 | **Hospedagem** | VPS na **Hostinger** |
 | **Orquestração / deploy** | **Coolify** |
 | Deploy | automático |
@@ -26,7 +28,7 @@
 Coolify é uma plataforma self-hosted de deploy (um PaaS que roda na sua própria VPS).
 Duas consequências práticas para o desenvolvimento:
 
-**1 · Tudo precisa ser containerizável.** API, ETL e frontend rodam como contêineres.
+**1 · Tudo precisa ser containerizável.** API e frontend rodam como contêineres.
 Escrever `Dockerfile` para cada um é tarefa de desenvolvimento, não de infraestrutura, e
 deve acontecer cedo — descobrir na véspera que a aplicação não containeriza é o tipo de
 surpresa cara.
@@ -53,21 +55,23 @@ está "no ar" e inútil.
    │  Coolify                                     │
    │   ├── ratio-api        (ASP.NET Core)        │
    │   ├── ratio-web        (React, estático)     │
-   │   ├── ratio-db         (Postgres)            │
-   │   └── ratio-etl        (job agendado)        │
+   │   └── ratio-db         (pgvector/pgvector:pg16)
    │                                              │
    │  proxy reverso + TLS  (gerenciado pelo Coolify)
    └──────────────────────────────────────────────┘
-              ▲                        │
-              │ deploy automático      │ ETL sai para as fontes
-        GitHub Actions            DataJud · PANGEA · tribunais
+          ▲                          ▲
+          │ deploy automático        │ pg_restore do schema dw
+    GitHub Actions             carga manual, na máquina de quem opera
+                               (coleta → NLP → testes → dump)
 ```
 
-### O ETL não é um serviço web
+### A carga não roda na VPS
 
-`Ratio.Etl` é console app. No Coolify, isso vira um **job agendado** (cron), não um
-serviço com porta. Rodar a carga dentro do processo da API é erro: acopla a carga ao
-ciclo de vida do servidor e impede rodar uma carga manual sem reiniciar tudo.
+Não há contêiner de ETL nem job agendado. A carga é
+[manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo): roda numa máquina
+do time contra um Postgres local, passa pelos 24 testes de integridade, e só então o
+schema `dw` é restaurado em produção numa transação única. Produção nunca fala com
+DataJud, DOAJ ou qualquer fonte.
 
 ### O banco na mesma VPS
 
@@ -75,8 +79,8 @@ Simples e barato, e serve para o projeto. Duas consequências a encarar:
 
 - **backup é responsabilidade nossa.** Um DW que se perde é uma recarga de dias contra
   fontes com limite de taxa. Backup automatizado do volume é item obrigatório.
-- **recursos são compartilhados.** Uma carga pesada de ETL compete com a API pelo mesmo
-  CPU. Agendar a carga em horário de baixo uso.
+- **o restore é o único momento pesado.** Como a carga roda fora, a VPS só sente o
+  `pg_restore` — alguns minutos, numa transação. Faça fora do horário de uso.
 
 ## Pipeline de CI/CD — esqueleto
 
@@ -84,12 +88,14 @@ Um pipeline por repositório.
 
 ### `API5-Backend`
 
+**Não existe workflow ainda** (o repo não tem `.github/`).
+
 ```
 push / pull request
   ├── restore + build                     (falha rápida)
-  ├── testes unitários                    (Domain, Application)
-  ├── testes de integração                (Postgres de serviço)
-  │     └── inclui os testes de integridade do DW (abaixo)
+  ├── testes unitários                    (Domain, Application)      ← TDD
+  ├── testes de integração                (Testcontainers: pgvector/pgvector:pg16)
+  │     └── aplicam as migrations SQL e rodam os testes de integridade do DW
   ├── análise estática / lint
   └── build da imagem Docker
         └── na main: publica e dispara deploy no Coolify
@@ -97,13 +103,20 @@ push / pull request
 
 ### `API5-Frontend`
 
+**Existe** — `.github/workflows/ci.yml`, Node 20, em `push`/`pull_request` para `main`:
+
 ```
 push / pull request
-  ├── install + typecheck + lint
-  ├── testes
-  └── build
-        └── na main: publica e dispara deploy no Coolify
+  ├── npm ci
+  ├── lint                  ✅
+  ├── typecheck             ✅
+  ├── test                  ❌ falta — vitest run  (TDD)
+  └── build                 ✅
+        └── na main: publica e dispara deploy no Coolify   ❌ falta
 ```
+
+> O gatilho hoje é só para `main`. Com o [padrão de branches](../07-justificativas/01-branches.md),
+> PR de task entra em `usX` — acrescentar `us*` em `branches:` para o CI rodar nesses PRs.
 
 ### `API-5-docs` (esta wiki)
 
@@ -155,9 +168,10 @@ E mais 18 que a implementação mostrou serem necessários:
    alguma coluna do schema `dw` voltar a usá-la. Impede a reintrodução do
    [problema de polaridade](../03-dados/05-polaridade-do-resultado.md).
 
-> ⚠ **Ainda não rodam no CI.** Hoje são arquivos `.sql` executados à mão contra
-> o banco local. Entrar no pipeline é tarefa pendente — junto com o port do ETL
-> para o `Ratio.Etl` em .NET.
+> **Onde rodam.** São o **passo 6 da [carga manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo)**
+> — obrigatórios antes de qualquer dump subir para produção. Nenhuma linha retornada é
+> a condição para seguir. No CI do backend, rodam nos testes de integração contra o
+> Postgres do Testcontainers (pendente, junto com o workflow).
 
 ## Monitoramento — a definir
 
@@ -166,24 +180,24 @@ O que precisa ser respondido, independentemente da ferramenta escolhida:
 | Pergunta | Sinal necessário |
 |---|---|
 | A API está de pé e respondendo rápido? | uptime + latência por rota |
-| A carga de ontem rodou? | **alarme quando o ETL falha ou não roda** |
-| O dado está velho? | idade da última extração, exposta em `/health/ready` |
+| Quando foi a última carga? | data da última extração, exposta em `/health/ready` e no rodapé das telas |
 | Alguma fonte mudou de comportamento? | taxa de erro por fonte |
-| O banco está saudável? | espaço em disco, conexões, duração do `REFRESH` |
+| O banco está saudável? | espaço em disco, conexões; consultas lentas via `pg_stat_statements` |
 | O que aconteceu quando deu erro? | log estruturado com correlação de requisição |
 
-O alarme de ETL é o mais importante: uma carga que falha silenciosamente por uma semana
-deixa o produto exibindo dado velho **com aparência de dado atual**.
+Com a carga manual não há "carga que falhou em silêncio" — ela falha na frente de quem
+roda. O risco que sobra é o **dado envelhecer sem ninguém notar**: por isso a data da
+extração aparece na tela, não só no log.
 
 ## Decisões pendentes
 
 | Escolha | Opções a considerar | Quando decidir |
 |---|---|---|
 | Runner de CI | GitHub Actions (provável, pelos repos) | antes do primeiro merge relevante |
-| Runner de migration | DbUp, FluentMigrator | antes da primeira migration |
+| Controle de migration aplicada | tabela de versão própria, ou DbUp lendo os SQL de `scraping/sql` | antes da primeira migration nova |
 | Log estruturado | Serilog + destino a definir | junto com o esqueleto da API |
 | Monitoramento | Uptime Kuma (leve, self-host), Grafana + Prometheus (completo), Sentry (erros) | depois do primeiro deploy |
-| Backup | dump agendado + destino externo à VPS | antes da primeira carga que doa perder |
+| Backup | o dump de cada carga + o `raw` local, guardados fora da VPS | antes da primeira carga que doa perder |
 | Gestão de segredos | variáveis do Coolify | imediato — nada de segredo no repositório |
 | Ambientes | só produção, ou produção + staging? | antes de configurar o Coolify |
 | Documentação | esta wiki + Swagger + README por repo | contínuo |
@@ -193,6 +207,9 @@ deixa o produto exibindo dado velho **com aparência de dado atual**.
 1. **Nenhum segredo no repositório.** Connection string, chave de API, credencial —
    tudo por variável de ambiente.
 2. **Deploy só do que passou no CI.** Sem `git push` para a VPS.
-3. **Toda migration é versionada e roda no pipeline**, nunca à mão em produção.
-4. **A carga é idempotente.** Isso é o que torna deploy e reprocessamento seguros.
-5. **`Dockerfile` desde cedo.** Containerizar no fim do projeto é onde os prazos morrem.
+3. **Toda migration é versionada.** Em produção, o schema chega pelo `pg_restore` da
+   carga validada — ninguém roda DDL à mão lá.
+4. **A carga é idempotente.** Isso é o que torna reprocessamento seguro.
+5. **Nada sobe para produção sem os 24 testes de integridade vazios.**
+6. **Nada entra na `main` com teste falhando** — o CI bloqueia o merge. Ver [TDD](../07-justificativas/03-tdd.md).
+7. **`Dockerfile` desde cedo.** Containerizar no fim do projeto é onde os prazos morrem.

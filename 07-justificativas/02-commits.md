@@ -20,6 +20,7 @@ repositórios do projeto.
 | `fix:` | correção de bug ou comportamento inesperado |
 | `refactor:` | melhoria de código sem alterar comportamento |
 | `docs:` | atualização de documentação |
+| `test:` | teste **sem** mudança de código de produção — cobrir comportamento que já existia |
 | `chore:` | tarefas de configuração, build ou manutenção |
 
 ## Formato
@@ -43,6 +44,7 @@ feat: add semantic search by legal topic
 | `refactor: extract strength score into domain service` | `refactor: changes` | não descreve nada |
 | `docs: add branch naming standard` | `update docs` | sem tipo |
 | `chore: configure CI pipeline for backend` | `chore: setup, fix tests and add endpoint` | três mudanças num commit só |
+| `test: cover empty doctrine state` | `feat: add tests` | teste sem código novo é `test:` |
 
 ---
 
@@ -88,6 +90,25 @@ de tamanho anda junto com a revisão — sem ela, o indicador mede volume, não
 contribuição.
 
 ---
+
+## Relação com o TDD
+
+O projeto segue [TDD](03-tdd.md). No histórico, isso aparece assim:
+
+- **Teste e implementação vão no mesmo commit**, com o tipo da mudança (`feat:`,
+  `fix:`). O ciclo vermelho → verde acontece na máquina; o commit registra o par já
+  verde. Assim nenhum commit da branch deixa o CI vermelho.
+- **`test:`** é só para commit que acrescenta teste sem tocar código de produção.
+- **Todo `fix:` traz o teste que reproduz o bug.** Um `fix:` sem teste é um bug que pode
+  voltar.
+
+## Estado nos repositórios (19/09/2026)
+
+| Repo | Histórico | Segue o padrão? |
+|---|---|---|
+| `API5-Frontend` | `feat: initial scaffold with design system tokens and file-based routing` | ✅ |
+| `API5-Backend` | `initial commit` | ❌ sem tipo — é o commit inicial; vale daqui em diante |
+| `API-5-docs` | `docs: …` desde `550a71c` | ✅ (o `feat: adicionado docs 02-09-2026` é anterior ao padrão) |
 
 ## Relação com as branches
 

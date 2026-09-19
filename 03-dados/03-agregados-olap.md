@@ -127,7 +127,7 @@ caso só é ruído de vara, não divergência.
 ## Agregados no grão de TEMA — novos
 
 A cadeia original parava no assunto. Com a
-[camada semântica](../02-arquitetura/05-etl-e-nlp.md#uso-1--agrupar-assuntos-em-tema-maior-valor-começar-por-aqui),
+[camada semântica](../02-arquitetura/05-etl-e-nlp.md#uso-1--agrupar-assuntos-em-tema--maior-valor-começar-por-aqui),
 existe um nível acima, que é o que a tela consome:
 
 ```

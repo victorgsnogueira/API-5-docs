@@ -66,7 +66,7 @@ acima, ligada por `bridge_theme_topic`. A pergunta "de onde saiu esse tema?" tem
 resposta em SQL, e há teste que falha se algum tema perder o lastro.
 
 Detalhes do método, dos erros do algoritmo e da curadoria:
-[ETL e NLP](../02-arquitetura/05-etl-e-nlp.md#uso-1--agrupar-assuntos-em-tema-maior-valor-começar-por-aqui).
+[ETL e NLP](../02-arquitetura/05-etl-e-nlp.md#uso-1--agrupar-assuntos-em-tema--maior-valor-começar-por-aqui).
 
 ⚠ **O contra da Opção A continua valendo.** Os mockups mostram cinco teses para
 uma consulta; o agrupamento por embedding junta variação de **redação**, não

@@ -131,6 +131,14 @@ A estrutura de branches define onde o pipeline roda. Ver
 
 | Evento | O que o pipeline deve fazer |
 |---|---|
-| Pull request de task → `usX` | build + testes |
+| Pull request de task → `usX` | build + testes — **teste falhando bloqueia o merge** ([TDD](03-tdd.md)) |
 | Pull request de `usX` → `main` | build + testes + testes de integridade do DW |
 | Merge na `main` | build da imagem e deploy automático no Coolify |
+
+> ⚠ O CI do `API5-Frontend` hoje dispara só em PR para `main`. Para cobrir a tabela
+> acima, o gatilho precisa incluir as branches `us*`. O `API5-Backend` ainda não tem CI.
+
+## Estado nos repositórios (19/09/2026)
+
+`API5-Backend` e `API5-Frontend` têm só a `main`, com um commit cada. Nenhuma branch
+`usX` criada ainda — o padrão começa a valer na primeira US.

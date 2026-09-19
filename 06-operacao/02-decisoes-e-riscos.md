@@ -31,7 +31,8 @@ Detalhes: [Data Warehouse](../02-arquitetura/04-data-warehouse.md).
 camadas uma restrição do compilador, não uma convenção que se erode.
 
 **Custo.** Começar do zero: o protótipo antigo está em Python e
-[não serve de base](../05-prototipo/01-prototipo-referencia.md).
+[não serve de base](../05-prototipo/01-prototipo-referencia.md). E o .NET 8 sai de
+suporte antes do fim do projeto — ver [R-14](#r-14--net-8-sai-de-suporte-durante-o-projeto-).
 
 ---
 
@@ -82,10 +83,16 @@ saber **o que citar**, não receber o arquivo.
 
 ---
 
-### D-06 · Backend em inglês, dados em português
+### D-06 · Código em inglês, retorno da API em português
 
-**Decisão.** Todo o backend — classes, métodos, tabelas, colunas, rotas, campos JSON,
-logs, commits — em inglês. Os **valores** dos dados permanecem em português.
+**Decisão.** Todo o código — backend, frontend e pipeline: classes, métodos, tabelas,
+colunas, rotas, chaves do JSON, logs, testes, commits — em inglês. **Tudo o que a API
+devolve para ser lido é em português**: valores de dado, rótulos, motivos de dado
+ausente, mensagens de erro e de validação. *(Revisada em 19/09/2026: antes falava só em
+"dados em português"; agora cobre explicitamente erro e rótulo.)*
+
+**Regra de bolso.** Chave é código (inglês); valor é retorno (português). Detalhe em
+[Idioma](../02-arquitetura/02-backend-dotnet.md#idioma).
 
 **Custo.** Traduzir jargão jurídico gera divergência no time. Mitigado por um
 [vocabulário PT→EN fechado](../02-arquitetura/02-backend-dotnet.md#idioma) — acrescente
@@ -99,8 +106,8 @@ linhas a ele, não invente sinônimos.
 monitoramento obrigatórios; ferramentas a definir.
 
 **Implicações.** Tudo precisa ser containerizável; health check vira contrato;
-configuração por variável de ambiente; e o banco divide recursos com a aplicação, o que
-torna backup e agendamento de carga responsabilidade nossa.
+configuração por variável de ambiente; e backup do banco é responsabilidade nossa. (A
+carga não roda na VPS — [D-17](#d-17--carga-manual-não-agendada).)
 
 Ver [DevOps e infraestrutura](03-devops-e-infra.md).
 
@@ -238,10 +245,108 @@ artigo sem tema é recuperável, artigo no tema errado não é (mesma lógica do
 
 ---
 
+### D-17 · Carga manual, não agendada
+
+**Decisão.** Não existe carga diária nem job agendado. A raspagem é feita **à mão**,
+quando o time decide atualizar a base: coletar → normalizar (NLP + curadoria) →
+agregar → validar (24 testes) → subir para produção por `pg_dump`/`pg_restore` do
+schema `dw`. Exatamente o processo que produziu a base atual. *(19/09/2026)*
+
+**Por quê.** O pipeline tem um passo humano que não automatiza — a
+[curadoria de temas](../02-arquitetura/05-etl-e-nlp.md#por-que-o-passo-4-é-humano)
+rejeitou 37 de 69 clusters. As fontes têm limite de taxa e a coleta leva horas. E o
+produto mostra **tendência de julgamento**, não notícia: dado de semanas atrás não muda
+a leitura.
+
+**Consequências.**
+- o pipeline fica em **Python** (onde está o NLP); o `Ratio.Etl` em .NET perde o papel —
+  recomendação: remover da solução;
+- a API passa a ser **somente leitura** também no banco (papel `ratio_api` só com
+  `SELECT`);
+- some o contêiner de ETL e o alarme de "carga não rodou";
+- a **data da extração** vira a única defesa contra dado velho — declarada na tela e em
+  `/health/ready`.
+
+**Custo.** A base só se atualiza quando alguém roda. E o pipeline mora hoje numa pasta
+fora de repositório — [R-15](#r-15--o-pipeline-de-carga-não-está-versionado-).
+
+---
+
+### D-18 · TDD no backend e no frontend
+
+**Decisão.** Todo código de produção, nos dois repositórios de aplicação, nasce de um
+teste que falhou antes. Backend: xUnit + Shouldly + NSubstitute + Testcontainers
+(Postgres real). Frontend: Vitest + Testing Library + MSW. *(19/09/2026)*
+
+**Por quê.** Os erros mais caros encontrados até aqui — "favorável" invertendo temas
+penais, filosofia moral ligada a *dano moral*, agregado duplicando por produto
+cartesiano — **não quebravam nada visível**. Só teste que afirma o comportamento pega
+esse tipo de erro.
+
+**Custo.** Ritmo inicial mais lento, e o CI precisa de Docker para os testes de
+integração. Ver [TDD](../07-justificativas/03-tdd.md).
+
+---
+
+### D-19 · Frontend: TanStack Router + shadcn/ui + Tailwind
+
+**Decisão.** React 19 + Vite + TypeScript, **TanStack Router** (rotas por arquivo),
+**shadcn/ui** sobre Base UI, **Tailwind CSS v4**, em monorepo Turborepo. Substitui a
+recomendação anterior desta wiki (React Router + CSS puro). *(19/09/2026 — registrando
+o que o scaffold do `API5-Frontend` já adotou.)*
+
+**Por quê.** O TanStack Router tipa rota e search param (a aba do detalhe mora na URL).
+O shadcn copia o código do componente para o repo — dá para dobrá-lo ao design system
+em vez de brigar com uma biblioteca fechada. E o Tailwind v4 lê os tokens do design
+system direto de CSS custom properties.
+
+**Custo.** O default do shadcn traz sombra, raio e modo escuro que o design system
+proíbe — **todo componente adicionado precisa ser revisado** antes de commitar. Ver
+[Frontend React](../02-arquitetura/03-frontend-react.md).
+
+---
+
+### D-20 · Imagem do banco: `pgvector/pgvector:pg16`, locale ICU `pt-BR`
+
+**Decisão.** Dev, CI (Testcontainers) e produção usam a mesma imagem, com
+`--locale-provider=icu --icu-locale=pt-BR`. Extensões: `vector`, `pg_trgm`,
+`unaccent`. *(Formaliza o que foi feito na primeira carga.)*
+
+**Por quê.** A imagem oficial não traz o pgvector; e o locale de sistema `pt_BR.utf8`
+não existe na imagem Debian — o ICU é o que faz o `ORDER BY` respeitar acento.
+
+**Custo.** `default_text_search_config` continua `english` — todo `to_tsvector` precisa
+dizer `'portuguese'`. Inventário completo em
+[Data Warehouse](../02-arquitetura/04-data-warehouse.md#o-que-está-instalado-no-banco).
+
+---
+
 ## Riscos
 
 Ordenados por impacto. **Status revisado em 15/09/2026**, após a primeira carga
-real.
+real; R-14 e R-15 acrescentados em 19/09/2026.
+
+### R-14 · .NET 8 sai de suporte durante o projeto 🟠
+
+O suporte do .NET 8 termina em **10/11/2026**. Depois disso, sem correção de
+segurança — num produto hospedado na internet.
+
+**Mitigação.** Migrar para **.NET 10** (LTS, suporte até nov/2028) **agora**, enquanto a
+solução é scaffold: trocar `net8.0` por `net10.0` nos sete `.csproj` e atualizar os
+pacotes de teste. Depois do primeiro código real, a mesma troca custa uma sprint de
+regressão.
+
+### R-15 · O pipeline de carga não está versionado 🟠
+
+A pasta `scraping/` — migrations do DW, coletores, NLP, curadoria de temas e os 24
+testes de integridade — **não está em nenhum repositório git**. É o único lugar onde o
+schema do DW existe. Um disco perdido leva o DW junto, e ninguém além de quem tem a
+pasta consegue rodar a carga ([D-17](#d-17--carga-manual-não-agendada)).
+
+**Mitigação.** Versionar já. Sugestão: pasta `pipeline/` dentro do `API5-Backend` — o
+schema fica ao lado da API que o lê, e o CI do backend passa a aplicar as mesmas
+migrations nos testes de integração. Alternativa: repositório próprio
+(`API5-Pipeline`) na organização Concord-API.
 
 ### R-01 · Blocos do mockup sem fonte 🟠 *(era 🔴 — reduzido, não eliminado)*
 
@@ -290,11 +395,10 @@ de uma renomeação muda retroativamente, sem rastro.
 **Mitigação.** Não endereçado. Decidir se alguma dimensão precisa de SCD tipo 2
 antes que a base fique grande demais para migrar.
 
-### R-02 · Três frentes em branco e nenhuma base reaproveitável 🔴
+### R-02 · Duas frentes em scaffold 🟠 *(era 🔴 — o DW saiu do zero)*
 
-O backend .NET é scaffold, o frontend não existe, e o protótipo
-[não serve de base](../05-prototipo/01-prototipo-referencia.md). Na prática, o projeto
-começa do zero em código.
+O DW está carregado e validado. O backend .NET é scaffold, e o frontend tem scaffold
+com o design system nos tokens, mas nenhuma tela.
 
 **Mitigação.** Priorizar o caminho mais curto até um fluxo ponta a ponta com dado real —
 uma fonte, um recorte pequeno, uma tela — antes de ampliar. Fatiar por fluxo vertical,
@@ -309,8 +413,9 @@ verificada. **463.016 linhas de fato.**
 **Restam dois itens do checklist:** o modelo não responde às perguntas que
 dependem de inteiro teor (R-01), e não há historização de dimensão (R-13).
 
-⚠ **O esquema está no spike `scraping/`, não no `Ratio.Etl` oficial em .NET.**
-A modelagem é a mesma; o host é que falta portar.
+O esquema vive nas migrations de `scraping/sql/`, e com o [D-17](#d-17--carga-manual-não-agendada)
+é ali que ele fica — não há mais port para o `Ratio.Etl`. Falta versioná-lo
+([R-15](#r-15--o-pipeline-de-carga-não-está-versionado-)).
 
 ### R-04 · Fontes candidatas não verificadas 🟠
 
@@ -343,7 +448,8 @@ o resumo) não foi feito.
 ### R-07 · DevOps é requisito e ainda não existe 🟠
 
 CI/CD, deploy automático, monitoramento e documentação são cobrados explicitamente, e
-valem nota. Nada está configurado.
+valem nota. Só o frontend tem CI (lint, typecheck, build — sem teste). Backend sem
+workflow, nada de deploy nem monitoramento.
 
 **Mitigação.** Começar cedo e pequeno: `Dockerfile` e pipeline de build já na primeira
 semana de código. Containerizar no fim do projeto é onde os prazos morrem. Ver
@@ -363,8 +469,9 @@ com os componentes abertos.
 O DataJud tem limite de taxa, falha intermitente e pode mudar formato ou rotacionar a
 chave. Quanto mais fontes, mais superfície.
 
-**Mitigação.** Retry com backoff em todo conector; **alarme quando a carga falhar**; e a
-tela tratando "dado velho" com honestidade.
+**Mitigação.** Retry com backoff em todo coletor (implementado no do DataJud); coletores
+idempotentes, que podem ser rodados de novo; e a tela declarando a data da extração.
+Com a carga manual, a falha acontece na frente de quem opera — não em silêncio.
 
 ### R-10 · Deep link para o processo só funciona em parte 🟡
 
@@ -389,15 +496,19 @@ dado do caso dele.
 
 | Pergunta | Quem decide | Bloqueia |
 |---|---|---|
-| Qual o grão do fato? | time | **tudo** — R-03 |
+| ~~Qual o grão do fato?~~ | ✅ D-13 | — |
 | STJ e STF entram no escopo? | time + cliente | modelagem, nota de força, telas |
 | PANGEA tem API utilizável? | spike | jurisprudência qualificada |
 | De onde vem o inteiro teor — ou ele sai do escopo? | time + cliente | metade da aba Base Analítica |
-| Doutrina: quais repositórios de artigo? | time | bloco de doutrina |
-| Qual uso de NLP entra na entrega? | time | R-06 |
+| ~~Doutrina: quais repositórios de artigo?~~ | ✅ DOAJ, SciELO, OAI-PMH | — |
+| ~~Qual uso de NLP entra na entrega?~~ | ✅ Usos 1 e 4 (R-06) | — |
 | Qual modelo/provedor de LLM para o chatbot? | time | custo, privacidade |
-| Migrations: DbUp ou FluentMigrator? | dev backend | primeira migration |
-| Acesso a dados: Dapper ou EF Core? | dev backend | primeira linha de Infrastructure |
+| Onde versionar o pipeline de carga (`scraping/`)? | time | R-15 |
+| Remover o `Ratio.Etl` da solução? | dev backend | limpeza da solução |
+| Migrar para .NET 10 agora? | dev backend | R-14 |
+| Controle de migration aplicada: tabela própria ou DbUp lendo os SQL? | dev backend | primeira migration nova |
+| Acesso a dados: Dapper ou EF Core? *(recomendação: Dapper — a API só lê)* | dev backend | primeira linha de Infrastructure |
+| Com que frequência rodar a carga manual? | time | frescor do dado exibido |
 | Só produção, ou produção + staging no Coolify? | time | configuração do CI/CD |
 | Ferramenta de monitoramento? | time | R-07 |
 | Quais assuntos na carga de demonstração? | time | conteúdo da apresentação |

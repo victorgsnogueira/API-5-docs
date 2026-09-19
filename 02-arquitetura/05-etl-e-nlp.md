@@ -1,28 +1,44 @@
 # ETL e NLP
 
-> Nada disso está implementado. O `prototipo/` tem um ETL funcional, mas ele
-> [não é fonte de verdade](../05-prototipo/01-prototipo-referencia.md) — serve como
-> catálogo de armadilhas conhecidas, não como código a portar.
+> **Implementado e carregado** (set/2026): 463.016 linhas de fato, 52.696 artigos de
+> doutrina, 408 temas. O pipeline é o conjunto de scripts em `scraping/` — Python + SQL —
+> e **roda à mão**, não agendado. Ver [Carga manual](#carga-manual--o-processo) e
+> [D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada).
 
-## O desenho: um pipeline, vários conectores
-
-O produto é [multifonte](../03-dados/01-fontes.md). O ETL precisa nascer assumindo isso:
+## O desenho: um pipeline, vários conectores, três camadas no banco
 
 ```
-   DataJud ─┐
-   PANGEA  ─┤
-   TJSP    ─┼──> [ mesma porta: ICaseSource ] ──> Transform ──> Load ──> DW
-   TJRJ    ─┤                                                     │
-   TJMG    ─┤                                            proveniência
-   …       ─┘                                        (fonte + data de extração)
+   DataJud  ─┐                         ┌─ raw.*       payload cru (JSONB), um por fonte
+   DOAJ     ─┤   harvest_*.py          │              idempotente: UNIQUE(source, payload_hash)
+   SciELO   ─┼──────────────────────► ─┤
+   OAI-PMH  ─┘   (um coletor por fonte) ├─ staging.*   DTO achatado, formato comum
+                                        │              tratamento defensivo mora aqui
+                 transform_load_*.py   ─┤
+                                        └─ dw.*        modelo dimensional (fato + dims + pontes)
+                                                       + camada semântica (NLP)
+                 nlp_*.py              ──►             + agregados (views materializadas)
 ```
 
-Acrescentar uma fonte é registrar uma implementação, não reescrever o pipeline.
-Interface sugerida em [Backend .NET](02-backend-dotnet.md#multifonte-na-estrutura).
+Acrescentar uma fonte é escrever um coletor que grava em `raw` e um extrator que achata
+para `staging`. O que está em `dw` não muda.
 
-**Escopo:** TJSP, TJRJ e TJMG. Todo conector é escrito para esses três.
+**Escopo:** TJSP, TJRJ e TJMG. Todo coletor é escrito para esses três.
 
----
+### Stack do pipeline
+
+| Peça | O quê |
+|---|---|
+| Linguagem | **Python 3.12** |
+| Banco | `psycopg2-binary` (carga em lote com `execute_values`) |
+| HTTP | `requests`, com retry e backoff |
+| Parsing | `beautifulsoup4` + `lxml` (OAI-PMH / HTML), `html.unescape` para entidade |
+| Embeddings | `sentence-transformers` com `paraphrase-multilingual-MiniLM-L12-v2` — **local, CPU, sem chave de API**, 384 dimensões |
+| Clusterização | `scikit-learn` (aglomerativo, cosseno) + `numpy` |
+| Schema | migrations SQL numeradas (`scraping/sql/001…017`) |
+
+> **Por que Python e não .NET.** O ecossistema de NLP (sentence-transformers, torch,
+> scikit-learn) é Python. Com a carga manual, portar para o `Ratio.Etl` seria reescrever
+> o que funciona sem ganho — a API só lê o resultado.
 
 ## Extract
 
@@ -53,13 +69,34 @@ consulta, não depois.
 
 ### Demais fontes
 
-PANGEA, repositórios dos tribunais e doutrina ainda estão em investigação. Cada uma
-precisa responder ao questionário em [Fontes](../03-dados/01-fontes.md#fontes-ainda-não-listadas)
-antes de virar conector.
+Doutrina entrou (DOAJ, SciELO, OAI-PMH). Repositórios de jurisprudência dos tribunais
+estão bloqueados por captcha/WAF — ver [Fontes](../03-dados/01-fontes.md) e
+[Limitações](../03-dados/04-limitacoes-da-fonte.md). Toda fonte nova responde ao
+questionário em [Fontes](../03-dados/01-fontes.md#fontes-ainda-não-listadas) antes de
+virar coletor.
 
 ---
 
 ## Transform
+
+### O que "normalizar" significa, campo a campo
+
+Resumo de tudo o que a carga faz entre o payload cru e o dado que a API lê. Cada linha
+é um passo que existe no código hoje.
+
+| O quê | De → para | Onde | Regra |
+|---|---|---|---|
+| Texto | `&#8220;` / `&amp;` / espaço duplo → texto limpo | `clean()` no extrator de doutrina; `fix_html_entities.py` no dado já carregado | decodifica entidade HTML até estabilizar (há dupla codificação). ⚠ falta no extrator do DataJud |
+| Número CNJ | 20 dígitos → `NNNNNNN-DD.AAAA.J.TR.OOOO` | `012_source_links.sql` | validado por teste (malformado = falha) |
+| Data | ISO com `Z` ou `yyyyMMddHHmmss` → `dim_date` | `transform_load_datajud.py` | `dim_date` cobre 1940+; data fora do calendário não derruba a linha |
+| Grau | `G1` / `G2` / `GRAU_UNICO` → `First` / `Second` / `Superior` | `COURT_LEVEL_MAP` | código fora do mapa passa como veio — não é inventado |
+| Movimentação | código TPU → categoria de resultado + **polaridade** | `dim_movement` | só 6 códigos conferidos; o resto é neutro ([D-10](../06-operacao/02-decisoes-e-riscos.md#d-10--código-de-movimentação-não-conferido-não-entra-na-métrica)) |
+| Classe processual | classe → **quem propõe** (`claimant_type`) | `dim_case_class` | acusação · fazenda · credor · defesa · autor particular ([Polaridade](../03-dados/05-polaridade-do-resultado.md)) |
+| Assunto | variações de redação → **tema** | NLP Uso 1 + curadoria | "Indenização por Dano Moral" = "Indenizaçao por Dano Moral" |
+| Tema | → **área jurídica** (`subject_area`) | NLP + mapa exato | 94,1% dos temas com área |
+| Doutrina | artigo → tema | NLP Uso 4 | semântico **e** léxico ([D-16](../06-operacao/02-decisoes-e-riscos.md#d-16--doutrina-ligada-a-tema-por-método-híbrido-não-só-embedding)) |
+| Processo | número → **link na origem** | `012_source_links.sql` | `direto` (TJSP) · `portal` (TJRJ, TJMG) · sem link |
+| Tema | contagens → **nota de força** 0–100 | `013`/`017` | componentes gravados; teste recalcula a soma |
 
 ### 1 · Achatar
 
@@ -127,13 +164,12 @@ Ver [NLP](#nlp--onde-o-modelo-entra) e
 ### Idempotência é requisito
 
 Rodar a carga duas vezes com os mesmos dados **não** pode duplicar linha nem inflar
-contagem. O agendamento reprocessa janelas que se sobrepõem, e um fato duplicado
-apareceria na tela como decisão a mais.
+contagem. Toda carga manual reprocessa janelas que se sobrepõem à anterior, e um fato
+duplicado apareceria na tela como decisão a mais.
 
-Como se garante: upsert por chave natural nas dimensões, e chave natural bem escolhida
-no fato. Qual é essa chave depende do
-[grão](../03-dados/02-modelo-dimensional.md#decisão-2--o-grão-duas-opções-em-aberto),
-que ainda está em discussão.
+Como se garante: `UNIQUE(source, payload_hash)` no `raw`, upsert por chave natural nas
+dimensões, e chave natural no fato (grão = movimentação, [D-13](../06-operacao/02-decisoes-e-riscos.md#d-13--grão-do-fato-movimentação-processual-opção-a)).
+Verificado: recarregar o mesmo lote não muda a contagem.
 
 ### Proveniência em toda linha
 
@@ -147,21 +183,95 @@ Atualizar os agregados, na ordem de dependência. Ver
 
 ---
 
-## Agendamento
+## Carga manual — o processo
 
-`Ratio.Etl` é console app (`OutputType=Exe`). No Coolify, isso vira **job agendado**.
+**Não há carga agendada.** A raspagem é feita **à mão**, quando o time decide
+atualizar a base: coletar → normalizar → validar → subir. Exatamente o processo que
+produziu a base atual.
 
-**Não** transforme em `BackgroundService` dentro da API: acoplar a carga ao ciclo de
-vida do servidor web impede rodar uma carga manual sem reiniciar a API, e faz a carga
-competir com o tráfego.
+```
+   1 COLETAR      harvest_*.py            fontes ──► raw.*
+   2 ACHATAR      transform_load_*.py     raw ──► staging ──► dw (fato + dimensões)
+   3 NORMALIZAR   nlp_*.py                embeddings · temas · área · doutrina↔tema
+   4 REVISAR      curadoria humana        clusters novos aceitos/rejeitados por nome
+   5 AGREGAR      REFRESH MATERIALIZED    na ordem de dependência
+   6 VALIDAR      24 testes de integridade   ── qualquer linha retornada = PARA
+   7 SUBIR        pg_dump ──► pg_restore  local ──► produção
+   8 REGISTRAR    data, fontes, contagens   no README da carga e na Decisões
+```
 
-Agendar em horário de baixo uso — o banco é compartilhado com a API na mesma VPS.
+### Passo a passo
 
-**Alarme obrigatório quando a carga falha ou não roda.** Uma carga que falha
-silenciosamente por uma semana deixa o produto exibindo dado velho com aparência de dado
-atual. Ver [DevOps](../06-operacao/03-devops-e-infra.md).
+```bash
+# 0. schema — só se houver migration nova
+for f in scraping/sql/0*.sql; do docker exec -i api5-dw psql -U dw_admin -d api5_dw -v ON_ERROR_STOP=1 < "$f"; done
 
----
+# 1. coletar (idempotente — pode rodar de novo)
+python -u scraping/scripts/harvest_datajud.py tjsp,tjrj,tjmg 25000
+python -u scraping/scripts/harvest_doaj.py
+python -u scraping/scripts/harvest_scielo.py
+python -u scraping/scripts/harvest_oai.py
+
+# 2. achatar e carregar no modelo dimensional
+python scraping/scripts/transform_load_doctrine.py
+python scraping/scripts/transform_load_datajud.py
+
+# 3. normalizar (NLP)
+python scraping/scripts/nlp_embed.py                  # embeddings -> pgvector
+python scraping/scripts/nlp_cluster_subjects.py 0.20  # PROPÕE clusters
+python scraping/scripts/nlp_curate_themes.py          # 4. aplica a curadoria revisada
+python scraping/scripts/nlp_load_themes.py            # dim_theme + bridge_theme_topic
+python scraping/scripts/nlp_link_doctrine.py 0.55 10  # doutrina -> tema (semântico + léxico)
+
+# 5. agregar — a ordem importa
+#    case_current_result → topic_* → theme_summary/by_year/by_court → theme_strength
+
+# 6. validar — todas as consultas devem voltar VAZIAS
+docker exec -i api5-dw psql -U dw_admin -d api5_dw < scraping/sql/011_nlp_integrity_tests.sql
+docker exec -i api5-dw psql -U dw_admin -d api5_dw < scraping/sql/014_strength_link_tests.sql
+```
+
+Comandos completos (inclusive a lista de `REFRESH`) em `scraping/README.md`.
+
+### Por que o passo 4 é humano
+
+A clusterização **propõe**; ela não decide. Na carga atual, de 69 clusters candidatos
+**37 foram rejeitados** na revisão (`Furto | Roubo | Ameaça | Liminar…` num balde só).
+Se aparecer assunto novo, alguém lê os clusters novos e registra a decisão **por nome**
+em `nlp_curate_themes.py`. Assunto sem decisão fica 1:1 — degrada para a granularidade
+da TPU, não quebra.
+
+### Subir para produção
+
+A carga roda **na máquina de quem opera**, contra o Postgres local; produção só recebe o
+resultado validado:
+
+```bash
+# local — depois do passo 6 passar
+docker exec api5-dw pg_dump -U dw_admin -d api5_dw -Fc -n dw -f /tmp/dw.dump
+docker cp api5-dw:/tmp/dw.dump ./dw.dump
+
+# produção — restore do schema dw inteiro, numa transação
+pg_restore --clean --if-exists --single-transaction -n dw -d "$PROD_URL" dw.dump
+```
+
+- **Só o schema `dw` sobe.** `raw` e `staging` são área de trabalho, ficam locais (o
+  `raw` é o que permite reprocessar sem voltar às fontes — mantenha backup dele).
+- `--single-transaction`: se o restore falhar no meio, produção continua com a base
+  anterior, inteira.
+- Produção **nunca** roda coletor nem script de NLP.
+
+### O que muda por não ser agendado
+
+| Antes (agendado) | Agora (manual) |
+|---|---|
+| job no Coolify | nenhum contêiner de ETL em produção |
+| alarme "a carga não rodou" | não se aplica — a data da última carga é **declarada** na tela e em `/health/ready` |
+| carga competindo com a API por CPU | não há — a carga roda fora da VPS |
+| falha silenciosa por dias | falha na frente de quem está rodando; o passo 6 impede subir base inconsistente |
+
+**Continua valendo:** idempotência, proveniência em toda linha, e a regra de que o
+produto declara **a data da extração** — dado manual envelhece do mesmo jeito.
 
 ## NLP — onde o modelo entra
 

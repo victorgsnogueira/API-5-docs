@@ -87,7 +87,7 @@ request deixaria a tela lenta.
 padronizar, deduplicar), *Load* (gravar nas tabelas do DW).
 
 **Idempotência** — rodar a carga duas vezes com os mesmos dados não duplica linha nem
-infla contagem. Requisito, não conforto: o agendamento diário reprocessa janelas que
+infla contagem. Requisito, não conforto: cada carga manual reprocessa janelas que
 se sobrepõem.
 
 **NLP** — processamento de linguagem natural. Aqui: normalizar textos e assuntos

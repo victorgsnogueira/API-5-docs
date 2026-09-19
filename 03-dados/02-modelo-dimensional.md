@@ -18,8 +18,9 @@
 > [polaridade do resultado](05-polaridade-do-resultado.md) — `dim_movement`
 > e `dim_case_class` ganharam colunas que esta página não previa.
 >
-> A implementação está em `scraping/sql/` (spike), não no `Ratio.Etl` oficial em
-> .NET. O esquema é o mesmo; o host é que ainda vai ser portado.
+> A implementação está nas migrations de `scraping/sql/`, que são o pipeline de
+> carga oficial desde o [D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada)
+> (carga manual). Não há port para .NET previsto.
 >
 > A modelagem do `prototipo/` continua **não servindo de base** — nada dela foi
 > aproveitado.
