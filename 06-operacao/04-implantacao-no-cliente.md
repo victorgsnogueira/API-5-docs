@@ -138,9 +138,7 @@ O que isso implica:
 | monitoramento nosso | o cliente opera; nós entregamos health check e log em arquivo |
 
 > ⚠ **Conflito com o desafio.** O desafio cobra "deploy automático". Com a produção na
-> mão do cliente, o deploy automático só pode existir no ambiente **nosso** de
-> homologação — que simula a intranet numa rede Tailscale
-> ([D-24](02-decisoes-e-riscos.md#d-24--homologação-simulada-numa-rede-tailscale-sem-vps)).
+> mão do cliente, o que o CI entrega automaticamente é o pacote de versão.
 > Ver [R-17](02-decisoes-e-riscos.md#r-17--deploy-automático-exigido-pelo-desafio-x-produção-no-cliente-).
 
 ---

@@ -135,7 +135,7 @@ Backend e frontend são escritos por TDD. Ver [TDD](../07-justificativas/03-tdd.
 | Proxy reverso | **NGINX** (no lugar do IIS do cliente) |
 | Entrega | arquivos buildados: API self-contained `win-x64`, `dist/` do frontend, `nginx.conf`, dump do `dw` |
 | Acesso | só restrição de rede, sem login (D-23) |
-| Homologação | rede **Tailscale** do time, sem VPS (D-24) |
+| Simulação de produção | rede **Tailscale** simulando a intranet (D-24) |
 | CI/CD | GitHub Actions (frontend já tem; backend falta) |
 | Monitoramento | obrigatório, ferramenta a definir |
 

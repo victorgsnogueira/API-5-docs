@@ -20,33 +20,20 @@
 | **Proxy reverso** | **NGINX** (o cliente usa IIS; trocamos) — ver [D-22](02-decisoes-e-riscos.md#d-22--nginx-como-proxy-reverso-no-lugar-do-iis) |
 | **Entrega** | pacote de **arquivos buildados** + manual; o cliente instala |
 | **Acesso** | só restrição de rede, **sem login** — ver [D-23](02-decisoes-e-riscos.md#d-23--acesso-por-restrição-de-rede-sem-login) |
-| **Homologação** | simulada numa rede **Tailscale**, **sem VPS** — ver [D-24](02-decisoes-e-riscos.md#d-24--homologação-simulada-numa-rede-tailscale-sem-vps) |
-| Deploy automático | só na homologação (CI entra na tailnet); em produção, o CI gera o pacote |
+| **Simulação de produção** | rede **Tailscale** simulando a intranet; sem VPS — ver [D-24](02-decisoes-e-riscos.md#d-24--simulação-da-intranet-numa-rede-tailscale) |
+| Deploy | o CI gera o pacote de versão; quem instala é o cliente |
 | CI/CD | obrigatório |
 | Monitoramento | obrigatório, ferramenta a definir |
 | Documentação | obrigatória, formato a definir |
 
-## Os dois ambientes
+## Ambiente
 
-| | Produção | Homologação |
-|---|---|---|
-| Onde | intranet do cliente, Windows Server | máquina na rede **Tailscale** do time |
-| Quem acessa | funcionários do cliente, pela intranet | o time (e a banca, se convidada), pela tailnet |
-| Controle de acesso | a rede do cliente | convite + ACL do Tailscale |
-| Login | não há | não há |
-| Como chega a versão | a TI do cliente instala o pacote, pelo manual | deploy automático do CI, via tailnet |
-| Como chega a carga | dump do `dw` dentro do pacote | `pg_restore` do dump validado |
-| Detalhe | [Implantação no cliente](04-implantacao-no-cliente.md) | [D-24](02-decisoes-e-riscos.md#d-24--homologação-simulada-numa-rede-tailscale-sem-vps) |
+Produção é a intranet do cliente — ver [Implantação no cliente](04-implantacao-no-cliente.md).
+O projeto está sendo rodado numa rede **Tailscale** para simular esse ambiente de
+intranet ([D-24](02-decisoes-e-riscos.md#d-24--simulação-da-intranet-numa-rede-tailscale)).
 
-A homologação existe para ser **a produção em miniatura**: mesmo pacote, mesmo
-`nginx.conf`, mesmo modelo de acesso (rede, sem login). O que for diferente dela — por
-exemplo, banco em contêiner em vez de serviço Windows — deve ficar anotado, porque é
-exatamente ali que um problema de produção passaria despercebido.
-
-### O que vale nos dois
-
-**Health check é contrato, não enfeite.** É por ele que a instalação é verificada —
-pelo CI na homologação, pela TI do cliente em produção. A API precisa expor:
+**Health check é contrato, não enfeite.** É por ele que a instalação é verificada. A
+API precisa expor:
 
 | Endpoint | Responde |
 |---|---|
@@ -59,13 +46,12 @@ está "no ar" e inútil.
 **Configuração fora do código.** Nada de connection string em `appsettings.json`
 versionado nem dentro do pacote. A configuração é da máquina onde roda.
 
-### A carga não roda em nenhum dos dois
+### A carga não roda no ambiente de produção
 
 Não há contêiner de ETL nem job agendado. A carga é
-[manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo): roda contra um
-Postgres de trabalho, passa pelos 24 testes de integridade, e só então o schema `dw`
-é restaurado — na homologação e, dentro do pacote, em produção. Nenhum dos dois
-ambientes fala com DataJud, DOAJ ou qualquer fonte.
+[manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo): passa pelos 24
+testes de integridade, e só então o schema `dw` é restaurado. Produção não fala com
+DataJud, DOAJ ou qualquer fonte.
 
 **Backup é responsabilidade nossa** até a entrega: um DW que se perde é uma recarga de
 dias contra fontes com limite de taxa. Guarde o dump de cada carga e o `raw`.
@@ -187,7 +173,6 @@ extração aparece na tela, não só no log.
 | Monitoramento | Uptime Kuma (leve, self-host), Grafana + Prometheus (completo), Sentry (erros) | depois do primeiro deploy |
 | Backup | o dump de cada carga + o `raw` local, guardados fora da máquina que os gerou | antes da primeira carga que doa perder |
 | Gestão de segredos | configuração na máquina do cliente (fora do pacote) | imediato — nada de segredo no repositório nem no pacote |
-| Deploy automático na homologação | `tailscale/github-action` + chave efêmera com tag e ACL | junto com o CI do backend |
 | Documentação | esta wiki + Swagger + README por repo | contínuo |
 
 ## Regras que valem desde já
