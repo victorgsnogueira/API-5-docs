@@ -19,78 +19,56 @@
 | **Produção** | **intranet do cliente, Windows Server** — ver [D-21](02-decisoes-e-riscos.md#d-21--produção-na-intranet-do-cliente-em-windows-server) e [Implantação no cliente](04-implantacao-no-cliente.md) |
 | **Proxy reverso** | **NGINX** (o cliente usa IIS; trocamos) — ver [D-22](02-decisoes-e-riscos.md#d-22--nginx-como-proxy-reverso-no-lugar-do-iis) |
 | **Entrega** | pacote de **arquivos buildados** + manual; o cliente instala |
-| Homologação / demonstração | VPS Hostinger + Coolify? — **em aberto** ([R-17](02-decisoes-e-riscos.md#r-17--deploy-automático-exigido-pelo-desafio-x-produção-no-cliente-)) |
-| Deploy automático | só no ambiente nosso; em produção, o CI gera o pacote |
+| **Acesso** | só restrição de rede, **sem login** — ver [D-23](02-decisoes-e-riscos.md#d-23--acesso-por-restrição-de-rede-sem-login) |
+| **Homologação** | simulada numa rede **Tailscale**, **sem VPS** — ver [D-24](02-decisoes-e-riscos.md#d-24--homologação-simulada-numa-rede-tailscale-sem-vps) |
+| Deploy automático | só na homologação (CI entra na tailnet); em produção, o CI gera o pacote |
 | CI/CD | obrigatório |
 | Monitoramento | obrigatório, ferramenta a definir |
 | Documentação | obrigatória, formato a definir |
 
-## Coolify — o que isso implica
+## Os dois ambientes
 
-> ⚠ **Vale só se a VPS continuar como homologação/demonstração.** Produção é a intranet
-> do cliente, em Windows Server, sem Docker — ver [Implantação no cliente](04-implantacao-no-cliente.md).
-> Os pontos 2 e 3 abaixo (health check, configuração fora do código) valem nos dois
-> ambientes.
+| | Produção | Homologação |
+|---|---|---|
+| Onde | intranet do cliente, Windows Server | máquina na rede **Tailscale** do time |
+| Quem acessa | funcionários do cliente, pela intranet | o time (e a banca, se convidada), pela tailnet |
+| Controle de acesso | a rede do cliente | convite + ACL do Tailscale |
+| Login | não há | não há |
+| Como chega a versão | a TI do cliente instala o pacote, pelo manual | deploy automático do CI, via tailnet |
+| Como chega a carga | dump do `dw` dentro do pacote | `pg_restore` do dump validado |
+| Detalhe | [Implantação no cliente](04-implantacao-no-cliente.md) | [D-24](02-decisoes-e-riscos.md#d-24--homologação-simulada-numa-rede-tailscale-sem-vps) |
 
-Coolify é uma plataforma self-hosted de deploy (um PaaS que roda na sua própria VPS).
-Consequências práticas para o desenvolvimento:
+A homologação existe para ser **a produção em miniatura**: mesmo pacote, mesmo
+`nginx.conf`, mesmo modelo de acesso (rede, sem login). O que for diferente dela — por
+exemplo, banco em contêiner em vez de serviço Windows — deve ficar anotado, porque é
+exatamente ali que um problema de produção passaria despercebido.
 
-**1 · Tudo precisa ser containerizável.** API e frontend rodam como contêineres.
-Escrever `Dockerfile` para cada um é tarefa de desenvolvimento, não de infraestrutura, e
-deve acontecer cedo — descobrir na véspera que a aplicação não containeriza é o tipo de
-surpresa cara.
+### O que vale nos dois
 
-**2 · Health check é contrato, não enfeite.** Coolify usa health check para saber se um
-deploy subiu. A API precisa expor:
+**Health check é contrato, não enfeite.** É por ele que a instalação é verificada —
+pelo CI na homologação, pela TI do cliente em produção. A API precisa expor:
 
 | Endpoint | Responde |
 |---|---|
 | `/health` | o processo está de pé (*liveness*) |
-| `/health/ready` | há dado utilizável no DW (*readiness*) |
+| `/health/ready` | há dado utilizável no DW, e de quando é a última carga (*readiness*) |
 
 O segundo é o que importa de verdade: uma API que sobe apontando para um banco vazio
 está "no ar" e inútil.
 
-**3 · Configuração por variável de ambiente.** Nada de connection string em
-`appsettings.json` versionado. Coolify injeta as variáveis; o código lê do ambiente.
+**Configuração fora do código.** Nada de connection string em `appsettings.json`
+versionado nem dentro do pacote. A configuração é da máquina onde roda.
 
-## Desenho da infraestrutura
-
-> Este é o desenho do ambiente **nosso** (homologação/demonstração, se mantido). O de
-> **produção** está em [Implantação no cliente](04-implantacao-no-cliente.md#desenho-no-servidor-do-cliente).
-
-```
-                    VPS Hostinger
-   ┌──────────────────────────────────────────────┐
-   │  Coolify                                     │
-   │   ├── ratio-api        (ASP.NET Core)        │
-   │   ├── ratio-web        (React, estático)     │
-   │   └── ratio-db         (pgvector/pgvector:pg16)
-   │                                              │
-   │  proxy reverso + TLS  (gerenciado pelo Coolify)
-   └──────────────────────────────────────────────┘
-          ▲                          ▲
-          │ deploy automático        │ pg_restore do schema dw
-    GitHub Actions             carga manual, na máquina de quem opera
-                               (coleta → NLP → testes → dump)
-```
-
-### A carga não roda na VPS
+### A carga não roda em nenhum dos dois
 
 Não há contêiner de ETL nem job agendado. A carga é
-[manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo): roda numa máquina
-do time contra um Postgres local, passa pelos 24 testes de integridade, e só então o
-schema `dw` é restaurado em produção numa transação única. Produção nunca fala com
-DataJud, DOAJ ou qualquer fonte.
+[manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo): roda contra um
+Postgres de trabalho, passa pelos 24 testes de integridade, e só então o schema `dw`
+é restaurado — na homologação e, dentro do pacote, em produção. Nenhum dos dois
+ambientes fala com DataJud, DOAJ ou qualquer fonte.
 
-### O banco na mesma VPS
-
-Simples e barato, e serve para o projeto. Duas consequências a encarar:
-
-- **backup é responsabilidade nossa.** Um DW que se perde é uma recarga de dias contra
-  fontes com limite de taxa. Backup automatizado do volume é item obrigatório.
-- **o restore é o único momento pesado.** Como a carga roda fora, a VPS só sente o
-  `pg_restore` — alguns minutos, numa transação. Faça fora do horário de uso.
+**Backup é responsabilidade nossa** até a entrega: um DW que se perde é uma recarga de
+dias contra fontes com limite de taxa. Guarde o dump de cada carga e o `raw`.
 
 ## Pipeline de CI/CD — esqueleto
 
@@ -134,7 +112,7 @@ Lint de markdown e **verificação de links e âncoras quebrados**. Wiki com lin
 envelhece rápido, e as páginas se referenciam muito entre si.
 
 Não precisa de deploy — o GitHub já renderiza. Se um dia a wiki virar site (MkDocs,
-Docusaurus), aí sim entra no Coolify como estático.
+Docusaurus), aí sim vira um site estático a hospedar.
 
 ## Testes de integridade do DW — requisito explícito
 
@@ -207,9 +185,9 @@ extração aparece na tela, não só no log.
 | Controle de migration aplicada | tabela de versão própria, ou DbUp lendo os SQL de `scraping/sql` | antes da primeira migration nova |
 | Log estruturado | Serilog + destino a definir | junto com o esqueleto da API |
 | Monitoramento | Uptime Kuma (leve, self-host), Grafana + Prometheus (completo), Sentry (erros) | depois do primeiro deploy |
-| Backup | o dump de cada carga + o `raw` local, guardados fora da VPS | antes da primeira carga que doa perder |
+| Backup | o dump de cada carga + o `raw` local, guardados fora da máquina que os gerou | antes da primeira carga que doa perder |
 | Gestão de segredos | configuração na máquina do cliente (fora do pacote) | imediato — nada de segredo no repositório nem no pacote |
-| Ambientes | produção no cliente; homologação nossa (VPS + Coolify)? | R-17 |
+| Deploy automático na homologação | `tailscale/github-action` + chave efêmera com tag e ACL | junto com o CI do backend |
 | Documentação | esta wiki + Swagger + README por repo | contínuo |
 
 ## Regras que valem desde já

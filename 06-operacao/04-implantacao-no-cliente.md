@@ -17,7 +17,7 @@
 | Servidores **Windows Server** | todo artefato entregue tem de rodar em Windows — API, frontend, banco e proxy |
 | **Nós damos a spec** das máquinas | a especificação é um entregável nosso, não uma pergunta ao cliente |
 | O cliente recebe **só arquivos buildados** | nenhum SDK, Node, npm, Python, Git ou IDE nas máquinas dele |
-| Uso **só por funcionários** | acesso restrito à rede interna; autenticação em aberto ([abaixo](#acesso-só-de-funcionários)) |
+| Uso **só por funcionários** | **restrição de rede, sem login** — quem está na intranet usa ([abaixo](#acesso-só-de-funcionários)) |
 | Proxy reverso: **NGINX**, não IIS | ver [D-22](02-decisoes-e-riscos.md#d-22--nginx-como-proxy-reverso-no-lugar-do-iis) |
 
 ---
@@ -70,7 +70,7 @@ Pontos que o desenho fixa:
 | Escutar só em `127.0.0.1` | o acesso é pelo NGINX |
 | Honrar `X-Forwarded-*` (`UseForwardedHeaders`) | atrás de proxy, para log e esquema (`https`) corretos |
 | Configuração por `appsettings.Production.json` **fora do pacote** ou variável de ambiente do serviço | connection string e caminhos são do cliente, não do build |
-| Log em **arquivo** com rotação (Serilog `File`) | não há Coolify nem console para ler log |
+| Log em **arquivo** com rotação (Serilog `File`) | no servidor do cliente não há console para ler log |
 | CORS: desnecessário em produção | origem única; manter lista explícita só para dev |
 
 ### Frontend
@@ -108,23 +108,28 @@ Pontos que o desenho fixa:
 
 ## Acesso só de funcionários
 
-"Só funcionários" pode significar duas coisas, e a diferença muda o projeto:
+**Decidido: restrição de rede, sem login** ([D-23](02-decisoes-e-riscos.md#d-23--acesso-por-restrição-de-rede-sem-login)).
+Quem alcança o servidor pela intranet do cliente usa o sistema; não há tela de login,
+sessão, usuário nem integração com Active Directory.
 
-| Opção | O que é | Custo |
-|---|---|---|
-| **A · Restrição de rede** | o sistema só é alcançável de dentro da intranet; quem está na rede usa | nenhum código; depende inteiramente da rede do cliente |
-| **B · Autenticação** | além da rede, cada funcionário se identifica — tipicamente pelo **Active Directory** do cliente | login, sessão, integração com AD/LDAP ou SSO; e o NGINX open source **não faz** autenticação Windows integrada como o IIS fazia |
+O que isso implica:
 
-**Pergunta em aberto** — ver [Decisões e riscos](02-decisoes-e-riscos.md#perguntas-em-aberto).
-Se for B, a troca de IIS por NGINX deixa de ser neutra: a autenticação integrada do
-Windows (Kerberos/NTLM) teria de ir para a própria API (`Negotiate` no ASP.NET Core) ou
-para um provedor OIDC do cliente.
+- **A segurança de acesso é da rede do cliente.** O Ratio não controla quem entra; o
+  manual de implantação precisa dizer isso com todas as letras, para a TI do cliente
+  não publicar o servidor para fora da intranet.
+- **Só a porta do NGINX fica exposta.** API e banco em `127.0.0.1` continuam
+  obrigatórios — sem login, nenhuma outra porta pode ser alcançável.
+- **A troca de IIS por NGINX é neutra.** Como não há autenticação Windows integrada a
+  preservar, o NGINX substitui o IIS sem perda.
+- **Não há dado de usuário.** Nada de LGPD sobre quem consulta — o sistema não sabe.
+  (Se o [chatbot](../01-produto/05-chatbot.md) entrar, a pergunta digitada volta a ser
+  dado a tratar.)
 
 ---
 
 ## O que deixa de valer
 
-| Antes (VPS Hostinger + Coolify) | Agora (intranet do cliente) |
+| Antes (VPS Hostinger + Coolify — descartada) | Agora (intranet do cliente) |
 |---|---|
 | deploy automático no merge da `main` | o CI **gera o pacote de versão**; quem instala é o cliente, seguindo o manual |
 | contêineres Docker | serviços Windows |
@@ -133,8 +138,10 @@ para um provedor OIDC do cliente.
 | monitoramento nosso | o cliente opera; nós entregamos health check e log em arquivo |
 
 > ⚠ **Conflito com o desafio.** O desafio cobra "deploy automático". Com a produção na
-> mão do cliente, o deploy automático só pode existir num ambiente **nosso**
-> (homologação/demonstração). Ver [R-17](02-decisoes-e-riscos.md#r-17--deploy-automático-exigido-pelo-desafio-x-produção-no-cliente-).
+> mão do cliente, o deploy automático só pode existir no ambiente **nosso** de
+> homologação — que simula a intranet numa rede Tailscale
+> ([D-24](02-decisoes-e-riscos.md#d-24--homologação-simulada-numa-rede-tailscale-sem-vps)).
+> Ver [R-17](02-decisoes-e-riscos.md#r-17--deploy-automático-exigido-pelo-desafio-x-produção-no-cliente-).
 
 ---
 

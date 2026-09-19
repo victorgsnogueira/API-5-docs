@@ -134,7 +134,8 @@ Backend e frontend são escritos por TDD. Ver [TDD](../07-justificativas/03-tdd.
 | Produção | **intranet do cliente**, **Windows Server**, uso só por funcionários — ver [Implantação no cliente](../06-operacao/04-implantacao-no-cliente.md) |
 | Proxy reverso | **NGINX** (no lugar do IIS do cliente) |
 | Entrega | arquivos buildados: API self-contained `win-x64`, `dist/` do frontend, `nginx.conf`, dump do `dw` |
-| Homologação | VPS Hostinger + Coolify, se mantida — em aberto |
+| Acesso | só restrição de rede, sem login (D-23) |
+| Homologação | rede **Tailscale** do time, sem VPS (D-24) |
 | CI/CD | GitHub Actions (frontend já tem; backend falta) |
 | Monitoramento | obrigatório, ferramenta a definir |
 

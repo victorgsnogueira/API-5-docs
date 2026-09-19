@@ -102,9 +102,10 @@ linhas a ele, não invente sinônimos.
 
 ### D-07 · Hospedagem em VPS Hostinger com Coolify ⚠ *substituída pelo D-21*
 
-> **Não vale mais para produção** desde 19/09/2026: produção é a intranet do cliente
-> ([D-21](#d-21--produção-na-intranet-do-cliente-em-windows-server)). Se a VPS continua
-> como homologação/demonstração é pergunta em aberto. Texto original mantido abaixo.
+> **Descartada** em 19/09/2026: produção é a intranet do cliente
+> ([D-21](#d-21--produção-na-intranet-do-cliente-em-windows-server)) e a homologação
+> é simulada numa rede Tailscale ([D-24](#d-24--homologação-simulada-numa-rede-tailscale-sem-vps)).
+> **Não há VPS.** Texto original mantido abaixo só como registro.
 
 **Decisão.** VPS na Hostinger, deploy automático via Coolify. CI/CD, documentação e
 monitoramento obrigatórios; ferramentas a definir.
@@ -367,9 +368,46 @@ gerenciador do IIS, específica de cada máquina.
 - o NGINX para Windows não se registra como serviço sozinho — precisa de WinSW ou NSSM;
 - a versão Windows do NGINX é menos otimizada que a de Linux (limite de conexões
   simultâneas por *worker*) — irrelevante para o volume de uma intranet, mas registrado;
-- **perde-se a autenticação Windows integrada** que o IIS oferece. Se o acesso exigir
-  login com o AD do cliente, ela vai para a API — ver
-  [Acesso só de funcionários](04-implantacao-no-cliente.md#acesso-só-de-funcionários).
+- perde-se a autenticação Windows integrada do IIS — **sem efeito**, porque o acesso
+  é só por restrição de rede ([D-23](#d-23--acesso-por-restrição-de-rede-sem-login)).
+
+---
+
+### D-23 · Acesso por restrição de rede, sem login
+
+**Decisão.** "Só funcionários" é garantido pela **rede do cliente**: quem está na
+intranet usa o sistema. Não há login, sessão, cadastro de usuário nem integração com
+Active Directory. *(19/09/2026)*
+
+**Por quê.** O conteúdo é jurisprudência pública agregada; não há dado por usuário nem
+permissão diferente entre funcionários. Login seria custo sem ganho.
+
+**Custo.** O Ratio não se defende sozinho: se o servidor for exposto fora da intranet,
+qualquer um acessa. Mitigado deixando **só a porta do NGINX** alcançável (API e banco
+em `127.0.0.1`) e dizendo isso explicitamente no manual de implantação.
+
+---
+
+### D-24 · Homologação simulada numa rede Tailscale, sem VPS
+
+**Decisão.** Não há VPS. O ambiente que simula a produção roda numa máquina ligada a
+uma rede privada **Tailscale** do time; o time acessa por ela, como os funcionários do
+cliente acessarão pela intranet. *(19/09/2026)*
+
+**Por quê.** A tailnet reproduz o modelo de acesso de produção — **só quem está na rede
+alcança o sistema, sem login** ([D-23](#d-23--acesso-por-restrição-de-rede-sem-login))
+— sem custo de hospedagem e sem expor nada à internet.
+
+**Consequências.**
+- o controle de quem acessa é a própria tailnet (convite + ACL do Tailscale);
+- o endereço é o nome MagicDNS da máquina; TLS por `tailscale cert`, ou HTTP puro (o
+  tráfego já vai cifrado pelo WireGuard);
+- deploy automático na homologação exige que o CI **entre na tailnet** — ver
+  [R-17](#r-17--deploy-automático-exigido-pelo-desafio-x-produção-no-cliente-);
+- a homologação só está no ar quando a máquina que a hospeda está ligada.
+
+**Custo.** Disponibilidade depende de uma máquina do time, não de um servidor. Aceitável
+para homologação e demonstração; não para produção — que é do cliente.
 
 ---
 
@@ -409,8 +447,11 @@ O desafio cobra CI/CD e **deploy automático**. Produção, porém, é instalada
 cliente a partir de arquivos buildados — não há deploy automático possível ali.
 
 **Mitigação.** O CI gera o **pacote de versão** automaticamente (artefato/release a
-cada merge na `main`), e o deploy automático acontece num ambiente **nosso** de
-homologação/demonstração. Confirmar com o professor/cliente que isso atende o requisito.
+cada merge na `main`), e o deploy automático acontece na **homologação via Tailscale**
+([D-24](#d-24--homologação-simulada-numa-rede-tailscale-sem-vps)): o workflow entra na
+tailnet com a action oficial `tailscale/github-action` (chave efêmera, marcada com tag
+e restrita por ACL) e instala o pacote na máquina de homologação. Confirmar com o
+professor/cliente que isso atende o requisito.
 
 ### R-15 · O pipeline de carga não está versionado 🟠
 
@@ -586,8 +627,8 @@ dado do caso dele.
 | Acesso a dados: Dapper ou EF Core? *(recomendação: Dapper — a API só lê)* | dev backend | primeira linha de Infrastructure |
 | Com que frequência rodar a carga manual? | time | frescor do dado exibido |
 | ~~Só produção, ou produção + staging no Coolify?~~ | substituída: produção é o cliente (D-21) | — |
-| A VPS Hostinger + Coolify continua, como homologação/demonstração? | time | R-17 |
-| "Só funcionários" é restrição de rede ou exige login (AD do cliente)? | time + cliente | autenticação, D-22 |
+| ~~A VPS Hostinger + Coolify continua, como homologação?~~ | ✅ não — homologação via Tailscale (D-24) | — |
+| ~~"Só funcionários" é restrição de rede ou exige login?~~ | ✅ só rede, sem login (D-23) | — |
 | Banco e aplicação na mesma máquina ou em duas? Qual versão do Windows Server? | time | especificação das máquinas |
 | As estações do cliente acessam a internet (links "consultar no tribunal")? | cliente | deep link |
 | Ferramenta de monitoramento? | time | R-07 |
