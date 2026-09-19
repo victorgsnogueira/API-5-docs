@@ -260,6 +260,9 @@ pg_restore --clean --if-exists --single-transaction -n dw -d "$PROD_URL" dw.dump
 - `--single-transaction`: se o restore falhar no meio, produção continua com a base
   anterior, inteira.
 - Produção **nunca** roda coletor nem script de NLP.
+- **Produção é o servidor do cliente** ([D-21](../06-operacao/02-decisoes-e-riscos.md#d-21--produção-na-intranet-do-cliente-em-windows-server)):
+  o dump vai **no pacote de versão**, e o restore é feito pela TI do cliente, seguindo o
+  manual de atualização ([Implantação no cliente](../06-operacao/04-implantacao-no-cliente.md#documentos-que-precisam-ser-escritos)).
 
 ### O que muda por não ser agendado
 

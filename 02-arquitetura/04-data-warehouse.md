@@ -43,6 +43,11 @@ Inventário do contêiner `api5-dw`, conferido direto no catálogo do Postgres
 (`pg_extension`, `pg_database`, `pg_settings`) em 19/09/2026. **É este o banco que
 produção precisa reproduzir.**
 
+> ⚠ **Produção não é este contêiner.** No cliente, o banco é **PostgreSQL 16 nativo
+> em Windows Server** ([D-21](../06-operacao/02-decisoes-e-riscos.md#d-21--produção-na-intranet-do-cliente-em-windows-server)),
+> que precisa reproduzir exatamente o que está listado aqui — inclusive o pgvector, que
+> não vem no instalador Windows ([R-16](../06-operacao/02-decisoes-e-riscos.md#r-16--pgvector-e-locale-no-postgres-para-windows-)).
+
 ### Imagem e versão
 
 | Item | Valor |
@@ -140,7 +145,7 @@ Todos no **padrão da imagem**:
 
 | Parâmetro | Valor | Nota |
 |---|---|---|
-| `shared_buffers` | 128 MB | subir para ~25% da RAM da VPS em produção |
+| `shared_buffers` | 128 MB | subir para ~25% da RAM do servidor em produção |
 | `work_mem` | 4 MB | baixo para `REFRESH` dos agregados; na carga, `SET work_mem = '256MB'` na sessão |
 | `maintenance_work_mem` | 64 MB | idem para `CREATE INDEX` |
 | `max_connections` | 100 | sobra — a API usa pool |

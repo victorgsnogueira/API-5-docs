@@ -77,7 +77,8 @@ Host=localhost;Port=5432;Database=api5_dw;Username=dw_admin;Password=<senha>
 ```
 
 **Por variável de ambiente, nunca em `appsettings.json` versionado** — é a mesma
-disciplina que o [Coolify](03-devops-e-infra.md) exige em produção.
+disciplina que a [implantação no cliente](04-implantacao-no-cliente.md) exige — a
+configuração de produção é da máquina dele, não do build.
 
 **Banco vazio?** Ou roda a [carga manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo)
 inteira, ou restaura um dump de quem já tem a base:
@@ -173,7 +174,7 @@ Frontend:
 A chave do DataJud e os parâmetros de recorte (tribunais, assuntos, teto) são do
 **pipeline de carga**, não do backend — hoje são argumentos dos scripts.
 
-Em produção, todas injetadas pelo [Coolify](03-devops-e-infra.md). **Nenhum segredo no
+Em produção, definidas na máquina do cliente ([Implantação no cliente](04-implantacao-no-cliente.md)). **Nenhum segredo no
 repositório.**
 
 ---

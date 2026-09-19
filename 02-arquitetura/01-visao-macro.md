@@ -38,7 +38,7 @@
                            │
 ┌─ 6 · DEVOPS ──────────────▼─────────────────────────────────────────┐
 │  CI/CD · deploy automático · monitoramento · documentação           │
-│  VPS Hostinger + Coolify                                            │
+│  produção: intranet do cliente · Windows Server · NGINX (D-21/22)   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -131,9 +131,10 @@ Backend e frontend são escritos por TDD. Ver [TDD](../07-justificativas/03-tdd.
 | Item | Escolha |
 |---|---|
 | Banco | Postgres 16 (`pgvector/pgvector:pg16`) com `vector`, `pg_trgm`, `unaccent` — ver [Data Warehouse](04-data-warehouse.md#o-que-está-instalado-no-banco) |
-| Contêineres | Docker — tudo containerizável é requisito do Coolify |
-| Hospedagem | VPS **Hostinger** |
-| Deploy | **Coolify**, automático |
+| Produção | **intranet do cliente**, **Windows Server**, uso só por funcionários — ver [Implantação no cliente](../06-operacao/04-implantacao-no-cliente.md) |
+| Proxy reverso | **NGINX** (no lugar do IIS do cliente) |
+| Entrega | arquivos buildados: API self-contained `win-x64`, `dist/` do frontend, `nginx.conf`, dump do `dw` |
+| Homologação | VPS Hostinger + Coolify, se mantida — em aberto |
 | CI/CD | GitHub Actions (frontend já tem; backend falta) |
 | Monitoramento | obrigatório, ferramenta a definir |
 

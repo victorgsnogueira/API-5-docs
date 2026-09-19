@@ -15,18 +15,25 @@
 | **Estratégia de branch** | feature branching, uma branch por US — ver [Padrão de branches](../07-justificativas/01-branches.md) |
 | **Padrão de commit** | convenção semântica, em inglês — ver [Padrão de commits](../07-justificativas/02-commits.md) |
 | **Padrão de desenvolvimento** | **TDD**, backend e frontend — ver [TDD](../07-justificativas/03-tdd.md) |
-| **Carga do DW** | **manual**, fora da VPS; produção recebe o dump validado — ver [D-17](02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) |
-| **Hospedagem** | VPS na **Hostinger** |
-| **Orquestração / deploy** | **Coolify** |
-| Deploy | automático |
+| **Carga do DW** | **manual**, do nosso lado; produção recebe o dump validado — ver [D-17](02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) |
+| **Produção** | **intranet do cliente, Windows Server** — ver [D-21](02-decisoes-e-riscos.md#d-21--produção-na-intranet-do-cliente-em-windows-server) e [Implantação no cliente](04-implantacao-no-cliente.md) |
+| **Proxy reverso** | **NGINX** (o cliente usa IIS; trocamos) — ver [D-22](02-decisoes-e-riscos.md#d-22--nginx-como-proxy-reverso-no-lugar-do-iis) |
+| **Entrega** | pacote de **arquivos buildados** + manual; o cliente instala |
+| Homologação / demonstração | VPS Hostinger + Coolify? — **em aberto** ([R-17](02-decisoes-e-riscos.md#r-17--deploy-automático-exigido-pelo-desafio-x-produção-no-cliente-)) |
+| Deploy automático | só no ambiente nosso; em produção, o CI gera o pacote |
 | CI/CD | obrigatório |
 | Monitoramento | obrigatório, ferramenta a definir |
 | Documentação | obrigatória, formato a definir |
 
 ## Coolify — o que isso implica
 
+> ⚠ **Vale só se a VPS continuar como homologação/demonstração.** Produção é a intranet
+> do cliente, em Windows Server, sem Docker — ver [Implantação no cliente](04-implantacao-no-cliente.md).
+> Os pontos 2 e 3 abaixo (health check, configuração fora do código) valem nos dois
+> ambientes.
+
 Coolify é uma plataforma self-hosted de deploy (um PaaS que roda na sua própria VPS).
-Duas consequências práticas para o desenvolvimento:
+Consequências práticas para o desenvolvimento:
 
 **1 · Tudo precisa ser containerizável.** API e frontend rodam como contêineres.
 Escrever `Dockerfile` para cada um é tarefa de desenvolvimento, não de infraestrutura, e
@@ -48,6 +55,9 @@ está "no ar" e inútil.
 `appsettings.json` versionado. Coolify injeta as variáveis; o código lê do ambiente.
 
 ## Desenho da infraestrutura
+
+> Este é o desenho do ambiente **nosso** (homologação/demonstração, se mantido). O de
+> **produção** está em [Implantação no cliente](04-implantacao-no-cliente.md#desenho-no-servidor-do-cliente).
 
 ```
                     VPS Hostinger

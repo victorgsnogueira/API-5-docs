@@ -189,10 +189,15 @@ Não misture os dois num mesmo identificador (`ScoreForca`, `useTema`).
 
 | Variável | Exemplo |
 |---|---|
-| `VITE_API_URL` | `http://localhost:5000` em dev; injetada no build pelo Coolify em produção |
+| `VITE_API_URL` | `http://localhost:5000` **só em dev** |
+
+**Em produção a API é chamada por caminho relativo (`/api/...`)**: o NGINX do cliente
+serve o frontend e repassa `/api/` para a API, na mesma origem. Como o endereço da
+intranet do cliente não é conhecido no build, uma URL fixa obrigaria um build por
+cliente. Ver [Implantação no cliente](../06-operacao/04-implantacao-no-cliente.md#frontend).
 
 O backend precisa ter a origem do dev server (`http://localhost:5173`) na lista
-explícita de CORS.
+explícita de CORS — só em dev.
 
 > `VITE_*` é embutida no bundle **em tempo de build** — não é segredo e não muda depois
 > do deploy sem rebuild. Nunca ponha chave ali.
@@ -212,7 +217,8 @@ npm run format
 ## Acessibilidade e tipografia
 
 - Fontes **self-hosted** (Fontsource), carregadas por `globals.css` — sem requisição ao
-  Google Fonts, sem *flash* de fonte de terceiro. Pilha de fallback real
+  Google Fonts. **Obrigatório**, não preferência: produção é intranet, e nenhum recurso
+  pode vir de CDN. Pilha de fallback real
   (`Source Serif 4, Georgia, serif` / `IBM Plex Mono, ui-monospace, monospace`).
 - Contraste: `#8B8478` sobre `#F4F1EA` é o par mais fraco da paleta — reserve-o a
   metadado e legenda.

@@ -100,7 +100,11 @@ linhas a ele, não invente sinônimos.
 
 ---
 
-### D-07 · Hospedagem em VPS Hostinger com Coolify
+### D-07 · Hospedagem em VPS Hostinger com Coolify ⚠ *substituída pelo D-21*
+
+> **Não vale mais para produção** desde 19/09/2026: produção é a intranet do cliente
+> ([D-21](#d-21--produção-na-intranet-do-cliente-em-windows-server)). Se a VPS continua
+> como homologação/demonstração é pergunta em aberto. Texto original mantido abaixo.
 
 **Decisão.** VPS na Hostinger, deploy automático via Coolify. CI/CD, documentação e
 monitoramento obrigatórios; ferramentas a definir.
@@ -319,6 +323,54 @@ não existe na imagem Debian — o ICU é o que faz o `ORDER BY` respeitar acent
 dizer `'portuguese'`. Inventário completo em
 [Data Warehouse](../02-arquitetura/04-data-warehouse.md#o-que-está-instalado-no-banco).
 
+⚠ **Vale para dev e CI.** Em produção o banco é PostgreSQL nativo em Windows Server
+([D-21](#d-21--produção-na-intranet-do-cliente-em-windows-server)) — com a **mesma
+versão, extensões e locale**, o que ainda precisa ser provado ([R-16](#r-16--pgvector-e-locale-no-postgres-para-windows-)).
+
+---
+
+### D-21 · Produção na intranet do cliente, em Windows Server
+
+**Decisão.** O Ratio roda nos servidores do cliente, na intranet, em **Windows
+Server**, usado **só pelos funcionários** dele. **Nós especificamos as máquinas.** O
+cliente recebe **apenas arquivos buildados** — nenhuma ferramenta de desenvolvimento
+nas máquinas dele. *(19/09/2026)*
+
+**Consequências.**
+- API publicada **self-contained** para `win-x64` e rodando como **serviço Windows**;
+- frontend como arquivos estáticos servidos pelo proxy, chamando a API por **caminho
+  relativo** (`/api`) — um único build serve qualquer cliente;
+- PostgreSQL **nativo para Windows**, com pgvector;
+- a carga continua do nosso lado ([D-17](#d-17--carga-manual-não-agendada)): o cliente
+  recebe o **dump do `dw`** junto com a versão;
+- precisam ser escritos: **manual de implantação**, **manual de atualização**,
+  **especificação das máquinas** e a definição do **pacote de versão**.
+
+**Custo.** Deploy automático em produção deixa de existir ([R-17](#r-17--deploy-automático-exigido-pelo-desafio-x-produção-no-cliente-)),
+e o ambiente de produção é Windows enquanto dev e CI são Linux ([R-16](#r-16--pgvector-e-locale-no-postgres-para-windows-)).
+
+Detalhe: [Implantação no cliente](04-implantacao-no-cliente.md).
+
+---
+
+### D-22 · NGINX como proxy reverso, no lugar do IIS
+
+**Decisão.** O cliente usa IIS hoje; o Ratio é entregue com **NGINX** como proxy
+reverso. Na prática, implementa-se direto o NGINX. *(19/09/2026)*
+
+**Por quê.** Uma configuração só (`nginx.conf`) servindo o frontend estático e
+repassando `/api/` para a API, versionada junto com o código e entregue pronta no
+pacote. O IIS exigiria o ASP.NET Core Module e configuração por `web.config` e pelo
+gerenciador do IIS, específica de cada máquina.
+
+**Custo.**
+- o NGINX para Windows não se registra como serviço sozinho — precisa de WinSW ou NSSM;
+- a versão Windows do NGINX é menos otimizada que a de Linux (limite de conexões
+  simultâneas por *worker*) — irrelevante para o volume de uma intranet, mas registrado;
+- **perde-se a autenticação Windows integrada** que o IIS oferece. Se o acesso exigir
+  login com o AD do cliente, ela vai para a API — ver
+  [Acesso só de funcionários](04-implantacao-no-cliente.md#acesso-só-de-funcionários).
+
 ---
 
 ## Riscos
@@ -335,6 +387,30 @@ segurança — num produto hospedado na internet.
 solução é scaffold: trocar `net8.0` por `net10.0` nos sete `.csproj` e atualizar os
 pacotes de teste. Depois do primeiro código real, a mesma troca custa uma sprint de
 regressão.
+
+### R-16 · pgvector e locale no Postgres para Windows 🟠
+
+Hoje o DW roda na imagem Linux `pgvector/pgvector:pg16`. Em produção será PostgreSQL
+nativo em Windows Server, e o **pgvector não vem no instalador padrão** do Postgres
+para Windows — precisa ser compilado (Visual Studio + `nmake`) ou obtido em pacote
+pronto, e isso tem de acontecer do **nosso** lado, porque o cliente não terá ferramenta
+de desenvolvimento. O locale ICU `pt-BR` também precisa ser confirmado no Windows.
+
+E há um desencontro: o CI testa em Linux (Testcontainers) e produção roda em Windows.
+
+**Mitigação.** Spike antes da especificação das máquinas: instalar Postgres 16 +
+pgvector num Windows Server limpo, restaurar o dump atual, rodar os 24 testes de
+integridade e comparar a ordenação com acento. Os binários do pgvector compilados
+entram no pacote de versão.
+
+### R-17 · Deploy automático exigido pelo desafio × produção no cliente 🟠
+
+O desafio cobra CI/CD e **deploy automático**. Produção, porém, é instalada pelo
+cliente a partir de arquivos buildados — não há deploy automático possível ali.
+
+**Mitigação.** O CI gera o **pacote de versão** automaticamente (artefato/release a
+cada merge na `main`), e o deploy automático acontece num ambiente **nosso** de
+homologação/demonstração. Confirmar com o professor/cliente que isso atende o requisito.
 
 ### R-15 · O pipeline de carga não está versionado 🟠
 
@@ -509,6 +585,10 @@ dado do caso dele.
 | Controle de migration aplicada: tabela própria ou DbUp lendo os SQL? | dev backend | primeira migration nova |
 | Acesso a dados: Dapper ou EF Core? *(recomendação: Dapper — a API só lê)* | dev backend | primeira linha de Infrastructure |
 | Com que frequência rodar a carga manual? | time | frescor do dado exibido |
-| Só produção, ou produção + staging no Coolify? | time | configuração do CI/CD |
+| ~~Só produção, ou produção + staging no Coolify?~~ | substituída: produção é o cliente (D-21) | — |
+| A VPS Hostinger + Coolify continua, como homologação/demonstração? | time | R-17 |
+| "Só funcionários" é restrição de rede ou exige login (AD do cliente)? | time + cliente | autenticação, D-22 |
+| Banco e aplicação na mesma máquina ou em duas? Qual versão do Windows Server? | time | especificação das máquinas |
+| As estações do cliente acessam a internet (links "consultar no tribunal")? | cliente | deep link |
 | Ferramenta de monitoramento? | time | R-07 |
 | Quais assuntos na carga de demonstração? | time | conteúdo da apresentação |

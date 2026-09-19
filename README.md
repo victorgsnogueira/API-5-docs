@@ -9,8 +9,9 @@ processo em portais de tribunal.
 
 **Escopo:** TJSP, TJRJ e TJMG. **Fontes:** múltiplas (DataJud, PANGEA, repositórios de
 tribunal, doutrina). **Stack:** ASP.NET Core + React (TanStack Router, shadcn/ui,
-Tailwind) + Postgres 16/pgvector, em VPS Hostinger com Coolify. **TDD** no backend e no
-frontend. **Carga manual** do DW.
+Tailwind) + Postgres 16/pgvector. **Produção na intranet do cliente**, em Windows
+Server atrás de NGINX, só para funcionários dele. **TDD** no backend e no frontend.
+**Carga manual** do DW.
 
 Esta wiki é o repositório `API-5-docs`; o código vive em
 [outros repositórios](00-visao-geral/03-repositorios.md), clonados lado a lado.
@@ -28,6 +29,7 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 | ⚠ O que depende de **inteiro teor** segue sem fonte — os 4 tribunais estão bloqueados | [Limitações da fonte](03-dados/04-limitacoes-da-fonte.md) |
 | ⚠ Código **em inglês**; tudo o que a API devolve (dados, rótulos, erros) **em português** | [Idioma](02-arquitetura/02-backend-dotnet.md#idioma) |
 | 🧪 **TDD**: nenhum código de produção sem um teste que falhou antes | [TDD](07-justificativas/03-tdd.md) |
+| 🏢 Produção é a **intranet do cliente** (Windows Server, NGINX); ele recebe **só arquivos buildados** | [Implantação no cliente](06-operacao/04-implantacao-no-cliente.md) |
 | ⚠ A carga do DW é **manual** e a pasta `scraping/` **não está versionada** | [D-17](06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) · [R-15](06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-) |
 
 ---
@@ -40,7 +42,7 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 | Dev backend | [Visão macro](02-arquitetura/01-visao-macro.md) → [Backend .NET](02-arquitetura/02-backend-dotnet.md) → [Modelo dimensional](03-dados/02-modelo-dimensional.md) |
 | Dev frontend | [Telas](01-produto/02-telas.md) → [Design system](04-design/01-design-system.md) → [Frontend React](02-arquitetura/03-frontend-react.md) |
 | Dev de dados / ETL | [Fontes](03-dados/01-fontes.md) → [ETL e NLP](02-arquitetura/05-etl-e-nlp.md) → [Limitações](03-dados/04-limitacoes-da-fonte.md) → [Polaridade](03-dados/05-polaridade-do-resultado.md) |
-| DevOps | [DevOps e infraestrutura](06-operacao/03-devops-e-infra.md) → [Ambiente local](06-operacao/01-ambiente-local.md) |
+| DevOps | [DevOps e infraestrutura](06-operacao/03-devops-e-infra.md) → [Implantação no cliente](06-operacao/04-implantacao-no-cliente.md) → [Ambiente local](06-operacao/01-ambiente-local.md) |
 | SM / documentação | [Repositórios](00-visao-geral/03-repositorios.md) → [Decisões e riscos](06-operacao/02-decisoes-e-riscos.md) |
 | Qualquer um, antes do primeiro commit | [Padrão de branches](07-justificativas/01-branches.md) → [Padrão de commits](07-justificativas/02-commits.md) → [TDD](07-justificativas/03-tdd.md) |
 
@@ -84,6 +86,7 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 - [Ambiente local](06-operacao/01-ambiente-local.md) — subir tudo na sua máquina
 - [Decisões e riscos](06-operacao/02-decisoes-e-riscos.md) — registro de decisões e o que está aberto
 - [DevOps e infraestrutura](06-operacao/03-devops-e-infra.md) — CI/CD, Coolify, monitoramento
+- [Implantação no cliente](06-operacao/04-implantacao-no-cliente.md) — intranet, Windows Server, NGINX, e os manuais que faltam escrever
 
 ### 07 · Justificativas
 Os padrões e as ferramentas do projeto, e por que foram escolhidos.
@@ -107,6 +110,7 @@ Os padrões e as ferramentas do projeto, e por que foram escolhidos.
 | Frontend React (`API5-Frontend`) | 🟠 scaffold com design system e CI; nenhuma tela |
 | Testes | 🟠 24 testes de integridade do DW; TDD definido, nenhum teste de código ainda |
 | Chatbot | 🔴 roadmap |
+| Implantação no cliente | 🔴 requisitos registrados; manuais, spec das máquinas e pacote **a escrever** |
 | Deploy, monitoramento | 🔴 não configurado |
 
 ## Próximos desbloqueios, em ordem

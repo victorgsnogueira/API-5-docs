@@ -167,7 +167,10 @@ Todos os projetos existem; nenhum tem código de verdade (um commit, `initial co
 - [ ] `ProblemDetails` com `title`/`detail` em português para todo erro.
 - [ ] Expor `/health` e `/health/ready` para o [monitoramento e o Coolify](../06-operacao/03-devops-e-infra.md).
 - [ ] Log estruturado (Serilog) — pré-requisito de observabilidade.
-- [ ] Workflow de CI — **não existe `.github/` no repo**: build + test.
+- [ ] Workflow de CI — **não existe `.github/` no repo**: build + test + pacote de versão.
+- [ ] Publicação **self-contained `win-x64`** rodando como **serviço Windows**, escutando
+      em `127.0.0.1` atrás do NGINX, com `UseForwardedHeaders` e log em arquivo — ver
+      [Implantação no cliente](../06-operacao/04-implantacao-no-cliente.md#backend).
 
 ## Pacotes
 
@@ -187,7 +190,8 @@ A adicionar:
 | `Npgsql` | Infrastructure | driver Postgres |
 | `Dapper` | Infrastructure | acesso a dados (ver abaixo) |
 | `Pgvector` | Infrastructure | tipo `vector` no Npgsql — só se a API consultar embedding (busca semântica, chatbot) |
-| `Serilog.AspNetCore` | Api | log estruturado |
+| `Serilog.AspNetCore` + `Serilog.Sinks.File` | Api | log estruturado, em arquivo com rotação (no cliente não há console) |
+| `Microsoft.Extensions.Hosting.WindowsServices` | Api | rodar como serviço Windows |
 | `AspNetCore.HealthChecks.NpgSql` | Api | `/health/ready` |
 | `Moq` (≥ 4.20.70) | testes | dublê; asserção é o `Assert` do xUnit — ver [TDD](../07-justificativas/03-tdd.md#backend--net) |
 | `Microsoft.AspNetCore.Mvc.Testing` | `Ratio.Api.Tests` | API em memória |
@@ -222,7 +226,7 @@ Somente `GET` na camada de consulta.
 
 | Rota | Responde | Alimenta |
 |---|---|---|
-| `GET /health` | prontidão do processo | Coolify, monitoramento |
+| `GET /health` | prontidão do processo | monitoramento, verificação pós-instalação |
 | `GET /health/ready` | prontidão **real**: há dado utilizável? | monitoramento |
 | `GET /api/topics?q=&court=&period=&level=&minStrength=&limit=` | lista de temas | tela de resultados + filtros |
 | `GET /api/topics/{code}` | painel do tema: resumo, série anual, por tribunal, por órgão | detalhamento |
