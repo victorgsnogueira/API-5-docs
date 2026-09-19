@@ -60,11 +60,15 @@ tema). O resultado — `dim_theme`, `bridge_theme_topic`, `bridge_topic_doctrine
 `similarity` gravado — é tabela comum. A API nunca consulta um vetor. Por isso o pgvector
 fica só na carga, e produção roda o Postgres do instalador Windows padrão.
 
-> ⚠ **Pendente:** hoje as colunas `embedding` estão **dentro do schema `dw`**
-> (`dw.dim_topic.embedding`, `dw.dim_doctrine.embedding`), então um `pg_dump -n dw`
-> ainda carrega o tipo `vector`. Precisa de uma migration que mova os embeddings para
-> um schema `nlp` (tabelas `nlp.topic_embedding`, `nlp.doctrine_embedding`, chaveadas
-> pela SK), e ajustar `nlp_embed.py` / `nlp_link_doctrine.py` / o teste de dimensão.
+Os embeddings ficam em `nlp.topic_embedding` e `nlp.doctrine_embedding`
+(migration `018_move_embeddings_to_nlp.sql`), chaveados pela SK da dimensão. O schema
+`dw` não tem nenhuma coluna vetorial — e o teste de integridade 7 falha se voltar a ter.
+
+> ✅ **Verificado em 19/09/2026:** `pg_dump -Fc -n dw` (14,7 MB) restaurado num
+> `postgres:16` **sem pgvector**, com ICU `pt-BR`: mesmas contagens (463.016 fatos,
+> 52.696 artigos, 408 temas, 9.186 ligações), as 9 views materializadas populadas, busca
+> com `unaccent` funcionando e **os 24 testes de integridade vazios**. Só é preciso criar
+> `pg_trgm` e `unaccent` antes do restore.
 
 ### Imagem e versão
 
@@ -202,7 +206,7 @@ A API é somente leitura por desenho; o banco deve garantir isso, não só o có
 | Locale | ICU `pt-BR` na criação do banco | `ORDER BY` com acento |
 | Configuração | por variável de ambiente | a configuração de produção é da máquina do cliente ([Implantação](../06-operacao/04-implantacao-no-cliente.md)) |
 
-> **Migrations são SQL numerado** (`scraping/sql/001…017`), aplicadas em ordem com
+> **Migrations são SQL numerado** (`scraping/sql/001…018`), aplicadas em ordem com
 > `psql -v ON_ERROR_STOP=1`. Aplicar via `docker-entrypoint-initdb.d` só funciona com
 > volume vazio — não serve para evoluir esquema com dado dentro. Falta um controle de
 > "qual migration já rodou" (tabela de versão, ou DbUp lendo os mesmos arquivos).

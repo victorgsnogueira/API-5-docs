@@ -34,7 +34,7 @@ para `staging`. O que está em `dw` não muda.
 | Parsing | `beautifulsoup4` + `lxml` (OAI-PMH / HTML), `html.unescape` para entidade |
 | Embeddings | `sentence-transformers` com `paraphrase-multilingual-MiniLM-L12-v2` — **local, CPU, sem chave de API**, 384 dimensões |
 | Clusterização | `scikit-learn` (aglomerativo, cosseno) + `numpy` |
-| Schema | migrations SQL numeradas (`scraping/sql/001…017`) |
+| Schema | migrations SQL numeradas (`scraping/sql/001…018`) |
 
 > **Por que Python e não .NET.** O ecossistema de NLP (sentence-transformers, torch,
 > scikit-learn) é Python. Com a carga manual, reescrever em .NET seria refazer o que

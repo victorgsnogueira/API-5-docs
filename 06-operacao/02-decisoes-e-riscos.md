@@ -406,9 +406,9 @@ tema e ligar doutrina a tema. O resultado é tabela comum, com o `similarity` gr
 API nunca consulta um vetor. Levar o pgvector para produção obrigaria a compilá-lo para
 Windows e entregá-lo no pacote, sem nenhum uso.
 
-**Consequência.** Migration pendente: mover `dw.dim_topic.embedding` e
-`dw.dim_doctrine.embedding` para um schema `nlp`, para que o dump do `dw` não carregue o
-tipo `vector`. Ver [Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção).
+**Consequência.** Os embeddings foram movidos para o schema `nlp` (migration `018`),
+que nunca sobe. Verificado: o dump do `dw` restaura num Postgres 16 sem pgvector com os
+24 testes de integridade vazios. Ver [Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção).
 
 **Custo.** Busca semântica em tempo de requisição (busca por significado, chatbot) fica
 fora. Se entrar, esta decisão é revertida e o pgvector para Windows volta a ser problema.
