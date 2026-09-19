@@ -347,7 +347,7 @@ nas máquinas dele. *(19/09/2026)*
 - precisam ser escritos: **manual de implantação**, **manual de atualização**,
   **especificação das máquinas** e a definição do **pacote de versão**.
 
-**Custo.** Deploy automático em produção deixa de existir ([R-17](#r-17--deploy-automático-exigido-pelo-desafio-x-produção-no-cliente-)),
+**Custo.** Deploy automático em produção deixa de existir ([R-17](#r-17--deploy-automático-exigido-pelo-desafio--produção-no-cliente-)),
 e o ambiente de produção é Windows enquanto dev e CI são Linux ([R-16](#r-16--postgres-nativo-para-windows-)).
 
 Detalhe: [Implantação no cliente](04-implantacao-no-cliente.md).

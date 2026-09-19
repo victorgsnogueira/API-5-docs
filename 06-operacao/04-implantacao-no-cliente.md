@@ -139,7 +139,7 @@ O que isso implica:
 
 > ⚠ **Conflito com o desafio.** O desafio cobra "deploy automático". Com a produção na
 > mão do cliente, o que o CI entrega automaticamente é o pacote de versão.
-> Ver [R-17](02-decisoes-e-riscos.md#r-17--deploy-automático-exigido-pelo-desafio-x-produção-no-cliente-).
+> Ver [R-17](02-decisoes-e-riscos.md#r-17--deploy-automático-exigido-pelo-desafio--produção-no-cliente-).
 
 ---
 
