@@ -165,7 +165,7 @@ Todos os projetos existem; nenhum tem código de verdade (um commit, `initial co
 - [ ] Connection string por variável de ambiente (`ConnectionStrings__Ratio`).
 - [ ] CORS com **lista explícita** de origens, nunca `*`.
 - [ ] `ProblemDetails` com `title`/`detail` em português para todo erro.
-- [ ] Expor `/health` e `/health/ready` para o [monitoramento e o Coolify](../06-operacao/03-devops-e-infra.md).
+- [ ] Expor `/health` e `/health/ready` para o [monitoramento e a verificação pós-instalação](../06-operacao/03-devops-e-infra.md).
 - [ ] Log estruturado (Serilog) — pré-requisito de observabilidade.
 - [ ] Workflow de CI — **não existe `.github/` no repo**: build + test + pacote de versão.
 - [ ] Publicação **self-contained `win-x64`** rodando como **serviço Windows**, escutando

@@ -10,7 +10,7 @@
 │  PANGEA / PDPJ    precedentes qualificados           (a investigar) │
 │                        escopo: SP · RJ · MG                         │
 └──────────────────────────┬──────────────────────────────────────────┘
-                           │  batch MANUAL — rodado à mão, fora da VPS
+                           │  batch MANUAL — rodado à mão, do nosso lado
 ┌─ 2 · CARGA ───────────────▼─────────────────────────────────────────┐
 │  Extract    um coletor por fonte ──► raw (JSONB)                    │
 │  Transform  achatar ──► staging · traduzir códigos · polaridade     │

@@ -85,7 +85,7 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 ### 06 · Operação
 - [Ambiente local](06-operacao/01-ambiente-local.md) — subir tudo na sua máquina
 - [Decisões e riscos](06-operacao/02-decisoes-e-riscos.md) — registro de decisões e o que está aberto
-- [DevOps e infraestrutura](06-operacao/03-devops-e-infra.md) — CI/CD, Coolify, monitoramento
+- [DevOps e infraestrutura](06-operacao/03-devops-e-infra.md) — CI/CD, pacote de versão, monitoramento
 - [Implantação no cliente](06-operacao/04-implantacao-no-cliente.md) — intranet, Windows Server, NGINX, e os manuais que faltam escrever
 
 ### 07 · Justificativas

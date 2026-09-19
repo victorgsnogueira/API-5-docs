@@ -107,8 +107,8 @@ push / pull request
   ├── testes de integração                (Testcontainers: pgvector/pgvector:pg16)
   │     └── aplicam as migrations SQL e rodam os testes de integridade do DW
   ├── análise estática / lint
-  └── build da imagem Docker
-        └── na main: publica e dispara deploy no Coolify
+  └── publicação self-contained win-x64
+        └── na main: gera o pacote de versão (API + web + nginx.conf + dump do dw)
 ```
 
 ### `API5-Frontend`
@@ -122,7 +122,7 @@ push / pull request
   ├── typecheck             ✅
   ├── test                  ❌ falta — vitest run  (TDD)
   └── build                 ✅
-        └── na main: publica e dispara deploy no Coolify   ❌ falta
+        └── na main: dist/ entra no pacote de versão   ❌ falta
 ```
 
 > O gatilho hoje é só para `main`. Com o [padrão de branches](../07-justificativas/01-branches.md),
@@ -208,15 +208,15 @@ extração aparece na tela, não só no log.
 | Log estruturado | Serilog + destino a definir | junto com o esqueleto da API |
 | Monitoramento | Uptime Kuma (leve, self-host), Grafana + Prometheus (completo), Sentry (erros) | depois do primeiro deploy |
 | Backup | o dump de cada carga + o `raw` local, guardados fora da VPS | antes da primeira carga que doa perder |
-| Gestão de segredos | variáveis do Coolify | imediato — nada de segredo no repositório |
-| Ambientes | só produção, ou produção + staging? | antes de configurar o Coolify |
+| Gestão de segredos | configuração na máquina do cliente (fora do pacote) | imediato — nada de segredo no repositório nem no pacote |
+| Ambientes | produção no cliente; homologação nossa (VPS + Coolify)? | R-17 |
 | Documentação | esta wiki + Swagger + README por repo | contínuo |
 
 ## Regras que valem desde já
 
 1. **Nenhum segredo no repositório.** Connection string, chave de API, credencial —
    tudo por variável de ambiente.
-2. **Deploy só do que passou no CI.** Sem `git push` para a VPS.
+2. **Só vira pacote de versão o que passou no CI.** Nada de build feito à mão na máquina de alguém.
 3. **Toda migration é versionada.** Em produção, o schema chega pelo `pg_restore` da
    carga validada — ninguém roda DDL à mão lá.
 4. **A carga é idempotente.** Isso é o que torna reprocessamento seguro.

@@ -270,7 +270,7 @@ pg_restore --clean --if-exists --single-transaction -n dw -d "$PROD_URL" dw.dump
 |---|---|
 | job no Coolify | nenhum contêiner de ETL em produção |
 | alarme "a carga não rodou" | não se aplica — a data da última carga é **declarada** na tela e em `/health/ready` |
-| carga competindo com a API por CPU | não há — a carga roda fora da VPS |
+| carga competindo com a API por CPU | não há — a carga roda do nosso lado, fora do servidor de produção |
 | falha silenciosa por dias | falha na frente de quem está rodando; o passo 6 impede subir base inconsistente |
 
 **Continua valendo:** idempotência, proveniência em toda linha, e a regra de que o

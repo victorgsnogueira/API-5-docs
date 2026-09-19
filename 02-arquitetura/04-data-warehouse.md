@@ -179,7 +179,7 @@ A API é somente leitura por desenho; o banco deve garantir isso, não só o có
 | Item | Valor | Motivo |
 |---|---|---|
 | Locale | ICU `pt-BR` na criação do banco | `ORDER BY` com acento |
-| Configuração | por variável de ambiente | requisito do [Coolify](../06-operacao/03-devops-e-infra.md) |
+| Configuração | por variável de ambiente | a configuração de produção é da máquina do cliente ([Implantação](../06-operacao/04-implantacao-no-cliente.md)) |
 
 > **Migrations são SQL numerado** (`scraping/sql/001…017`), aplicadas em ordem com
 > `psql -v ON_ERROR_STOP=1`. Aplicar via `docker-entrypoint-initdb.d` só funciona com
