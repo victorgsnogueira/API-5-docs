@@ -69,15 +69,14 @@ clones lado a lado, como no diagrama acima.
 | Remoto | `Concord-API/API5-Backend` |
 | Estado | solução criada, camadas em branco (scaffold) |
 
-Solução `Ratio.slnx`, sete projetos em Clean Architecture:
+Solução `Ratio.slnx`, em Clean Architecture:
 
 | Projeto | Papel | Estado |
 |---|---|---|
 | `Ratio.Domain` | entidades e regras de negócio puras, sem dependência | `Class1.cs` vazio |
 | `Ratio.Application` | casos de uso, portas (interfaces); depende só do Domain | `Class1.cs` vazio |
-| `Ratio.Infrastructure` | acesso ao Postgres, clientes das fontes, migrations | `Class1.cs` vazio |
+| `Ratio.Infrastructure` | acesso de leitura ao Postgres | `Class1.cs` vazio |
 | `Ratio.Api` | ASP.NET Core Web API + Swashbuckle (Swagger) | scaffold `WeatherForecast` |
-| `Ratio.Etl` | ⚠ sem papel desde o [D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) — recomendação: remover | `Program.cs` scaffold |
 | `Ratio.Application.Tests` | xUnit sobre Application e Domain | `UnitTest1.cs` |
 | `Ratio.Infrastructure.Tests` | xUnit sobre Infrastructure | `UnitTest1.cs` |
 

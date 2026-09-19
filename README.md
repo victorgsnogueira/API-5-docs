@@ -9,7 +9,7 @@ processo em portais de tribunal.
 
 **Escopo:** TJSP, TJRJ e TJMG. **Fontes:** múltiplas (DataJud, PANGEA, repositórios de
 tribunal, doutrina). **Stack:** ASP.NET Core + React (TanStack Router, shadcn/ui,
-Tailwind) + Postgres 16/pgvector. **Produção na intranet do cliente**, em Windows
+Tailwind) + Postgres 16. **Produção na intranet do cliente**, em Windows
 Server atrás de NGINX, só para funcionários dele. **TDD** no backend e no frontend.
 **Carga manual** do DW.
 

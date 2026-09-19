@@ -52,8 +52,9 @@ dotnet test          # o ciclo do TDD — ver 07-justificativas/03-tdd.md
 
 ### Banco
 
-O DW roda em contêiner, na **mesma imagem de produção** (Postgres 16 + pgvector) e com
-locale ICU `pt-BR`. Inventário completo do que está instalado em
+O banco da carga roda em contêiner (Postgres 16 + pgvector, porque o NLP grava
+embeddings) com locale ICU `pt-BR`. Produção não tem pgvector — ver
+[Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção). Inventário completo do que está instalado em
 [Data Warehouse](../02-arquitetura/04-data-warehouse.md#o-que-está-instalado-no-banco).
 
 ```bash
@@ -90,7 +91,7 @@ docker exec api5-dw pg_restore -U dw_admin -d api5_dw --clean --if-exists -n dw 
 
 ### Rodar a carga
 
-Não é mais o `Ratio.Etl`. A carga é o pipeline Python em `scraping/`, rodado à mão —
+A carga não faz parte do backend. É o pipeline Python em `scraping/`, rodado à mão —
 passo a passo em [Carga manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo).
 
 Pré-requisitos: **Python 3.12** e

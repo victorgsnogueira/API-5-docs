@@ -37,8 +37,8 @@ para `staging`. O que está em `dw` não muda.
 | Schema | migrations SQL numeradas (`scraping/sql/001…017`) |
 
 > **Por que Python e não .NET.** O ecossistema de NLP (sentence-transformers, torch,
-> scikit-learn) é Python. Com a carga manual, portar para o `Ratio.Etl` seria reescrever
-> o que funciona sem ganho — a API só lê o resultado.
+> scikit-learn) é Python. Com a carga manual, reescrever em .NET seria refazer o que
+> funciona sem ganho — a API só lê o resultado.
 
 ## Extract
 
@@ -255,8 +255,9 @@ docker cp api5-dw:/tmp/dw.dump ./dw.dump
 pg_restore --clean --if-exists --single-transaction -n dw -d "$PROD_URL" dw.dump
 ```
 
-- **Só o schema `dw` sobe.** `raw` e `staging` são área de trabalho, ficam locais (o
-  `raw` é o que permite reprocessar sem voltar às fontes — mantenha backup dele).
+- **Só o schema `dw` sobe.** `raw`, `staging` e `nlp` (embeddings) são área de
+  trabalho, ficam locais (o `raw` é o que permite reprocessar sem voltar às fontes —
+  mantenha backup dele). Produção **não tem pgvector** ([D-25](../06-operacao/02-decisoes-e-riscos.md#d-25--produção-sem-pgvector-embeddings-ficam-na-carga)).
 - `--single-transaction`: se o restore falhar no meio, produção continua com a base
   anterior, inteira.
 - Produção **nunca** roda coletor nem script de NLP.

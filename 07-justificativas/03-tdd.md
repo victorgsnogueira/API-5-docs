@@ -43,7 +43,7 @@ Três regras que tornam o ciclo real, e não teatro:
 | Asserção | **`Assert` do próprio xUnit** | ✅ já vem com o xUnit |
 | Dublê de teste | **Moq** | a adicionar |
 | Teste de API em memória | **`Microsoft.AspNetCore.Mvc.Testing`** (`WebApplicationFactory`) | a adicionar |
-| Postgres real em teste | **Testcontainers** (`Testcontainers.PostgreSql`) com a imagem `pgvector/pgvector:pg16` | a adicionar |
+| Postgres real em teste | **Testcontainers** (`Testcontainers.PostgreSql`) com a imagem `postgres:16` e locale ICU `pt-BR` — igual a produção, sem pgvector | a adicionar |
 
 > **Sem biblioteca de asserção extra.** O `Assert` do xUnit (`Assert.Equal`,
 > `Assert.DoesNotContain`, `Assert.Throws`…) cobre o que o projeto precisa. Não
@@ -53,7 +53,7 @@ Três regras que tornam o ciclo real, e não teatro:
 > no build); foi removido nas versões seguintes.
 
 > **Por que Testcontainers e não SQLite/in-memory.** O produto depende de coisas que só o
-> Postgres tem: `unaccent`, `pg_trgm`, `vector`, views materializadas, `FILTER (WHERE …)`.
+> Postgres tem: `unaccent`, `pg_trgm`, ordenação ICU `pt-BR`, views materializadas, `FILTER (WHERE …)`.
 > Um banco falso passaria nos testes e quebraria em produção. O teste de repositório
 > sobe o **mesmo** Postgres que roda em produção.
 
@@ -137,7 +137,7 @@ dotnet test --collect:"XPlat Code Coverage"              # com cobertura
 | DOM | **jsdom** | ambiente de browser para o Vitest |
 | Componente | **React Testing Library** + `@testing-library/user-event` + `@testing-library/jest-dom` | testa o que o usuário vê e faz, não detalhe de implementação |
 | API falsa | **MSW** (Mock Service Worker) | intercepta `fetch` na rede; o componente não sabe que é teste |
-| Rotas | `createMemoryHistory` do **TanStack Router** | renderiza a rota real com URL controlada — testa `?tab=analytics` de verdade |
+| Rotas | `createMemoryHistory` do **TanStack Router** | renderiza a rota real com URL controlada — testa `?aba=base` de verdade |
 | E2E *(opcional, fim de sprint)* | **Playwright** | fluxo Busca → Resultados → Tema contra a API real |
 
 **Nada disso está instalado ainda.** O CI do frontend hoje roda lint, typecheck e build
@@ -155,7 +155,7 @@ são, cada uma, um teste que nasce vermelho:
 | Figura exige fonte | `Figure` sem a prop `source` **não compila** (teste de tipo) |
 | Estado vazio é conteúdo | lista vazia de doutrina renderiza o **motivo**, não uma tabela vazia |
 | Nunca "% favorável" | `AlignmentBar` renderiza o rótulo que veio da API; o texto "favorável" não aparece |
-| Aba na URL | navegar para `/topics/1234?tab=analytics` abre a Base analítica |
+| Aba na URL | navegar para `/tema/1234?aba=base` abre a Base analítica |
 
 ### Exemplo do ciclo
 

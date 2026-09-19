@@ -21,7 +21,7 @@
 └──────────────────────────┬──────────────────────────────────────────┘
                            │  pg_dump / pg_restore do schema dw
 ┌─ 3 · DATA WAREHOUSE ──────▼─────────────────────────────────────────┐
-│  Postgres 16 + pgvector · ICU pt-BR · modelagem dimensional         │
+│  Postgres 16 · ICU pt-BR · modelagem dimensional                    │
 │  grão = movimentação processual (D-13) · 463.016 linhas de fato     │
 └──────────────────────────┬──────────────────────────────────────────┘
                            │  atualizado ao fim de cada carga
@@ -130,7 +130,7 @@ Backend e frontend são escritos por TDD. Ver [TDD](../07-justificativas/03-tdd.
 
 | Item | Escolha |
 |---|---|
-| Banco | Postgres 16 (`pgvector/pgvector:pg16`) com `vector`, `pg_trgm`, `unaccent` — ver [Data Warehouse](04-data-warehouse.md#o-que-está-instalado-no-banco) |
+| Banco | Postgres 16 com `pg_trgm` e `unaccent`; `pgvector` só no ambiente de carga ([D-25](../06-operacao/02-decisoes-e-riscos.md#d-25--produção-sem-pgvector-embeddings-ficam-na-carga)) — ver [Data Warehouse](04-data-warehouse.md#o-que-está-instalado-no-banco) |
 | Produção | **intranet do cliente**, **Windows Server**, uso só por funcionários — ver [Implantação no cliente](../06-operacao/04-implantacao-no-cliente.md) |
 | Proxy reverso | **NGINX** (no lugar do IIS do cliente) |
 | Entrega | arquivos buildados: API self-contained `win-x64`, `dist/` do frontend, `nginx.conf`, dump do `dw` |

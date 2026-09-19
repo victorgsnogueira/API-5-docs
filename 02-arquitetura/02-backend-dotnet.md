@@ -123,8 +123,6 @@ Ratio.Infrastructure ──> Application, Domain
 Ratio.Api  ──> Application, Infrastructure     (ASP.NET Core Web API)
    ▲
    └── Ratio.Api.Tests  (xUnit + WebApplicationFactory)   ← a criar
-
-Ratio.Etl  ──> Application, Infrastructure     ⚠ sem papel desde o D-17
 ```
 
 Dependências invertem para dentro: a Application define a **porta** (interface), a
@@ -138,7 +136,6 @@ Infrastructure fornece o **adaptador**. A Api é o host.
 | `Ratio.Application` | casos de uso (`SearchTopics`, `GetTopicDetail`, `ListDecisions`), DTOs, interfaces de repositório | Npgsql, `HttpClient` |
 | `Ratio.Infrastructure` | repositórios de leitura sobre Postgres | regra de negócio, DDL, cliente de fonte externa |
 | `Ratio.Api` | controllers, DI, CORS, Swagger, health checks | consulta SQL |
-| `Ratio.Etl` | ⚠ sem papel desde o [D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) — recomendação: remover | — |
 
 ### Multifonte na estrutura
 
@@ -158,9 +155,6 @@ Todos os projetos existem; nenhum tem código de verdade (um commit, `initial co
       `Controllers/WeatherForecastController.cs`) antes que apareça no Swagger.
 - [ ] Substituir os `Class1.cs` e `UnitTest1.cs` — **o primeiro código de cada camada
       nasce de um teste** ([TDD](../07-justificativas/03-tdd.md)).
-- [ ] **Decidir o destino do `Ratio.Etl`** — a carga passou a ser manual e vive fora do
-      backend ([D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada)).
-      Recomendação: remover o projeto da solução.
 - [ ] Criar `Ratio.Api.Tests` (testes HTTP com `WebApplicationFactory`).
 - [ ] Connection string por variável de ambiente (`ConnectionStrings__Ratio`).
 - [ ] CORS com **lista explícita** de origens, nunca `*`.
@@ -189,17 +183,16 @@ A adicionar:
 |---|---|---|
 | `Npgsql` | Infrastructure | driver Postgres |
 | `Dapper` | Infrastructure | acesso a dados (ver abaixo) |
-| `Pgvector` | Infrastructure | tipo `vector` no Npgsql — só se a API consultar embedding (busca semântica, chatbot) |
 | `Serilog.AspNetCore` + `Serilog.Sinks.File` | Api | log estruturado, em arquivo com rotação (no cliente não há console) |
 | `Microsoft.Extensions.Hosting.WindowsServices` | Api | rodar como serviço Windows |
 | `AspNetCore.HealthChecks.NpgSql` | Api | `/health/ready` |
 | `Moq` (≥ 4.20.70) | testes | dublê; asserção é o `Assert` do xUnit — ver [TDD](../07-justificativas/03-tdd.md#backend--net) |
 | `Microsoft.AspNetCore.Mvc.Testing` | `Ratio.Api.Tests` | API em memória |
-| `Testcontainers.PostgreSql` | `Ratio.Infrastructure.Tests` | Postgres real (`pgvector/pgvector:pg16`) no teste |
+| `Testcontainers.PostgreSql` | `Ratio.Infrastructure.Tests` | Postgres real (`postgres:16`, como produção — sem pgvector) no teste |
 
-### Acesso a dados — recomendação
+### Acesso a dados — Dapper
 
-**Dapper (ou Npgsql direto), não EF Core.** A carga de trabalho é **100% leitura** de
+**Decidido: Dapper, não EF Core** ([D-26](../06-operacao/02-decisoes-e-riscos.md#d-26--acesso-a-dados-com-dapper)). A carga de trabalho é **100% leitura** de
 agregados com SQL analítico que precisamos controlar. Um ORM adiciona uma camada de
 tradução entre você e a consulta. EF Core faria sentido com escrita transacional rica —
 não há: a API não escreve, e a carga é feita por fora

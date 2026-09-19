@@ -25,7 +25,7 @@ Detalhes: [Data Warehouse](../02-arquitetura/04-data-warehouse.md).
 
 ### D-02 · Backend em .NET 8
 
-**Decisão.** ASP.NET Core 8, Clean Architecture em sete projetos.
+**Decisão.** ASP.NET Core 8, Clean Architecture em projetos separados por camada.
 
 **Por quê.** Alternativa moderna ao Java; a estrutura de solução torna a separação em
 camadas uma restrição do compilador, não uma convenção que se erode.
@@ -264,8 +264,7 @@ produto mostra **tendência de julgamento**, não notícia: dado de semanas atr�
 a leitura.
 
 **Consequências.**
-- o pipeline fica em **Python** (onde está o NLP); o `Ratio.Etl` em .NET perde o papel —
-  recomendação: remover da solução;
+- o pipeline fica em **Python** (onde está o NLP), fora do backend;
 - a API passa a ser **somente leitura** também no banco (papel `ratio_api` só com
   `SELECT`);
 - some o contêiner de ETL e o alarme de "carga não rodou";
@@ -311,11 +310,12 @@ proíbe — **todo componente adicionado precisa ser revisado** antes de commita
 
 ---
 
-### D-20 · Imagem do banco: `pgvector/pgvector:pg16`, locale ICU `pt-BR`
+### D-20 · Banco da carga: `pgvector/pgvector:pg16`, locale ICU `pt-BR`
 
-**Decisão.** Dev, CI (Testcontainers) e produção usam a mesma imagem, com
+**Decisão.** O banco onde a carga roda usa `pgvector/pgvector:pg16`, com
 `--locale-provider=icu --icu-locale=pt-BR`. Extensões: `vector`, `pg_trgm`,
-`unaccent`. *(Formaliza o que foi feito na primeira carga.)*
+`unaccent`. *(Formaliza o que foi feito na primeira carga. Produção e os testes da API
+usam Postgres 16 **sem** pgvector — [D-25](#d-25--produção-sem-pgvector-embeddings-ficam-na-carga).)*
 
 **Por quê.** A imagem oficial não traz o pgvector; e o locale de sistema `pt_BR.utf8`
 não existe na imagem Debian — o ICU é o que faz o `ORDER BY` respeitar acento.
@@ -324,9 +324,9 @@ não existe na imagem Debian — o ICU é o que faz o `ORDER BY` respeitar acent
 dizer `'portuguese'`. Inventário completo em
 [Data Warehouse](../02-arquitetura/04-data-warehouse.md#o-que-está-instalado-no-banco).
 
-⚠ **Vale para dev e CI.** Em produção o banco é PostgreSQL nativo em Windows Server
-([D-21](#d-21--produção-na-intranet-do-cliente-em-windows-server)) — com a **mesma
-versão, extensões e locale**, o que ainda precisa ser provado ([R-16](#r-16--pgvector-e-locale-no-postgres-para-windows-)).
+Em produção o banco é PostgreSQL nativo em Windows Server
+([D-21](#d-21--produção-na-intranet-do-cliente-em-windows-server)), com a mesma versão
+e locale ([R-16](#r-16--postgres-nativo-para-windows-)).
 
 ---
 
@@ -341,14 +341,14 @@ nas máquinas dele. *(19/09/2026)*
 - API publicada **self-contained** para `win-x64` e rodando como **serviço Windows**;
 - frontend como arquivos estáticos servidos pelo proxy, chamando a API por **caminho
   relativo** (`/api`) — um único build serve qualquer cliente;
-- PostgreSQL **nativo para Windows**, com pgvector;
+- PostgreSQL **nativo para Windows**, do instalador padrão — sem pgvector ([D-25](#d-25--produção-sem-pgvector-embeddings-ficam-na-carga));
 - a carga continua do nosso lado ([D-17](#d-17--carga-manual-não-agendada)): o cliente
   recebe o **dump do `dw`** junto com a versão;
 - precisam ser escritos: **manual de implantação**, **manual de atualização**,
   **especificação das máquinas** e a definição do **pacote de versão**.
 
 **Custo.** Deploy automático em produção deixa de existir ([R-17](#r-17--deploy-automático-exigido-pelo-desafio-x-produção-no-cliente-)),
-e o ambiente de produção é Windows enquanto dev e CI são Linux ([R-16](#r-16--pgvector-e-locale-no-postgres-para-windows-)).
+e o ambiente de produção é Windows enquanto dev e CI são Linux ([R-16](#r-16--postgres-nativo-para-windows-)).
 
 Detalhe: [Implantação no cliente](04-implantacao-no-cliente.md).
 
@@ -395,6 +395,49 @@ ambiente de produção de intranet. Não há VPS. *(19/09/2026)*
 
 ---
 
+### D-25 · Produção sem pgvector: embeddings ficam na carga
+
+**Decisão.** O pgvector existe só no banco onde a carga roda. Produção é Postgres 16
+do instalador Windows padrão, com `pg_trgm` e `unaccent`, e recebe só o schema `dw`
+**sem embeddings**. *(19/09/2026)*
+
+**Por quê.** Os embeddings servem para **produzir** o dado — clusterizar assuntos em
+tema e ligar doutrina a tema. O resultado é tabela comum, com o `similarity` gravado. A
+API nunca consulta um vetor. Levar o pgvector para produção obrigaria a compilá-lo para
+Windows e entregá-lo no pacote, sem nenhum uso.
+
+**Consequência.** Migration pendente: mover `dw.dim_topic.embedding` e
+`dw.dim_doctrine.embedding` para um schema `nlp`, para que o dump do `dw` não carregue o
+tipo `vector`. Ver [Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção).
+
+**Custo.** Busca semântica em tempo de requisição (busca por significado, chatbot) fica
+fora. Se entrar, esta decisão é revertida e o pgvector para Windows volta a ser problema.
+
+---
+
+### D-26 · Acesso a dados com Dapper
+
+**Decisão.** A API acessa o banco com **Dapper** sobre Npgsql. Sem EF Core.
+*(19/09/2026)*
+
+**Por quê.** A API só lê agregados com SQL analítico que precisamos controlar; não há
+escrita transacional que justifique um ORM. O schema não é da API — nasce nas
+migrations do pipeline de carga.
+
+---
+
+### D-27 · Rotas do frontend em português
+
+**Decisão.** As URLs do frontend são em português: `/`, `/busca?q=`,
+`/tema/$code?aba=resumo|base`. *(19/09/2026)*
+
+**Por quê.** A URL é o que o usuário vê e compartilha — é texto de tela, não
+identificador. É a exceção à regra de código em inglês ([D-06](#d-06--código-em-inglês-retorno-da-api-em-português)).
+O resto continua em inglês: componentes, funções, o nome do parâmetro de rota e as
+rotas da **API** (`/api/topics`).
+
+---
+
 ## Riscos
 
 Ordenados por impacto. **Status revisado em 15/09/2026**, após a primeira carga
@@ -406,24 +449,22 @@ O suporte do .NET 8 termina em **10/11/2026**. Depois disso, sem correção de
 segurança — num produto hospedado na internet.
 
 **Mitigação.** Migrar para **.NET 10** (LTS, suporte até nov/2028) **agora**, enquanto a
-solução é scaffold: trocar `net8.0` por `net10.0` nos sete `.csproj` e atualizar os
+solução é scaffold: trocar `net8.0` por `net10.0` nos `.csproj` e atualizar os
 pacotes de teste. Depois do primeiro código real, a mesma troca custa uma sprint de
 regressão.
 
-### R-16 · pgvector e locale no Postgres para Windows 🟠
+### R-16 · Postgres nativo para Windows 🟡
 
-Hoje o DW roda na imagem Linux `pgvector/pgvector:pg16`. Em produção será PostgreSQL
-nativo em Windows Server, e o **pgvector não vem no instalador padrão** do Postgres
-para Windows — precisa ser compilado (Visual Studio + `nmake`) ou obtido em pacote
-pronto, e isso tem de acontecer do **nosso** lado, porque o cliente não terá ferramenta
-de desenvolvimento. O locale ICU `pt-BR` também precisa ser confirmado no Windows.
+*Era 🟠 — o pgvector saiu de produção.*
 
-E há um desencontro: o CI testa em Linux (Testcontainers) e produção roda em Windows.
+Produção será PostgreSQL 16 nativo em Windows Server; a carga e o CI rodam em Linux.
+O pgvector deixou de ser problema ([D-25](#d-25--produção-sem-pgvector-embeddings-ficam-na-carga)).
+Resta confirmar que o **locale ICU `pt-BR`** ordena igual no Windows e que o dump
+restaura sem erro.
 
-**Mitigação.** Spike antes da especificação das máquinas: instalar Postgres 16 +
-pgvector num Windows Server limpo, restaurar o dump atual, rodar os 24 testes de
-integridade e comparar a ordenação com acento. Os binários do pgvector compilados
-entram no pacote de versão.
+**Mitigação.** Spike antes da especificação das máquinas: instalar Postgres 16 num
+Windows Server limpo, restaurar o dump do `dw` (já sem embeddings), rodar os testes de
+integridade que não dependem de embedding e comparar a ordenação com acento.
 
 ### R-17 · Deploy automático exigido pelo desafio × produção no cliente 🟠
 
@@ -511,7 +552,7 @@ verificada. **463.016 linhas de fato.**
 dependem de inteiro teor (R-01), e não há historização de dimensão (R-13).
 
 O esquema vive nas migrations de `scraping/sql/`, e com o [D-17](#d-17--carga-manual-não-agendada)
-é ali que ele fica — não há mais port para o `Ratio.Etl`. Falta versioná-lo
+é ali que ele fica — não há port para .NET. Falta versioná-lo
 ([R-15](#r-15--o-pipeline-de-carga-não-está-versionado-)).
 
 ### R-04 · Fontes candidatas não verificadas 🟠
@@ -601,10 +642,9 @@ dado do caso dele.
 | ~~Qual uso de NLP entra na entrega?~~ | ✅ Usos 1 e 4 (R-06) | — |
 | Qual modelo/provedor de LLM para o chatbot? | time | custo, privacidade |
 | Onde versionar o pipeline de carga (`scraping/`)? | time | R-15 |
-| Remover o `Ratio.Etl` da solução? | dev backend | limpeza da solução |
 | Migrar para .NET 10 agora? | dev backend | R-14 |
 | Controle de migration aplicada: tabela própria ou DbUp lendo os SQL? | dev backend | primeira migration nova |
-| Acesso a dados: Dapper ou EF Core? *(recomendação: Dapper — a API só lê)* | dev backend | primeira linha de Infrastructure |
+| ~~Acesso a dados: Dapper ou EF Core?~~ | ✅ Dapper (D-26) | — |
 | Com que frequência rodar a carga manual? | time | frescor do dado exibido |
 | ~~Só produção, ou produção + staging no Coolify?~~ | substituída: produção é o cliente (D-21) | — |
 | ~~A VPS Hostinger + Coolify continua, como homologação?~~ | ✅ não — simulação em rede Tailscale (D-24) | — |

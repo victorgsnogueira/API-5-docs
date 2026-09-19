@@ -36,7 +36,7 @@
    │                                                            │
    │  Ratio.Api  (serviço Windows, self-contained)  127.0.0.1   │
    │                          │                                 │
-   │  PostgreSQL 16 + pgvector   (serviço Windows)  127.0.0.1   │
+   │  PostgreSQL 16              (serviço Windows)  127.0.0.1   │
    │                                                            │
    └────────────────────────────────────────────────────────────┘
                           ▲
@@ -80,7 +80,7 @@ Pontos que o desenho fixa:
 | Chamar a API por caminho **relativo** (`/api/...`) | o endereço da intranet do cliente não é conhecido no build; com `VITE_API_URL` fixo, cada cliente exigiria um build próprio |
 | Fontes **self-hosted** | ✅ já é assim (Fontsource) — sem internet, Google Fonts não carregaria |
 | Nenhum recurso de CDN | mesma razão |
-| Roteamento do lado do cliente | o NGINX precisa de `try_files … /index.html` para `/topics/123` não dar 404 ao recarregar |
+| Roteamento do lado do cliente | o NGINX precisa de `try_files … /index.html` para `/tema/123` não dar 404 ao recarregar |
 
 > **Links para os tribunais saem da intranet.** O "consultar no tribunal" abre o e-SAJ /
 > portal do tribunal no navegador do funcionário. Funciona se a estação tiver acesso à
@@ -91,7 +91,7 @@ Pontos que o desenho fixa:
 | Item | Por quê |
 |---|---|
 | **PostgreSQL 16 nativo para Windows** como serviço | sem Docker nas máquinas do cliente |
-| **pgvector compilado para Windows** | ⚠ não vem no instalador padrão — ver [R-16](02-decisoes-e-riscos.md#r-16--pgvector-e-locale-no-postgres-para-windows-) |
+| **Sem pgvector** | os embeddings ficam no ambiente de carga; produção usa o instalador Windows padrão — ver [D-25](02-decisoes-e-riscos.md#d-25--produção-sem-pgvector-embeddings-ficam-na-carga) |
 | Locale **ICU `pt-BR`** na criação do cluster (`initdb --locale-provider=icu --icu-locale=pt-BR`) | mesma ordenação com acento que temos hoje |
 | `unaccent` e `pg_trgm` | vêm no `contrib` do instalador Windows |
 | Papel `ratio_api` só com `SELECT` | a API não escreve ([Data Warehouse](../02-arquitetura/04-data-warehouse.md#papéis--o-que-falta-para-produção)) |
@@ -149,7 +149,7 @@ Registrados aqui para não se perderem. **Nenhum existe ainda.**
 
 | Documento | Para quem | O que precisa ter |
 |---|---|---|
-| **Manual de implantação** | equipe de TI do cliente | como instalar e configurar, a partir **só dos arquivos buildados**: PostgreSQL + pgvector, restauração do dump, serviço da API, NGINX + certificado, verificação pelo `/health/ready`; sem nenhuma ferramenta de desenvolvimento |
+| **Manual de implantação** | equipe de TI do cliente | como instalar e configurar, a partir **só dos arquivos buildados**: PostgreSQLector, restauração do dump, serviço da API, NGINX + certificado, verificação pelo `/health/ready`; sem nenhuma ferramenta de desenvolvimento |
 | **Manual de atualização** | TI do cliente | como aplicar uma versão nova e **uma carga nova** (restore do dump) sem perder a anterior; como voltar atrás |
 | **Especificação das máquinas** | cliente | versão do Windows Server, CPU, RAM, disco, se banco e aplicação ficam juntos ou separados, portas, certificado, contas de serviço |
 | **Conteúdo do pacote de versão** | nós e o cliente | o que vai no zip: API publicada, `dist/` do frontend, `nginx.conf`, dump do `dw`, scripts de instalação, versão e data da carga |

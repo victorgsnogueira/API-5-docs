@@ -39,14 +39,32 @@ e o desafio avalia modelagem dimensional e pipeline, não a marca do banco.
 
 ## O que está instalado no banco
 
-Inventário do contêiner `api5-dw`, conferido direto no catálogo do Postgres
-(`pg_extension`, `pg_database`, `pg_settings`) em 19/09/2026. **É este o banco que
-produção precisa reproduzir.**
+Inventário do contêiner `api5-dw` — o **banco da carga** —, conferido direto no
+catálogo do Postgres (`pg_extension`, `pg_database`, `pg_settings`) em 19/09/2026.
 
-> ⚠ **Produção não é este contêiner.** No cliente, o banco é **PostgreSQL 16 nativo
-> em Windows Server** ([D-21](../06-operacao/02-decisoes-e-riscos.md#d-21--produção-na-intranet-do-cliente-em-windows-server)),
-> que precisa reproduzir exatamente o que está listado aqui — inclusive o pgvector, que
-> não vem no instalador Windows ([R-16](../06-operacao/02-decisoes-e-riscos.md#r-16--pgvector-e-locale-no-postgres-para-windows-)).
+### Carga × produção
+
+Os dois bancos **não são iguais**, de propósito
+([D-25](../06-operacao/02-decisoes-e-riscos.md#d-25--produção-sem-pgvector-embeddings-ficam-na-carga)):
+
+| | Banco da carga (`api5-dw`) | Produção (cliente) |
+|---|---|---|
+| Onde | contêiner, na máquina de quem roda a carga | **PostgreSQL 16 nativo em Windows Server** |
+| Schemas | `raw`, `staging`, `dw`, `nlp` | **só `dw`** |
+| Extensões | `vector`, `pg_trgm`, `unaccent` | **`pg_trgm`, `unaccent`** — sem pgvector |
+| Embeddings | sim — é onde o NLP trabalha | **não** |
+| Locale | ICU `pt-BR` | ICU `pt-BR` |
+
+Os embeddings só servem para **produzir** o dado (clusterizar assuntos, ligar doutrina a
+tema). O resultado — `dim_theme`, `bridge_theme_topic`, `bridge_topic_doctrine` com o
+`similarity` gravado — é tabela comum. A API nunca consulta um vetor. Por isso o pgvector
+fica só na carga, e produção roda o Postgres do instalador Windows padrão.
+
+> ⚠ **Pendente:** hoje as colunas `embedding` estão **dentro do schema `dw`**
+> (`dw.dim_topic.embedding`, `dw.dim_doctrine.embedding`), então um `pg_dump -n dw`
+> ainda carrega o tipo `vector`. Precisa de uma migration que mova os embeddings para
+> um schema `nlp` (tabelas `nlp.topic_embedding`, `nlp.doctrine_embedding`, chaveadas
+> pela SK), e ajustar `nlp_embed.py` / `nlp_link_doctrine.py` / o teste de dimensão.
 
 ### Imagem e versão
 
@@ -56,15 +74,15 @@ produção precisa reproduzir.**
 | Postgres | **16.15** (Debian 12 / bookworm) |
 | Tamanho atual | ~844 MB (463.016 linhas de fato + 52.696 artigos + embeddings) |
 
-> **Não use `postgres:16-alpine`.** A imagem oficial não traz o pgvector, e compilar a
-> extensão depois é trabalho à toa. Produção, dev e o Testcontainers dos
-> [testes](../07-justificativas/03-tdd.md) usam **a mesma imagem**.
+> **Banco da carga:** `pgvector/pgvector:pg16` — a imagem oficial não traz o pgvector.
+> **Testcontainers dos [testes](../07-justificativas/03-tdd.md) da API:** `postgres:16`
+> (Debian, não Alpine), porque a API testa contra o que produção tem — sem pgvector.
 
 ### Extensões instaladas
 
 | Extensão | Versão | Para quê | Onde é usada |
 |---|---|---|---|
-| **`vector`** (pgvector) | 0.8.6 | embeddings da [camada semântica](05-etl-e-nlp.md#uso-1--agrupar-assuntos-em-tema--maior-valor-começar-por-aqui) | `dim_topic.embedding` e `dim_doctrine.embedding`, **`vector(384)`** — 447 + 52.696 vetores |
+| **`vector`** (pgvector) — ⚠ **só no banco da carga** | 0.8.6 | embeddings da [camada semântica](05-etl-e-nlp.md#uso-1--agrupar-assuntos-em-tema--maior-valor-começar-por-aqui) | `dim_topic.embedding` e `dim_doctrine.embedding`, **`vector(384)`** — 447 + 52.696 vetores |
 | **`pg_trgm`** | 1.6 | similaridade por trigrama — tolera erro de digitação na busca | índices GIN em `dim_doctrine.title`, `dim_doctrine.subject_area`, `fact_case_decision.summary`; `similarity()` na busca de temas |
 | **`unaccent`** | 1.1 | "inscricao" acha "inscrição" | busca de temas |
 | `plpgsql` | 1.0 | linguagem de função (padrão do Postgres) | — |
@@ -128,12 +146,15 @@ POSTGRES_INITDB_ARGS="--locale-provider=icu --icu-locale=pt-BR --encoding=UTF8 -
 Detalhe das tabelas: [Modelo dimensional](../03-dados/02-modelo-dimensional.md). Das
 views: [Agregados OLAP](../03-dados/03-agregados-olap.md).
 
-### Índice vetorial — ainda não
+### Índice vetorial — não se aplica a produção
 
-Os embeddings **não têm índice HNSW/IVFFlat**. Com ~53 mil vetores de 384 dimensões e
+Os embeddings **não têm índice HNSW/IVFFlat**, e só existem no banco da carga. Com ~53 mil vetores de 384 dimensões e
 uso só na carga (clusterizar, ligar doutrina), a busca exata é rápida o bastante e dá o
-resultado **exato**, que é o que a curadoria precisa. Criar o índice quando a busca
-semântica entrar no caminho de uma requisição (busca por significado, chatbot):
+resultado **exato**, que é o que a curadoria precisa.
+
+Se um dia a busca semântica entrar no caminho de uma requisição (busca por significado,
+chatbot), isso **reverte o D-25**: produção passa a precisar do pgvector compilado para
+Windows. Nesse caso:
 
 ```sql
 CREATE INDEX ON dw.dim_doctrine USING hnsw (embedding vector_cosine_ops);

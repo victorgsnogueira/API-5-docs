@@ -11,20 +11,22 @@ Três telas, detalhadas em [Telas](../01-produto/02-telas.md):
 | Rota | Tela | API |
 |---|---|---|
 | `/` | Busca | `GET /api/topics?q=` (sugestões / temas de maior volume) |
-| `/results?q=…` | Resultados + filtros | `GET /api/topics?q=…` |
-| `/topics/$code?tab=summary\|analytics` | Detalhamento (abas Resumo / Base analítica) | `GET /api/topics/{code}` e `/decisions` |
+| `/busca?q=…` | Resultados + filtros | `GET /api/topics?q=…` |
+| `/tema/$code?aba=resumo\|base` | Detalhamento (abas Resumo / Base analítica) | `GET /api/topics/{code}` e `/decisions` |
 
 > **Estado no repo:** existem `routes/index.tsx`, `routes/result.tsx` e
 > `routes/details.tsx` — a rota de detalhe ainda **não recebe o código do tema**.
-> Renomear para `routes/topics.$code.tsx` e `routes/results.tsx` na primeira task de
-> tela.
+> Renomear para `routes/busca.tsx` e `routes/tema.$code.tsx` na primeira task de tela.
 
-**Rotas em inglês**, como todo o código ([Idioma](02-backend-dotnet.md#idioma)). O que o
-usuário **lê** — rótulos, títulos, mensagens, estado vazio — é em português.
+**Rotas em português.** A URL é o que o usuário vê, copia e manda para um colega — é
+texto de tela, não identificador. Por isso é a exceção à regra de código em inglês
+([D-27](../06-operacao/02-decisoes-e-riscos.md#d-27--rotas-do-frontend-em-português)).
+O nome do parâmetro de rota (`$code`) fica em inglês: ele não aparece na URL, só no
+código. A **API** continua com rotas em inglês (`/api/topics`).
 
-A aba do detalhamento é **search param validado** (`?tab=analytics`), não estado local:
-o usuário vai querer mandar o link da base analítica para um colega. O TanStack Router
-valida o parâmetro com `validateSearch` — aba inválida cai em `summary`, não em tela
+A aba do detalhamento é **search param validado** (`?aba=base`), não estado local: o
+usuário vai querer mandar o link da base analítica para um colega. O TanStack Router
+valida o parâmetro com `validateSearch` — aba inválida cai em `resumo`, não em tela
 quebrada.
 
 ---
@@ -61,7 +63,7 @@ E o que **falta** e se recomenda:
 ### Por que essa stack
 
 - **TanStack Router** tipa rota, parâmetro e search param de ponta a ponta. Numa tela
-  cuja aba mora na URL (`?tab=`), um link errado vira erro de compilação, não 404.
+  cuja aba mora na URL (`?aba=`), um link errado vira erro de compilação, não 404.
 - **shadcn/ui** não é dependência: o código do componente é **copiado** para
   `packages/ui` e passa a ser nosso. É isso que permite dobrar cada componente ao
   [design system](../04-design/01-design-system.md) — sem sombra, raio de 3px, vermelho
@@ -90,8 +92,8 @@ API5-Frontend/
     │       ├── routes/             uma rota por arquivo
     │       │   ├── __root.tsx
     │       │   ├── index.tsx       /
-    │       │   ├── result.tsx      → renomear: results.tsx
-    │       │   └── details.tsx     → renomear: topics.$code.tsx
+    │       │   ├── result.tsx      → renomear: busca.tsx
+    │       │   └── details.tsx     → renomear: tema.$code.tsx
     │       ├── api/                (a criar) client.ts + topics.ts: schemas zod + funções
     │       ├── features/           (a criar) search/ · results/ · topic/
     │       └── components/         componentes de tela
@@ -175,7 +177,8 @@ Cada uma dessas regras é um teste que nasce vermelho. Ver [TDD](../07-justifica
 
 | O quê | Idioma | Exemplo |
 |---|---|---|
-| Identificador — arquivo, componente, função, variável, tipo, rota | **inglês** | `AlignmentBar`, `searchTopics`, `/results` |
+| Identificador — componente, função, variável, tipo | **inglês** | `AlignmentBar`, `searchTopics` |
+| **Rota** — a URL que o usuário vê, e portanto o nome do arquivo em `routes/` | **português** | `/busca`, `/tema/123?aba=base` |
 | Chave do JSON da API (e portanto do tipo TS) | **inglês** | `strengthScore`, `polarityLabel` |
 | Texto que o usuário lê — rótulo, título, mensagem, estado vazio | **português** | "Base analítica", "consultar no tribunal" |
 | Texto que **vem da API** (rótulo de polaridade, motivo de dado ausente, grau da nota) | **português**, exibido como veio | "Divergente" |

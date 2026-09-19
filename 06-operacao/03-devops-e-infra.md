@@ -68,7 +68,7 @@ Um pipeline por repositório.
 push / pull request
   ├── restore + build                     (falha rápida)
   ├── testes unitários                    (Domain, Application)      ← TDD
-  ├── testes de integração                (Testcontainers: pgvector/pgvector:pg16)
+  ├── testes de integração                (Testcontainers: postgres:16, sem pgvector)
   │     └── aplicam as migrations SQL e rodam os testes de integridade do DW
   ├── análise estática / lint
   └── publicação self-contained win-x64
