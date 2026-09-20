@@ -30,7 +30,7 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 | ⚠ Código **em inglês**; tudo o que a API devolve (dados, rótulos, erros) **em português** | [Idioma](02-arquitetura/02-backend-dotnet.md#idioma) |
 | 🧪 **TDD**: nenhum código de produção sem um teste que falhou antes | [TDD](07-justificativas/03-tdd.md) |
 | 🏢 Produção é a **intranet do cliente** (Windows Server, NGINX); ele recebe **só arquivos buildados** | [Implantação no cliente](06-operacao/04-implantacao-no-cliente.md) |
-| ⚠ A carga do DW é **manual** e a pasta `scraping/` **não está versionada** | [D-17](06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) · [R-15](06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-) |
+| ⚠ A carga do DW é **manual** e a pasta `scraping/` **não está versionada** | [D-17](06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) · [R-15](06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito) |
 
 ---
 
@@ -103,20 +103,28 @@ Os padrões e as ferramentas do projeto, e por que foram escolhidos.
 | Telas (design) | ✅ mockups fechados em [`Telas/`](Telas/) |
 | Escopo, fontes e convenções | ✅ definidos — ver [Decisões](06-operacao/02-decisoes-e-riscos.md) |
 | Modelagem do DW | ✅ implementada e carregada — 463.016 linhas de fato |
-| Carga (coleta + normalização) | ✅ funcional, **manual** — ⚠ pasta `scraping/` sem repositório |
+| Carga (coleta + normalização) | ✅ funcional, **manual** — a pasta `scraping/` fica **fora de repositório**, por decisão ([R-15](06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito)) |
 | NLP / normalização em tema | ✅ 447 assuntos → 408 temas; doutrina ligada a tema |
 | Fontes além do DataJud | 🟠 doutrina ✅; jurisprudência dos tribunais bloqueada |
-| Backend .NET (`API5-Backend`) | 🔴 scaffold, sem CI — e .NET 8 sai de suporte em 11/2026 |
+| Backend .NET (`API5-Backend`) | 🟠 setup na branch `initial-setup` (PR aberto): .NET 10, camadas, health check, 17 testes — sem CI e sem rota de domínio |
 | Frontend React (`API5-Frontend`) | 🟠 scaffold com design system e CI; nenhuma tela |
-| Testes | 🟠 24 testes de integridade do DW; TDD definido, nenhum teste de código ainda |
+| Testes | 🟠 24 de integridade do DW + 17 no backend; **frontend sem Vitest** (nem script `test`) |
 | Chatbot | 🔴 roadmap |
 | Implantação no cliente | 🔴 requisitos registrados; manuais, spec das máquinas e pacote **a escrever** |
 | Deploy, monitoramento | 🔴 não configurado |
 
 ## Próximos desbloqueios, em ordem
 
-1. **Versionar o pipeline de carga** — hoje é o único lugar onde o schema do DW existe ([R-15](06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-)).
-2. **Subir o backend para .NET 10** enquanto é scaffold ([R-14](06-operacao/02-decisoes-e-riscos.md#r-14--net-8-sai-de-suporte-durante-o-projeto-)).
-3. **Configurar os testes** — Vitest no frontend, pacotes de teste no backend — antes da primeira linha de código ([TDD](07-justificativas/03-tdd.md)).
-4. **Um fluxo vertical fino** — `GET /api/topics` + tela de resultados, ponta a ponta, por TDD.
-5. **`Dockerfile` + CI do backend**, na mesma semana em que o código começa.
+1. **Configurar os testes do frontend** — Vitest + Testing Library + MSW; hoje o `apps/web`
+   não tem nem script `test`, e o backend já está com xUnit + Moq + Testcontainers
+   ([TDD](07-justificativas/03-tdd.md)).
+2. **Um fluxo vertical fino** — `GET /api/topics` + tela de resultados, ponta a ponta, por TDD.
+3. **CI do backend** — build + test + pacote de versão; os testes de integração pedem
+   **Docker no runner**. Não há `.github/` no repositório.
+4. **Manual de implantação e spec das máquinas** — o cliente instala sozinho, a partir só
+   dos arquivos buildados ([Implantação no cliente](06-operacao/04-implantacao-no-cliente.md#documentos-que-precisam-ser-escritos)).
+
+> Saíram desta lista: versionar o `scraping/` (decidido que fica fora) e subir para .NET 10
+> (feito). `Dockerfile` também: produção é serviço Windows, não contêiner
+> ([D-21](06-operacao/02-decisoes-e-riscos.md#d-21--produção-na-intranet-do-cliente-em-windows-server)) —
+> Docker só aparece em teste e na carga.

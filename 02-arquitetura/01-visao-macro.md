@@ -120,7 +120,7 @@ Backend e frontend são escritos por TDD. Ver [TDD](../07-justificativas/03-tdd.
 
 | Camada | Repositório | Projeto / pasta |
 |---|---|---|
-| Carga (coleta, NLP, testes de integridade) | ⚠ sem repo — pasta `scraping/` ([R-15](../06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-)) | `scripts/` |
+| Carga (coleta, NLP, testes de integridade) | ⚠ sem repo — pasta `scraping/` ([R-15](../06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito)) | `scripts/` |
 | Migrations do DW | idem | `sql/` |
 | API | `API5-Backend` | `Ratio.Api` |
 | Web | `API5-Frontend` | `ratio/apps/web` + `ratio/packages/ui` |

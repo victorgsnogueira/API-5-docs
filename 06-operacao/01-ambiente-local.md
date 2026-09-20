@@ -15,7 +15,7 @@ D:/Desenvolvimento/fatec/API/API-5/
 
 São **cinco repositórios git independentes**, mais duas pastas soltas. A `scraping/` é
 o pipeline que produziu o DW — **não está versionada** em lugar nenhum
-([R-15](02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-)). A pasta que os contém não é um repo — é só
+([R-15](02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito)). A pasta que os contém não é um repo — é só
 a convenção de tê-los lado a lado, que os caminhos citados na wiki pressupõem.
 
 Para montar o ambiente do zero:

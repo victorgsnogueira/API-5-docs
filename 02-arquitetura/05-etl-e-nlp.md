@@ -14,7 +14,7 @@ de integridade pertencem ao processo de carga; não entram no build nem no CI da
 A API apenas consulta o schema `dw` já publicado, via Dapper e com acesso de leitura.
 Seu CI usa PostgreSQL descartável com dados mínimos de teste, sem importar o banco
 completo nem executar a carga. O versionamento separado do pipeline continua pendente
-([R-15](../06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-)).
+([R-15](../06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito)).
 
 ## O desenho: um pipeline, vários conectores, três camadas no banco
 

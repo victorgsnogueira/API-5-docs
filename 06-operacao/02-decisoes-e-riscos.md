@@ -273,7 +273,7 @@ a leitura.
   `/health/ready`.
 
 **Custo.** A base só se atualiza quando alguém roda. E o pipeline mora hoje numa pasta
-fora de repositório — [R-15](#r-15--o-pipeline-de-carga-não-está-versionado-).
+fora de repositório — [R-15](#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito).
 
 ---
 
@@ -501,17 +501,23 @@ cliente a partir de arquivos buildados — não há deploy automático possível
 **Mitigação.** O CI gera o **pacote de versão** automaticamente (artefato/release a
 cada merge na `main`). Confirmar com o professor/cliente que isso atende o requisito.
 
-### R-15 · O pipeline de carga não está versionado 🟠
+### R-15 · O pipeline de carga fica fora de repositório 🟠 *(risco aceito)*
 
 A pasta `scraping/` — migrations do DW, coletores, NLP, curadoria de temas e os 24
-testes de integridade — **não está em nenhum repositório git**. É o único lugar onde o
-schema do DW existe. Um disco perdido leva o DW junto, e ninguém além de quem tem a
-pasta consegue rodar a carga ([D-17](#d-17--carga-manual-não-agendada)).
+testes de integridade — **não está em nenhum repositório git, e foi decidido que não
+entra** *(19/09/2026)*. Raspagem, ETL, NLP, migrations e testes da carga não vão para o
+`API5-Backend` nem para o `API5-Frontend`.
 
-**Mitigação.** Versionar o pipeline separadamente; o destino ainda precisa ser
-definido. Raspagem, ETL, NLP, migrations e testes da carga **não entram no
-`API5-Backend` nem no `API5-Frontend`**. Os 24 testes SQL são obrigatórios na carga;
-o CI do backend testa a aplicação com schema e dados mínimos em banco descartável.
+**O que isso custa.** É o único lugar onde o **schema do DW** existe como código: o
+dump reconstrói o banco publicado, mas não o pipeline que o produz. Um disco perdido
+leva junto a capacidade de refazer a carga, e só quem tem a pasta consegue rodá-la
+([D-17](#d-17--carga-manual-não-agendada)). Correções feitas ali — por exemplo o índice
+`019` que o `/health/ready` exige — existem em um único lugar.
+
+**O que sobra como proteção.** Cópia da pasta e do dump de cada carga, guardados por
+nós ([Backup](03-devops-e-infra.md#a-carga-não-roda-no-ambiente-de-produção)). Os 24
+testes SQL continuam obrigatórios a cada carga; o CI do backend não os roda — ele testa
+a aplicação com schema e dados mínimos em banco descartável.
 
 ### R-01 · Blocos do mockup sem fonte 🟠 *(era 🔴 — reduzido, não eliminado)*
 
@@ -580,7 +586,7 @@ dependem de inteiro teor (R-01), e não há historização de dimensão (R-13).
 
 O esquema vive nas migrations de `scraping/sql/`, e com o [D-17](#d-17--carga-manual-não-agendada)
 é ali que ele fica — não há port para .NET. Falta versioná-lo
-([R-15](#r-15--o-pipeline-de-carga-não-está-versionado-)).
+([R-15](#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito)).
 
 ### R-04 · Fontes candidatas não verificadas 🟠
 
@@ -668,7 +674,7 @@ dado do caso dele.
 | ~~Doutrina: quais repositórios de artigo?~~ | ✅ DOAJ, SciELO, OAI-PMH | — |
 | ~~Qual uso de NLP entra na entrega?~~ | ✅ Usos 1 e 4 (R-06) | — |
 | Qual modelo/provedor de LLM para o chatbot? | time | custo, privacidade |
-| Onde versionar o pipeline de carga (`scraping/`)? | time | R-15 |
+| ~~Onde versionar o pipeline de carga (`scraping/`)?~~ | ✅ em lugar nenhum — fica fora, risco aceito (R-15) | — |
 | Migrar para .NET 10 agora? | dev backend | R-14 |
 | Controle de migration aplicada: tabela própria ou DbUp lendo os SQL? | dev backend | primeira migration nova |
 | ~~Acesso a dados: Dapper ou EF Core?~~ | ✅ Dapper (D-26) | — |

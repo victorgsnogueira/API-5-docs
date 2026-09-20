@@ -105,7 +105,7 @@ Detalhe em [Frontend React](../02-arquitetura/03-frontend-react.md) e
 
 | | |
 |---|---|
-| Remoto | ⚠ **nenhum** — pasta local ([R-15](../06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-)) |
+| Remoto | ⚠ **nenhum** — pasta local ([R-15](../06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito)) |
 | Estado | ✅ funcional — produziu a base atual |
 | Conteúdo | `sql/` migrations do DW e testes de integridade · `scripts/` coletores, transformação e NLP |
 
