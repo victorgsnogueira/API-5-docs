@@ -11,8 +11,9 @@ repositórios do projeto.
    documentação.
 2. **Cada commit é pequeno, descritivo e objetivo.** Uma mudança com um propósito.
 3. **Todo commit começa com um tipo**, seguido de dois-pontos e da descrição.
-4. **Nenhum commit leva co-autor.** Nada de `Co-Authored-By:` na mensagem — nem de
-   colega, nem de ferramenta de IA. [Por quê](#por-que-nunca-co-autor).
+4. **Nenhum commit leva ferramenta de IA como coautora.** Remova qualquer
+   `Co-Authored-By:` atribuído a IA. A regra não proíbe coautoria humana.
+   [Por quê](#por-que-não-atribuir-coautoria-a-ia).
 
 ## Tipos
 
@@ -45,7 +46,7 @@ feat: add semantic search by legal topic
 | `fix: handle missing court code in DataJud response` | `fix: bug` | não descreve nada |
 | `refactor: extract strength score into domain service` | `refactor: changes` | não descreve nada |
 | `docs: add branch naming standard` | `update docs` | sem tipo |
-| `fix: handle empty result set` | `fix: handle empty result set`<br>`Co-Authored-By: …` | commit com co-autor |
+| `fix: handle empty result set` | `fix: handle empty result set`<br>`Co-Authored-By: AI Assistant <ai@example.com>` | IA registrada como coautora |
 | `chore: configure CI pipeline for backend` | `chore: setup, fix tests and add endpoint` | três mudanças num commit só |
 | `test: cover empty doctrine state` | `feat: add tests` | teste sem código novo é `test:` |
 
@@ -82,25 +83,17 @@ junto o resto.
 
 **Rastreamento do trabalho.** Ver abaixo.
 
-### Por que nunca co-autor
+### Por que não atribuir coautoria a IA
 
-O git aceita a linha `Co-Authored-By:` no fim da mensagem, e várias ferramentas — de
-*pair programming* a assistentes de IA — a acrescentam sozinhas. **Neste projeto ela não
-entra em commit nenhum, em nenhum repositório.**
+Assistentes de IA podem acrescentar `Co-Authored-By:` automaticamente. Neste projeto,
+o uso da ferramenta não deve ser registrado como coautoria: a responsabilidade pelo
+commit continua com as pessoas que produziram e revisaram a mudança.
 
-O motivo é o mesmo da seção abaixo: **o commit é a evidência de quem fez o quê**. Um
-commit com dois nomes deixa de responder essa pergunta — a contagem por pessoa passa a
-depender de qual nome a ferramenta escolheu como autor e qual virou co-autor. Num projeto
-avaliado por contribuição individual, isso é ruído numa métrica que precisa ser simples.
+**A restrição vale para IA, não para colegas.** Coautoria humana pode ser registrada.
+Antes de commitar, remova trailers que atribuam coautoria a uma ferramenta de IA.
 
-Trabalho feito em dupla continua registrável: cada pessoa commita o que escreveu, ou o
-par combina quem assina e diz isso na descrição, em texto — que qualquer um lê, sem
-depender de como a ferramenta preencheu um campo.
-
-**Se a sua ferramenta acrescenta a linha automaticamente, remova antes de commitar.**
-Se ela já foi parar no histórico e o commit ainda não foi para a `main`, reescreva a
-mensagem (`git commit --amend`, ou `git rebase` para commits anteriores) e publique de
-novo.
+**Não haverá validação de coautoria no CI nem hook para bloquear commits por isso.**
+A regra é uma orientação para quem prepara o commit e para os assistentes utilizados.
 
 ### Commit como indicador de contribuição
 

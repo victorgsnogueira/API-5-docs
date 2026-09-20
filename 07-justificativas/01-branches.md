@@ -132,8 +132,13 @@ A estrutura de branches define onde o pipeline roda. Ver
 | Evento | O que o pipeline deve fazer |
 |---|---|
 | Pull request de task → `usX` | build + testes — **teste falhando bloqueia o merge** ([TDD](03-tdd.md)) |
-| Pull request de `usX` → `main` | build + testes + testes de integridade do DW |
+| Pull request de `usX` → `main` | build + testes da aplicação, incluindo integração |
 | Merge na `main` | gera o **pacote de versão** para o cliente |
+
+Os 24 testes de integridade do DW pertencem à carga manual, executada separadamente.
+Não fazem parte do CI do backend ou do frontend. Os testes de integração da API usam
+PostgreSQL descartável com schema e dados mínimos preparados pelos próprios testes,
+sem executar raspagem, ETL ou NLP e sem acessar a homologação.
 
 > ⚠ O CI do `API5-Frontend` hoje dispara só em PR para `main`. Para cobrir a tabela
 > acima, o gatilho precisa incluir as branches `us*`. O `API5-Backend` ainda não tem CI.

@@ -198,12 +198,16 @@ npx vitest            # modo watch, dentro de apps/web — o do dia a dia no TDD
 ## Pipeline de dados
 
 O [pipeline de carga](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo) é
-Python e fica fora do escopo formal de TDD (que vale para backend e frontend). Ele tem
-duas redes próprias:
+Python, roda separadamente e fica fora dos repositórios e do CI do backend e do
+frontend. Também fica fora do escopo formal de TDD da aplicação. Ele tem duas redes próprias:
 
 - **24 testes de integridade em SQL** contra o DW, obrigatórios a cada carga;
 - funções puras de transformação (`clean()`, extratores, mapa de polaridade) são
   candidatas naturais a **pytest** — recomendado, não exigido.
+
+Os testes de integração da API continuam no backend: preparam schema e dados mínimos
+em PostgreSQL descartável para testar as consultas e o comportamento da aplicação.
+Não executam o pipeline nem exigem a base completa ou acesso à homologação.
 
 ---
 

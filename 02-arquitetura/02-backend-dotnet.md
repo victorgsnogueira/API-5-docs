@@ -207,6 +207,11 @@ não há: a API não escreve, e a carga é feita por fora
 pipeline de carga; a API só as lê. Não use EF Migrations nem crie tabela a partir do
 backend. O usuário de banco da API deve ter **só `SELECT`** no schema `dw`.
 
+Raspagem, ETL, NLP, migrations e testes de integridade da carga ficam fora deste
+repositório e do CI da API. Os testes de integração do backend podem criar schema e
+dados mínimos apenas no PostgreSQL descartável de teste, para validar suas consultas.
+Isso não executa o pipeline nem altera os bancos de carga, homologação ou produção.
+
 ---
 
 ## Contrato da API

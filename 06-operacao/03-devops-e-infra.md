@@ -80,11 +80,20 @@ push / pull request
   ├── restore + build                     (falha rápida)
   ├── testes unitários                    (Domain, Application)      ← TDD
   ├── testes de integração                (Testcontainers: postgres:16, sem pgvector)
-  │     └── aplicam as migrations SQL e rodam os testes de integridade do DW
+  │     └── schema e dados mínimos de teste para validar as consultas da API
   ├── análise estática / lint
   └── publicação self-contained win-x64
-        └── na main: gera o pacote de versão (API + web + nginx.conf + dump do dw)
+        └── na main: gera o artefato da API para o pacote de versão
 ```
+
+Raspagem, ETL, NLP, migrations da carga e os 24 testes de integridade do DW ficam
+fora do repositório e do CI do backend. Os testes da API preparam seu próprio banco
+descartável; não dependem da máquina de carga, da Tailscale, da homologação ou de um
+dump completo. A API em execução apenas consulta o `dw` publicado.
+
+O pacote entregue ao cliente reúne os artefatos da aplicação, a configuração do NGINX
+e um dump previamente validado pelo processo separado de carga. O CI da aplicação
+não coleta nem processa dados para gerar esse dump.
 
 ### `API5-Frontend`
 
@@ -114,7 +123,9 @@ Docusaurus), aí sim vira um site estático a hospedar.
 ## Testes de integridade do DW — requisito explícito
 
 O desafio pede "testes automatizados validando integridade dos dados e consistência das
-consultas". Isso é diferente de teste unitário, e roda no CI contra um Postgres real.
+consultas". Os 24 testes SQL validam os dados no processo separado de carga manual.
+Os testes de integração do backend validam as consultas da API contra PostgreSQL
+descartável no CI. São responsabilidades distintas.
 
 Cada um é uma consulta que retorna zero linhas quando está tudo certo.
 
@@ -155,8 +166,8 @@ E mais 18 que a implementação mostrou serem necessários:
 
 > **Onde rodam.** São o **passo 6 da [carga manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo)**
 > — obrigatórios antes de qualquer dump subir para produção. Nenhuma linha retornada é
-> a condição para seguir. No CI do backend, rodam nos testes de integração contra o
-> Postgres do Testcontainers (pendente, junto com o workflow).
+> a condição para seguir. O script de publicação também os executa no destino.
+> Eles não fazem parte do CI do backend ou do frontend.
 
 ## Monitoramento — a definir
 
@@ -179,7 +190,7 @@ extração aparece na tela, não só no log.
 | Escolha | Opções a considerar | Quando decidir |
 |---|---|---|
 | Runner de CI | GitHub Actions (provável, pelos repos) | antes do primeiro merge relevante |
-| Controle de migration aplicada | tabela de versão própria, ou DbUp lendo os SQL de `scraping/sql` | antes da primeira migration nova |
+| Controle de migration aplicada na carga separada | mecanismo a definir junto do versionamento do pipeline, fora do backend | antes da primeira migration nova |
 | Log estruturado | Serilog + destino a definir | junto com o esqueleto da API |
 | Monitoramento | Uptime Kuma (leve, self-host), Grafana + Prometheus (completo), Sentry (erros) | depois do primeiro deploy |
 | Backup | o dump de cada carga + o `raw` local, guardados fora da máquina que os gerou | antes da primeira carga que doa perder |
@@ -191,7 +202,7 @@ extração aparece na tela, não só no log.
 1. **Nenhum segredo no repositório.** Connection string, chave de API, credencial —
    tudo por variável de ambiente.
 2. **Só vira pacote de versão o que passou no CI.** Nada de build feito à mão na máquina de alguém.
-3. **Toda migration é versionada.** Em produção, o schema chega pelo `pg_restore` da
+3. **Toda migration da carga deve ser versionada separadamente do backend** (pendência R-15). Em produção, o schema chega pelo `pg_restore` da
    carga validada — ninguém roda DDL à mão lá.
 4. **A carga é idempotente.** Isso é o que torna reprocessamento seguro.
 5. **Nada sobe para produção sem os 24 testes de integridade vazios.**

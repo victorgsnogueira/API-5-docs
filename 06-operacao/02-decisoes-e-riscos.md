@@ -264,7 +264,8 @@ produto mostra **tendência de julgamento**, não notícia: dado de semanas atr�
 a leitura.
 
 **Consequências.**
-- o pipeline fica em **Python** (onde está o NLP), fora do backend;
+- o pipeline fica em **Python** (onde está o NLP), fora dos repositórios e do CI
+  do backend e do frontend, incluindo migrations da carga e seus 24 testes SQL;
 - a API passa a ser **somente leitura** também no banco (papel `ratio_api` só com
   `SELECT`);
 - some o contêiner de ETL e o alarme de "carga não rodou";
@@ -507,10 +508,10 @@ testes de integridade — **não está em nenhum repositório git**. É o único
 schema do DW existe. Um disco perdido leva o DW junto, e ninguém além de quem tem a
 pasta consegue rodar a carga ([D-17](#d-17--carga-manual-não-agendada)).
 
-**Mitigação.** Versionar já. Sugestão: pasta `pipeline/` dentro do `API5-Backend` — o
-schema fica ao lado da API que o lê, e o CI do backend passa a aplicar as mesmas
-migrations nos testes de integração. Alternativa: repositório próprio
-(`API5-Pipeline`) na organização Concord-API.
+**Mitigação.** Versionar o pipeline separadamente; o destino ainda precisa ser
+definido. Raspagem, ETL, NLP, migrations e testes da carga **não entram no
+`API5-Backend` nem no `API5-Frontend`**. Os 24 testes SQL são obrigatórios na carga;
+o CI do backend testa a aplicação com schema e dados mínimos em banco descartável.
 
 ### R-01 · Blocos do mockup sem fonte 🟠 *(era 🔴 — reduzido, não eliminado)*
 

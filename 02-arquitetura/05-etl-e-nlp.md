@@ -5,6 +5,17 @@
 > e **roda à mão**, não agendado. Ver [Carga manual](#carga-manual--o-processo) e
 > [D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada).
 
+## Separação da aplicação
+
+Raspagem, ETL e NLP são executados separadamente, fora dos repositórios do backend e
+do frontend. Os coletores, scripts de normalização, migrations do DW e os 24 testes
+de integridade pertencem ao processo de carga; não entram no build nem no CI da API.
+
+A API apenas consulta o schema `dw` já publicado, via Dapper e com acesso de leitura.
+Seu CI usa PostgreSQL descartável com dados mínimos de teste, sem importar o banco
+completo nem executar a carga. O versionamento separado do pipeline continua pendente
+([R-15](../06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-não-está-versionado-)).
+
 ## O desenho: um pipeline, vários conectores, três camadas no banco
 
 ```
