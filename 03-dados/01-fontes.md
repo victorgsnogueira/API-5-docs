@@ -7,7 +7,7 @@
 >
 > | Fonte | Veredito | Por quê |
 > |---|---|---|
-> | DataJud | ✅ **em uso** | 463.016 movimentações carregadas de TJSP e TJRJ |
+> | DataJud | ✅ **em uso** | 1.086.623 movimentações dos três tribunais, só matéria cível |
 > | Doutrina (DOAJ, SciELO, OAI-PMH) | ✅ **em uso** | 52.696 artigos — a lacuna de doutrina foi resolvida |
 > | Repositório do TJSP (e-SAJ/CJSG) | ❌ inviável | exige reCAPTCHA v3 |
 > | Repositório do TJRJ (eJURIS) | ❌ inviável | Termos de Uso proíbem raspagem |
@@ -245,7 +245,7 @@ capítulo — exatamente o que o mockup mostra em *Doutrina invocada*.
 
 Era a pergunta em aberto desta página. A resposta **não** depende do inteiro
 teor: é associação semântica entre o título do artigo e o assunto da TPU,
-com score gravado e limiar declarado. **9.186 ligações**, cobrindo 7.242 artigos.
+com score gravado e limiar declarado. **13.870 ligações**, cobrindo 9.649 artigos.
 
 **Só embedding não serve** — e isso é a lição que vale registrar. Na primeira
 tentativa, o tema *Indenização por Dano Moral* atraiu artigos de **filosofia
@@ -303,13 +303,13 @@ Atualizado após a carga real de 15/09/2026.
 
 | Bloco da tela | Fonte | Estado |
 |---|---|---|
-| Busca de temas | DataJud (assuntos TPU) + agrupamento semântico | 🟢 **408 temas carregados**, com lastro em assunto real |
+| Busca de temas | DataJud (assuntos TPU) + agrupamento semântico | 🟢 **1.049 temas carregados**, com lastro em assunto real |
 | Nota de força | DW (agregação própria) | 🟢 **implementada**, com os 4 componentes abertos. R-08 (cobertura) decidido: satura em 3 |
 | Comportamento por tribunal | DataJud + TPU | 🟢 **implementado** — mas só 2 tribunais têm dado (ver TJMG acima) |
-| Amostra auditável (processo, órgão, data, desfecho) | DataJud + TPU | 🟢 **11.609 processos** |
+| Amostra auditável (processo, órgão, data, desfecho) | DataJud + TPU | 🟢 **18.002 processos** |
 | Link para o processo na origem | mapeamento por tribunal | 🟢 **100% dos processos**: TJSP `direto` (reverificado), TJRJ `portal` |
 | Série anual / por órgão | DW | 🟢 **implementado** |
-| Doutrina invocada | DOAJ + SciELO + OAI-PMH | 🟢 **52.696 artigos**, 9.186 ligados a tema |
+| Doutrina invocada | DOAJ + SciELO + OAI-PMH | 🟢 **52.696 artigos**, 13.870 ligados a tema |
 | **Polaridade do resultado** | DataJud + classe processual | 🟢 **implementada** — ver [Polaridade](05-polaridade-do-resultado.md). **Nova exigência**, descoberta na carga |
 | Jurisprudência qualificada | **PANGEA** (não investigada) | 🔴 sem fonte |
 | Citação de acórdão · inteiro teor | repositório do tribunal | 🔴 **bloqueado nos 4 tribunais** (captcha/ToS) |

@@ -1,7 +1,7 @@
 # ETL e NLP
 
-> **Implementado e carregado** (set/2026): 463.016 linhas de fato, 52.696 artigos de
-> doutrina, 408 temas. O pipeline é o conjunto de scripts em `scraping/` — Python + SQL —
+> **Implementado e carregado** (set/2026): 1.086.623 linhas de fato, 52.696 artigos de
+> doutrina, 1.049 temas. O pipeline é o conjunto de scripts em `scraping/` — Python + SQL —
 > e **roda à mão**, não agendado. Ver [Carga manual](#carga-manual--o-processo) e
 > [D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada).
 
@@ -303,7 +303,7 @@ Três usos possíveis, em ordem de valor por custo. Nenhum implementado.
 
 ### Uso 1 · Agrupar assuntos em tema  *(maior valor, começar por aqui)*
 
-> **✅ Implementado — 15/09/2026.** 447 assuntos da TPU → **408 temas**.
+> **✅ Implementado — recarga de 20/09/2026.** 1.075 assuntos da TPU → **1.049 temas**.
 
 **Problema.** Os mockups mostram cinco teses distintas para uma mesma consulta. Um
 código de assunto da TPU não separa isso.
@@ -314,7 +314,7 @@ distância de cosseno; e o rótulo escrito na curadoria.
 
 | Etapa | Resultado |
 |---|---|
-| Embeddings | 447 assuntos + 52.696 títulos de doutrina |
+| Embeddings | 1.075 assuntos + 52.696 títulos de doutrina |
 | Clusterização (`threshold` 0,20) | 69 clusters multi-assunto **candidatos** |
 | Curadoria | **32 aceitos, 37 rejeitados** |
 | Temas | 408 (32 de merge + 376 mantidos 1:1) |
@@ -374,7 +374,7 @@ Nunca PDF de livro. Ver [Fontes](../03-dados/01-fontes.md#fonte-5--doutrina).
 
 ### Uso 4 · Ligar doutrina a tema  *(não estava previsto, e funcionou)*
 
-> **✅ Implementado.** 9.186 ligações, cobrindo 7.242 dos 52.696 artigos.
+> **✅ Implementado.** 13.870 ligações, cobrindo 9.649 dos 52.696 artigos.
 
 [Fontes](../03-dados/01-fontes.md#fonte-5--doutrina) listava "de onde sai a
 associação entre doutrina e tema" como pergunta sem resposta, presumindo que

@@ -2,7 +2,7 @@
 
 > ## ✅ Esquema implementado e carregado — 15/09/2026
 >
-> Deixou de ser proposta. Existe um esquema rodando com **463.016 linhas de
+> Deixou de ser proposta. Existe um esquema rodando com **1.086.623 linhas de
 > fato**, e as decisões que esta página listava como em aberto foram tomadas:
 >
 > | Decisão | Status |
@@ -71,7 +71,7 @@ A recomendação foi seguida. O que confirmou a escolha, na prática:
 
 - o DataJud entrega o array `movimentos` por processo — a fonte de eventos que a
   Opção A pressupõe **existe**;
-- média de **43,8 movimentos por processo**: 18.378 processos renderam 463.016
+- média de **60,4 movimentos por processo**: 18.020 processos renderam 1.086.623
   linhas de fato. Volume alto, como o contra previa, mas Postgres absorve sem
   esforço;
 - a camada `case_current_result` resolve o "resultado vigente por processo", e é

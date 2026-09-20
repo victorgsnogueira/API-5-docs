@@ -89,8 +89,8 @@ Os embeddings ficam em `nlp.topic_embedding` e `nlp.doctrine_embedding`
 `dw` não tem nenhuma coluna vetorial — e o teste de integridade 7 falha se voltar a ter.
 
 > ✅ **Verificado em 19/09/2026:** `pg_dump -Fc -n dw` (14,7 MB) restaurado num
-> `postgres:16` **sem pgvector**, com ICU `pt-BR`: mesmas contagens (463.016 fatos,
-> 52.696 artigos, 408 temas, 9.186 ligações), as 9 views materializadas populadas, busca
+> `postgres:16` **sem pgvector**, com ICU `pt-BR`: mesmas contagens (1.086.623 fatos,
+> 52.696 artigos, 1.049 temas, 13.870 ligações), as 9 views materializadas populadas, busca
 > com `unaccent` funcionando e **os 24 testes de integridade vazios**. Só é preciso criar
 > `pg_trgm` e `unaccent` antes do restore.
 
@@ -100,7 +100,7 @@ Os embeddings ficam em `nlp.topic_embedding` e `nlp.doctrine_embedding`
 |---|---|
 | Imagem | **`pgvector/pgvector:pg16`** — Postgres oficial + pgvector já compilado |
 | Postgres | **16.15** (Debian 12 / bookworm) |
-| Tamanho atual | ~844 MB (463.016 linhas de fato + 52.696 artigos + embeddings) |
+| Tamanho atual | ~1,5 GB (1.086.623 linhas de fato + 52.696 artigos + embeddings) |
 
 > **Banco da carga:** `pgvector/pgvector:pg16` — a imagem oficial não traz o pgvector.
 > **Testcontainers dos [testes](../07-justificativas/03-tdd.md) da API:** `postgres:16`
@@ -167,7 +167,7 @@ POSTGRES_INITDB_ARGS="--locale-provider=icu --icu-locale=pt-BR --encoding=UTF8 -
 |---|---|---|---|
 | `raw` | payload cru (JSONB) por fonte — `datajud_case`, `doctrine_article`, `tjmg_decision` | 3 | 12 (inclui GIN no `payload`) |
 | `staging` | DTO achatado — `case_event`, `case_decision`, `doctrine_article` | 3 | 8 |
-| `dw` | modelo dimensional: 2 fatos, 10 dimensões, 4 pontes, `strength_config` | 17 | 56 |
+| `dw` | modelo dimensional: 2 fatos, 10 dimensões, 4 pontes, `strength_config`, `tpu_scope` | 18 | 59 |
 | `dw` | **9 views materializadas** — `case_current_result`, `topic_summary`, `topic_by_year`, `topic_by_court`, `topic_by_judging_body`, `theme_summary`, `theme_by_year`, `theme_by_court`, `theme_strength` | — | índice único em cada (permite `REFRESH … CONCURRENTLY`) |
 | `public` | só as extensões | — | — |
 

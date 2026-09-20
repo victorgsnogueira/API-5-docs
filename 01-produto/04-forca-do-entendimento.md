@@ -7,7 +7,7 @@ A nota de 0 a 100 no círculo — a métrica-assinatura do produto. Responde a:
 > raciocínio, não de validação com especialista da área nem de teste empírico. Servem
 > como ponto de partida para a discussão — não como fórmula fechada.
 >
-> ✅ **Implementada em 15/09/2026** sobre a carga real (408 temas), em
+> ✅ **Implementada em 15/09/2026**, recalculada na recarga cível de 20/09/2026 (1.049 temas), em
 > `dw.theme_strength`. Os pesos continuam sendo calibragem não validada — mas
 > agora vivem em `dw.strength_config`, uma linha de tabela, alteráveis sem
 > mexer em SQL de view.
@@ -79,15 +79,19 @@ coverage = min(1, courts / N)
 > `N` vive em `dw.strength_config.coverage_courts`, **não cravado na fórmula** —
 > se STF/STJ entrarem no escopo, muda numa linha.
 
-⚠ **Efeito colateral real na carga atual.** Como o
-[TJMG ficou fora da tabela fato](../03-dados/04-limitacoes-da-fonte.md#5b--completude-do-dado-varia-por-tribunal),
-quase todo tema vê 1 ou 2 tribunais. A cobertura trava em 0,333–0,667 e puxa a
-nota para baixo: dos 292 temas com julgamento, a distribuição ficou **213 "Em
-formação", 75 "Divergente", 4 "Dominante", 0 "Consolidada"**.
+⚠ **Efeito colateral real na carga atual.** A cobertura continua sendo o componente
+que mais puxa a nota para baixo — média de **0,338**, ou seja, o tema típico aparece
+em **um** dos três tribunais. A causa mudou: não é mais o TJMG fora do fato (isso
+[era erro do coletor e foi corrigido](../03-dados/04-limitacoes-da-fonte.md#5b--completude-do-dado-varia-por-tribunal--era-erro-nosso-resolvido-em-20092026)),
+é a amostra ser estratificada por área e espalhar-se por 1.075 assuntos — poucos
+caem nos três tribunais ao mesmo tempo.
 
-Não é defeito da fórmula — é o dado disponível. Some quando o TJMG entrar. Mas
-**exibir "0 temas consolidados" na banca sem essa explicação é péssimo**, então
-a interface precisa declarar a cobertura efetiva.
+Na recarga cível de 20/09/2026, dos **709 temas com julgamento**: **498 "Em
+formação", 147 "Divergente", 61 "Dominante", 3 "Consolidada"**. Antes eram 292 temas
+e nenhum consolidado.
+
+Não é defeito da fórmula — é o dado disponível. A interface precisa declarar a
+cobertura efetiva, e um tema "Em formação" tem que dizer que viu um tribunal só.
 
 ### Recência
 

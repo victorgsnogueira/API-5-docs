@@ -198,7 +198,7 @@ a Opção A pressupunha. Não fecha porta: permite tempo entre etapas e taxa de
 recurso, que a Opção B perderia.
 
 **Custo.** Volume alto — média de **43,8 movimentos por processo**; 18.378
-processos renderam 463.016 linhas. Postgres absorve sem esforço.
+processos renderam 1.086.623 linhas. Postgres absorve sem esforço.
 
 **Nota.** `fact_case_decision` (grão = decisão publicada) existe e está vazia,
 para quando houver inteiro teor. São grãos diferentes para fontes diferentes,
@@ -479,39 +479,43 @@ precisa ser refeita.
 
 **Motivo.** Decisão do time; a justificativa não foi registrada.
 
-**O que ela toca no DW** — medido em 20/09/2026 no banco da carga:
+**O que não muda.** O [D-15](#d-15--a-palavra-favorável-não-existe-no-schema) continua
+valendo. A inversão de polaridade existe no cível também: em *Embargos à Execução* a
+procedência favorece o devedor, e em *Execução Fiscal* a autora é a Fazenda. Só saem os
+exemplos penais.
 
-| | Penal | Total |
-|---|---|---|
-| Processos ligados a tema `PENAL` | 987 (8,5%) | 11.609 |
-| Eventos desses processos | 118.511 (25,6%) | 463.016 |
-| Temas `PENAL` | 85 (20,8%) | 408 |
-| Artigos de doutrina ligados a tema `PENAL` | 1.047 (de 7.242 ligados a algum tema) | 52.696 |
+**✅ A base foi refeita em 20/09/2026**, e não filtrada na leitura. O recorte é feito na
+origem pela TPU oficial do CNJ (`scraping/tpu/tpu.json`, baixada do SGT):
 
-O penal pesa pouco em processos e muito em eventos: a execução da pena gera muito
-evento por processo. Também **não é mais a maior área**: 70% dos processos são de
-fazenda (Execução Fiscal). A premissa de [D-15](#d-15--a-palavra-favorável-não-existe-no-schema)
-era da primeira amostra, de 1.641 julgados.
+| | Antes | Depois |
+|---|---:|---:|
+| Processos | 11.609 | **18.002** |
+| Eventos (fato) | 463.016 | **1.086.623** |
+| Assuntos | 447 | **1.075** |
+| Temas | 408 | **1.049** |
+| Eventos do TJMG | 0 | **254.251** |
+| Processos de matéria penal | 987 | **0** |
 
-**O que não muda.** O D-15 continua valendo. A inversão de polaridade existe no cível
-também: em *Embargos à Execução* a procedência favorece o devedor, e em *Execução
-Fiscal* a autora é a Fazenda. Só saem os exemplos penais.
+O filtro é aplicado três vezes — na consulta ao DataJud, no transform, e como trava que
+aborta a carga —, e os testes 25 a 30 repetem a verificação no destino depois do dump.
+A base cresceu porque a mesma recarga corrigiu dois erros antigos:
 
-**O que fica a fazer** — nada disso foi feito:
+- **o TJMG voltou.** Ele não estava no fato porque a coleta ordenava do mais antigo para
+  o mais novo e só via documentos de 2017/2018, sem `dataHora`. Era erro do coletor, não
+  do tribunal ([5b](../03-dados/04-limitacoes-da-fonte.md#5b--completude-do-dado-varia-por-tribunal--era-erro-nosso-resolvido-em-20092026));
+- **a amostra deixou de ser o que o tribunal mais processa.** Antes, 70% eram Execução
+  Fiscal. Agora a cota é por área do direito, e nenhuma área domina.
 
-- decidir o destino do dado penal já carregado: esconder na leitura ou refazer a carga
-  sem ele;
-- o coletor deixa de trazer classes penais; como o `scraping/` não está versionado
-  ([R-15](#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito)), só quem
-  roda a carga faz isso;
-- as telas e o [chatbot](../01-produto/05-chatbot.md) declaram o escopo, e o chatbot
-  recusa pergunta criminal;
-- corrigir a curadoria antes de filtrar por `subject_area = 'PENAL'`: o rótulo derrubaria
-  temas que não são penais — *Averbação/Cômputo de tempo de serviço de segurado
-  especial* (previdenciário) e, provavelmente, *Esbulho / Turbação / Ameaça* (ação
-  possessória: 28 processos, nenhum de ação penal).
+`dim_topic` ganhou `subject_code` e `tpu_area`, a área **oficial** da TPU. Isso expôs um
+erro na área do produto: a regra de palavra-chave `"regime"` marcava como PENAL o tema
+*Averbação/Cômputo de tempo de serviço de segurado especial (regime de economia
+familiar)*, que é previdenciário. As regras penais saíram da curadoria.
 
-**Custo.** Menos dado na vitrine: 85 dos 408 temas e um quarto dos eventos.
+**O que ainda falta:** as telas e o [chatbot](../01-produto/05-chatbot.md) declararem o
+escopo cível, e o chatbot recusar pergunta criminal.
+
+**Custo.** Menos matéria na vitrine, e a recarga levou uma tarde. Em troca, a base
+triplicou e passou a ter os três tribunais.
 
 ---
 
@@ -630,7 +634,7 @@ não por camada.
 
 O esquema existe, está carregado e o checklist de auditoria foi percorrido. Grão
 declarado (D-13), pontes no lugar, proveniência em toda linha, carga idempotente
-verificada. **463.016 linhas de fato.**
+verificada. **1.086.623 linhas de fato.**
 
 **Restam dois itens do checklist:** o modelo não responde às perguntas que
 dependem de inteiro teor (R-01), e não há historização de dimensão (R-13).
@@ -650,7 +654,7 @@ não verificada.
 
 ### R-05 · Granularidade do tema 🟠 *(mitigado em parte)*
 
-A camada semântica foi construída: 447 assuntos → 408 temas, com o lastro da TPU
+A camada semântica foi construída: 1.075 assuntos → 1.049 temas, com o lastro da TPU
 preservado.
 
 **Mas o risco não sumiu.** O agrupamento por embedding junta variação de

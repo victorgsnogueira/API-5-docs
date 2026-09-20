@@ -22,7 +22,7 @@
                            │  pg_dump / pg_restore do schema dw
 ┌─ 3 · DATA WAREHOUSE ──────▼─────────────────────────────────────────┐
 │  Postgres 16 · ICU pt-BR · modelagem dimensional                    │
-│  grão = movimentação processual (D-13) · 463.016 linhas de fato     │
+│  grão = movimentação processual (D-13) · 1.086.623 linhas de fato   │
 └──────────────────────────┬──────────────────────────────────────────┘
                            │  atualizado ao fim de cada carga
 ┌─ 4 · AGREGADOS OLAP ──────▼─────────────────────────────────────────┐

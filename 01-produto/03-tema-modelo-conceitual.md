@@ -57,9 +57,9 @@ houver), usando embeddings ou uma LLM para rotular o cluster.
 
 ## ✅ Implementado: A com B por cima (15/09/2026)
 
-A recomendação abaixo foi seguida à risca. Resultado: **447 assuntos da TPU →
-408 temas**, dos quais 32 vieram de agrupamento semântico (consolidando 71
-assuntos) e 376 foram mantidos 1:1.
+A recomendação abaixo foi seguida à risca. Resultado, na recarga cível de
+20/09/2026: **1.075 assuntos da TPU → 1.049 temas**, dos quais 23 vieram de
+agrupamento semântico (consolidando 49 assuntos) e 1.026 foram mantidos 1:1.
 
 `dim_topic` (assunto bruto) **não foi destruída** — `dim_theme` é uma camada
 acima, ligada por `bridge_theme_topic`. A pergunta "de onde saiu esse tema?" tem
@@ -100,7 +100,7 @@ o [backend é em inglês](../02-arquitetura/02-backend-dotnet.md#idioma):
 | Campo | Origem | Uso na tela | Estado |
 |---|---|---|---|
 | `code` | chave do tema | identificador na URL | ✅ |
-| `name` | rótulo (**valor em português**) | título | ✅ 408 temas |
+| `name` | rótulo (**valor em português**) | título | ✅ 1.049 temas |
 | `subjectArea` | classificação de matéria | tag CONSUMIDOR / BANCÁRIO / QUANTUM | ✅ 94,1% |
 | `summary` | prosa curta, gerada e curada | as duas linhas do resultado | 🔴 NLP Uso 3, não feito |
 | `caseCount` | contagem distinta via ponte | "12.418 processos" | ✅ |

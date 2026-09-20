@@ -84,20 +84,21 @@ entra na métrica.
 > **[Polaridade do resultado](05-polaridade-do-resultado.md)** — leitura
 > obrigatória antes de exibir qualquer percentual.
 
-### 5b · Completude do dado varia por tribunal
+### 5b · ~~Completude do dado varia por tribunal~~ — era erro nosso *(resolvido em 20/09/2026)*
 
-Novo, e não previsto: **100% das 265.088 movimentações do TJMG** coletadas do
-DataJud têm `dataHora` **nulo**. TJSP e TJRJ não têm o problema.
+**O que esta seção dizia:** que 100% das 265.088 movimentações do TJMG vinham com
+`dataHora` nulo, que isso era o dado do tribunal e que bloqueava o TJMG inteiro na
+tabela fato.
 
-**Bloqueia** o TJMG inteiro na tabela fato — sem timestamp não há evento, e
-inventar data violaria o [D-11](../06-operacao/02-decisoes-e-riscos.md#d-11--nada-de-dado-inventado).
+**Estava errado, e o erro era do coletor.** A coleta ordenava por `@timestamp`
+**crescente** e parava na cota, então só via os documentos mais antigos do índice —
+no TJMG, de 2017/2018, que realmente não têm `dataHora`. Consultando o mesmo índice
+em ordem **decrescente**, os documentos recentes têm `dataHora` em 100% das
+movimentações. Na recarga de 20/09/2026 o TJMG entrou com **254.251 eventos**.
 
-**Consequência:** o escopo declarado é de três tribunais, a base efetiva tem
-dois. A interface precisa dizer isso, e a nota de força sofre no componente de
-cobertura.
-
-**Lição para todo conector novo:** verificar completude **campo a campo por
-tribunal**. Um contrato de API igual não garante dado igual.
+**A lição continua, corrigida:** a **ordem da coleta é o recorte**. Antes de atribuir
+uma lacuna à fonte, vale checar se ela não é da consulta. Verificar completude campo a
+campo por tribunal continua valendo — só não foi isso que aconteceu aqui.
 
 ### 6 · CPF / CNPJ das partes
 

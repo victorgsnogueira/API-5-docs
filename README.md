@@ -24,7 +24,7 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 | Aviso | Onde |
 |---|---|
 | ⚠ O `prototipo/` **não é fonte de verdade** — nem o código, nem o contrato, nem a modelagem | [Protótipo](05-prototipo/01-prototipo-referencia.md) |
-| ✅ A **modelagem do DW existe e está carregada** — 463.016 linhas de fato | [Modelo dimensional](03-dados/02-modelo-dimensional.md) |
+| ✅ A **modelagem do DW existe e está carregada** — 1.086.623 linhas de fato, só cível | [Modelo dimensional](03-dados/02-modelo-dimensional.md) |
 | 🔴 **"Favorável" sem dizer a quem inverte a leitura** — leia antes de exibir percentual | [Polaridade do resultado](03-dados/05-polaridade-do-resultado.md) |
 | ⚠ O que depende de **inteiro teor** segue sem fonte — os 4 tribunais estão bloqueados | [Limitações da fonte](03-dados/04-limitacoes-da-fonte.md) |
 | ⚠ Código **em inglês**; tudo o que a API devolve (dados, rótulos, erros) **em português** | [Idioma](02-arquitetura/02-backend-dotnet.md#idioma) |
@@ -103,9 +103,9 @@ Os padrões e as ferramentas do projeto, e por que foram escolhidos.
 |---|---|
 | Telas (design) | ✅ mockups fechados em [`Telas/`](Telas/) |
 | Escopo, fontes e convenções | ✅ definidos — ver [Decisões](06-operacao/02-decisoes-e-riscos.md) |
-| Modelagem do DW | ✅ implementada e carregada — 463.016 linhas de fato |
+| Modelagem do DW | ✅ implementada e carregada — 1.086.623 linhas de fato, só cível |
 | Carga (coleta + normalização) | ✅ funcional, **manual** — a pasta `scraping/` fica **fora de repositório**, por decisão ([R-15](06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito)) |
-| NLP / normalização em tema | ✅ 447 assuntos → 408 temas; doutrina ligada a tema |
+| NLP / normalização em tema | ✅ 1.075 assuntos → 1.049 temas; doutrina ligada a tema |
 | Fontes além do DataJud | 🟠 doutrina ✅; jurisprudência dos tribunais bloqueada |
 | Backend .NET (`API5-Backend`) | 🟠 setup mergeado na `main` (PR #2): .NET 10, camadas, health check, 17 testes, CI e release automática — sem rota de domínio |
 | Frontend React (`API5-Frontend`) | 🟠 scaffold com design system, testes (Vitest), CI e release automática; nenhuma tela |
