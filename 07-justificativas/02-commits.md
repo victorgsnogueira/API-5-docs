@@ -71,7 +71,7 @@ e na hora de montar o que foi entregue.
 
 **Abre caminho para automação.** A convenção semântica é um formato conhecido por
 ferramentas de validação de mensagem, geração de changelog e versionamento. Não estão
-configuradas hoje, mas o padrão já as torna possíveis sem reescrever histórico.
+configuradas hoje, mas o padrão já as torna possíveis sem reescrever histórico. A versão das releases **não** sai dos commits: vem do label `release:*` do PR — ver [Versionamento e releases](04-versionamento-e-releases.md).
 
 ### Por que commits pequenos
 

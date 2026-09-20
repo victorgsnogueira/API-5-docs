@@ -93,10 +93,11 @@ Os padrões e as ferramentas do projeto, e por que foram escolhidos.
 - [Padrão de branches](07-justificativas/01-branches.md) — `main`, uma branch por US, uma por task
 - [Padrão de commits](07-justificativas/02-commits.md) — convenção semântica, em inglês
 - [TDD](07-justificativas/03-tdd.md) — o padrão de desenvolvimento, backend e frontend
+- [Versionamento e releases](07-justificativas/04-versionamento-e-releases.md) — labels `release:*`, tag `vX.Y.Z`, o que cada merge na `main` publica
 
 ---
 
-## Estado atual (2026-09-19)
+## Estado atual (2026-09-20)
 
 | Frente | Estado |
 |---|---|
@@ -106,25 +107,22 @@ Os padrões e as ferramentas do projeto, e por que foram escolhidos.
 | Carga (coleta + normalização) | ✅ funcional, **manual** — a pasta `scraping/` fica **fora de repositório**, por decisão ([R-15](06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito)) |
 | NLP / normalização em tema | ✅ 447 assuntos → 408 temas; doutrina ligada a tema |
 | Fontes além do DataJud | 🟠 doutrina ✅; jurisprudência dos tribunais bloqueada |
-| Backend .NET (`API5-Backend`) | 🟠 setup na branch `initial-setup` (PR aberto): .NET 10, camadas, health check, 17 testes — sem CI e sem rota de domínio |
-| Frontend React (`API5-Frontend`) | 🟠 scaffold com design system e CI; nenhuma tela |
-| Testes | 🟠 24 de integridade do DW + 17 no backend; **frontend sem Vitest** (nem script `test`) |
+| Backend .NET (`API5-Backend`) | 🟠 setup mergeado na `main` (PR #2): .NET 10, camadas, health check, 17 testes, CI e release automática — sem rota de domínio |
+| Frontend React (`API5-Frontend`) | 🟠 scaffold com design system, testes (Vitest), CI e release automática; nenhuma tela |
+| Testes | 🟠 24 de integridade do DW + 17 no backend + Vitest no frontend (2 arquivos de teste, rodando no CI) |
 | Chatbot | 🔴 roadmap |
 | Implantação no cliente | 🔴 requisitos registrados; manuais, spec das máquinas e pacote **a escrever** |
-| Deploy, monitoramento | 🔴 não configurado |
+| Release, deploy, monitoramento | 🟠 release automática a cada merge na `main` (zip da API e do frontend); pacote completo, deploy e monitoramento não configurados |
 
 ## Próximos desbloqueios, em ordem
 
-1. **Configurar os testes do frontend** — Vitest + Testing Library + MSW; hoje o `apps/web`
-   não tem nem script `test`, e o backend já está com xUnit + Moq + Testcontainers
-   ([TDD](07-justificativas/03-tdd.md)).
-2. **Um fluxo vertical fino** — `GET /api/topics` + tela de resultados, ponta a ponta, por TDD.
-3. **CI do backend** — build + test + pacote de versão; os testes de integração pedem
-   **Docker no runner**. Não há `.github/` no repositório.
-4. **Manual de implantação e spec das máquinas** — o cliente instala sozinho, a partir só
+1. **Um fluxo vertical fino** — `GET /api/topics` + tela de resultados, ponta a ponta, por TDD.
+2. **Pacote de versão completo** — juntar a release da API, a do frontend, `nginx.conf`, dump do `dw`
+   e scripts ([Versionamento e releases](07-justificativas/04-versionamento-e-releases.md)).
+3. **Manual de implantação e spec das máquinas** — o cliente instala sozinho, a partir só
    dos arquivos buildados ([Implantação no cliente](06-operacao/04-implantacao-no-cliente.md#documentos-que-precisam-ser-escritos)).
 
-> Saíram desta lista: versionar o `scraping/` (decidido que fica fora) e subir para .NET 10
-> (feito). `Dockerfile` também: produção é serviço Windows, não contêiner
+> Saíram desta lista: versionar o `scraping/` (decidido que fica fora), subir para .NET 10,
+> configurar os testes do frontend e o CI do backend (feitos). `Dockerfile` também: produção é serviço Windows, não contêiner
 > ([D-21](06-operacao/02-decisoes-e-riscos.md#d-21--produção-na-intranet-do-cliente-em-windows-server)) —
 > Docker só aparece em teste e na carga.

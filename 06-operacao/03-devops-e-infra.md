@@ -21,7 +21,7 @@
 | **Entrega** | pacote de **arquivos buildados** + manual; o cliente instala |
 | **Acesso** | só restrição de rede, **sem login** — ver [D-23](02-decisoes-e-riscos.md#d-23--acesso-por-restrição-de-rede-sem-login) |
 | **Simulação de produção** | rede **Tailscale** simulando a intranet; sem VPS — ver [D-24](02-decisoes-e-riscos.md#d-24--simulação-da-intranet-numa-rede-tailscale) |
-| Deploy | o CI gera o pacote de versão; quem instala é o cliente |
+| Deploy | o merge na `main` publica uma release (zip + `.sha256`) — ver [Versionamento e releases](../07-justificativas/04-versionamento-e-releases.md); quem instala é o cliente |
 | CI/CD | obrigatório |
 | Monitoramento | obrigatório, ferramenta a definir |
 | Documentação | obrigatória, formato a definir |
@@ -73,18 +73,24 @@ Um pipeline por repositório.
 
 ### `API5-Backend`
 
-**Não existe workflow ainda** (o repo não tem `.github/`).
+**Existe** — `.github/workflows/ci.yml` (workflow `Backend CI`, job `Backend checks`),
+em `push`/`pull_request` para `main` e `us*`, e também sob demanda (`workflow_dispatch`):
 
 ```
 push / pull request
-  ├── restore + build                     (falha rápida)
-  ├── testes unitários                    (Domain, Application)      ← TDD
-  ├── testes de integração                (Testcontainers: postgres:16, sem pgvector)
+  ├── restore com dependências travadas   (--locked-mode)
+  ├── verificação de formatação e analyzers  (dotnet format --verify-no-changes)
+  ├── build Release
+  ├── testes com PostgreSQL descartável (Testcontainers)   ← TDD
   │     └── schema e dados mínimos de teste para validar as consultas da API
-  ├── análise estática / lint
-  └── publicação self-contained win-x64
-        └── na main: gera o artefato da API para o pacote de versão
+  ├── publicação self-contained win-x64
+  ├── upload de resultados de teste e cobertura (14 dias)
+  └── na main: upload do artefato da API para o pacote de versão (30 dias)
 ```
+
+O job `Backend checks` é o check **obrigatório** para merge na `main` e nas `usX`,
+configurado nos rulesets (ver
+[Proteção da `main` e das branches de US](../07-justificativas/01-branches.md#proteção-da-main-e-das-branches-de-us)).
 
 Raspagem, ETL, NLP, migrations da carga e os 24 testes de integridade do DW ficam
 fora do repositório e do CI do backend. Os testes da API preparam seu próprio banco
@@ -97,20 +103,41 @@ não coleta nem processa dados para gerar esse dump.
 
 ### `API5-Frontend`
 
-**Existe** — `.github/workflows/ci.yml`, Node 20, em `push`/`pull_request` para `main`:
+**Existe** — `.github/workflows/ci.yml` (workflow `Frontend CI`, job `Frontend checks`),
+em `push`/`pull_request` para `main` e `us*`, e também sob demanda (`workflow_dispatch`).
+A versão do Node vem de `ratio/.node-version`:
 
 ```
 push / pull request
-  ├── npm ci
-  ├── lint                  ✅
-  ├── typecheck             ✅
-  ├── test                  ❌ falta — vitest run  (TDD)
-  └── build                 ✅
-        └── na main: dist/ entra no pacote de versão   ❌ falta
+  ├── npm ci                              (dependências travadas)
+  ├── format:check
+  ├── lint
+  ├── typecheck
+  ├── test:ci                             ← TDD (com cobertura)
+  ├── build
+  ├── upload de resultados e cobertura (14 dias)
+  └── na main: upload do dist/ para o pacote de versão (30 dias)
 ```
 
-> O gatilho hoje é só para `main`. Com o [padrão de branches](../07-justificativas/01-branches.md),
-> PR de task entra em `usX` — acrescentar `us*` em `branches:` para o CI rodar nesses PRs.
+O job `Frontend checks` é o check **obrigatório** para merge na `main` e nas `usX`,
+configurado nos rulesets (ver
+[Proteção da `main` e das branches de US](../07-justificativas/01-branches.md#proteção-da-main-e-das-branches-de-us)).
+
+### Release — backend e frontend
+
+Além do CI, cada repositório tem dois workflows que cuidam da versão, idênticos nos dois.
+Detalhes, regra de versão e pontos de atenção em
+[Versionamento e releases](../07-justificativas/04-versionamento-e-releases.md).
+
+| Workflow | Job / check | Quando roda | O que faz |
+|---|---|---|---|
+| `Release label` (`release-label.yml`) | `Release label` | PR para a `main` (aberto, reaberto, novo push, label posto ou tirado) | exige **um** label `release:sprint\|us\|fix\|none` e comenta no PR a versão prevista |
+| `Backend Release` / `Frontend Release` (`release.yml`) | `Publish release` | fim do CI, com sucesso, em push na `main` | acha o PR mergeado, calcula a versão pelo label e cria a **GitHub Release** com o zip e o `.sha256` |
+
+O check `Release label` é **obrigatório** nos rulesets. A release publica
+`ratio-api-vX.Y.Z-win-x64.zip` (backend, self-contained) e `ratio-web-vX.Y.Z.zip`
+(frontend, conteúdo do `dist/`). Isso **não é o pacote de versão completo** do cliente:
+faltam `nginx.conf`, dump do `dw`, scripts e manual.
 
 ### `API-5-docs` (esta wiki)
 
@@ -189,19 +216,20 @@ extração aparece na tela, não só no log.
 
 | Escolha | Opções a considerar | Quando decidir |
 |---|---|---|
-| Runner de CI | GitHub Actions (provável, pelos repos) | antes do primeiro merge relevante |
+| ~~Runner de CI~~ | decidido: **GitHub Actions**, runner `ubuntu-24.04` | — |
 | Controle de migration aplicada na carga separada | mecanismo a definir junto do versionamento do pipeline, fora do backend | antes da primeira migration nova |
 | Log estruturado | Serilog + destino a definir | junto com o esqueleto da API |
 | Monitoramento | Uptime Kuma (leve, self-host), Grafana + Prometheus (completo), Sentry (erros) | depois do primeiro deploy |
 | Backup | o dump de cada carga + o `raw` local, guardados fora da máquina que os gerou | antes da primeira carga que doa perder |
 | Gestão de segredos | configuração na máquina do cliente (fora do pacote) | imediato — nada de segredo no repositório nem no pacote |
+| Pacote de versão completo | as releases do backend e do frontend são zips separados; falta juntar com `nginx.conf`, dump do `dw`, scripts e manual | antes da primeira entrega ao cliente |
 | Documentação | esta wiki + Swagger + README por repo | contínuo |
 
 ## Regras que valem desde já
 
 1. **Nenhum segredo no repositório.** Connection string, chave de API, credencial —
    tudo por variável de ambiente.
-2. **Só vira pacote de versão o que passou no CI.** Nada de build feito à mão na máquina de alguém.
+2. **Só vira pacote de versão o que passou no CI.** Nada de build feito à mão na máquina de alguém. A release só é publicada depois do CI verde na `main`.
 3. **Toda migration da carga deve ser versionada separadamente do backend** (pendência R-15). Em produção, o schema chega pelo `pg_restore` da
    carga validada — ninguém roda DDL à mão lá.
 4. **A carga é idempotente.** Isso é o que torna reprocessamento seguro.

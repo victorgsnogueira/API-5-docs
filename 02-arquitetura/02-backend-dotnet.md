@@ -163,6 +163,9 @@ Feito (na `initial-setup`):
 - [x] `ProblemDetails` com `title`/`detail` em português — inclusive o 400 de validação.
 - [x] `/health` e `/health/ready` com os [três estados](#health-check--os-três-estados).
 - [x] Log estruturado em arquivo (Serilog), `UseWindowsService()` e `UseForwardedHeaders`.
+- [x] **CI e release** (`Backend CI`, `Release label`, `Backend Release`) — ver
+      [DevOps](../06-operacao/03-devops-e-infra.md#pipeline-de-cicd--esqueleto) e
+      [Versionamento e releases](../07-justificativas/04-versionamento-e-releases.md).
 - [x] Erro de configuração na subida vai **para o arquivo de log** — no serviço Windows
       não há console, e sem isso a TI do cliente ficaria sem diagnóstico.
 
@@ -170,7 +173,7 @@ Falta:
 
 - [ ] **Primeira rota de domínio** (`GET /api/topics`) — hoje só o health existe, e ela
       **nasce de um teste** ([TDD](../07-justificativas/03-tdd.md)).
-- [ ] Workflow de CI — **não existe `.github/` no repo**: build + test + pacote de versão.
+- [ ] **Pacote de versão completo** — o CI e a release do backend já existem (`.github/workflows/`), mas a release publica só o zip da API; falta juntar com NGINX, dump e manual.
 - [ ] Publicação **self-contained `win-x64`** rodando como **serviço Windows**, escutando
       em `127.0.0.1` atrás do NGINX — ver
       [Implantação no cliente](../06-operacao/04-implantacao-no-cliente.md#backend).
