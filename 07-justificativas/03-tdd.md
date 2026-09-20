@@ -140,8 +140,11 @@ dotnet test --collect:"XPlat Code Coverage"              # com cobertura
 | Rotas | `createMemoryHistory` do **TanStack Router** | renderiza a rota real com URL controlada — testa `?aba=base` de verdade |
 | E2E *(opcional, fim de sprint)* | **Playwright** | fluxo Busca → Resultados → Tema contra a API real |
 
-**Nada disso está instalado ainda.** O CI do frontend hoje roda lint, typecheck e build
-— falta o passo de teste. Ver [DevOps](../06-operacao/03-devops-e-infra.md#pipeline-de-cicd--esqueleto).
+**Já instalados no `apps/web`:** Vitest (com cobertura), jsdom, React Testing Library
+(com `user-event` e `jest-dom`) e MSW; há testes do provedor de tema e da navegação. **Não
+instalado:** Playwright (E2E, opcional). O CI do frontend roda `npm run test:ci`
+(`vitest run --coverage`) — ver
+[DevOps](../06-operacao/03-devops-e-infra.md#pipeline-de-cicd--esqueleto).
 
 ### O que se testa primeiro
 
