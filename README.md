@@ -7,7 +7,7 @@ Data Warehouse jurídico com camada de busca: um lugar único onde advogado e ju
 consultam **como um tema costuma ser decidido**, em vez de garimpar processo a
 processo em portais de tribunal.
 
-**Escopo:** TJSP, TJRJ e TJMG. **Fontes:** múltiplas (DataJud, PANGEA, repositórios de
+**Escopo:** TJSP, TJRJ e TJMG, só matéria cível ([D-29](06-operacao/02-decisoes-e-riscos.md#d-29--escopo-cível-sem-o-ramo-criminal)). **Fontes:** múltiplas (DataJud, PANGEA, repositórios de
 tribunal, doutrina). **Stack:** ASP.NET Core + React (TanStack Router, shadcn/ui,
 Tailwind) + Postgres 16. **Produção na intranet do cliente**, em Windows
 Server atrás de NGINX, só para funcionários dele. **TDD** no backend e no frontend.

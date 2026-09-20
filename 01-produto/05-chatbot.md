@@ -100,6 +100,9 @@ chatbot precisa responder sobre os três que temos, **dizendo que são três**.
 - **Não dá aconselhamento jurídico.** Ele descreve o que os dados mostram. "Em 82% dos
   casos o pedido foi acolhido" é dado; "você deve entrar com essa ação" não é o produto.
 - **Não inventa jurisprudência.** Se o tema não está no DW, a resposta é que não está.
+- **Não responde matéria criminal.** O produto é só cível
+  ([D-29](../06-operacao/02-decisoes-e-riscos.md#d-29--escopo-cível-sem-o-ramo-criminal)); pergunta penal recebe a declaração de escopo, não uma
+  resposta.
 - **Não substitui as telas.** A tela é melhor para exploração visual e para citar; o
   chat é melhor para perguntas que não cabem em filtro.
 - **Não é o núcleo do desafio acadêmico.** O núcleo é DW + ETL + OLAP + DevOps. O

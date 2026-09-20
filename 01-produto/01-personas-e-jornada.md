@@ -76,6 +76,10 @@ Os dados cobrem **TJSP, TJRJ e TJMG**. Isso precisa estar visível: um advogado 
 assume cobertura nacional tira conclusão errada de um percentual que só reflete três
 estados. A tela declara o escopo, e o [chatbot](05-chatbot.md) também.
 
+O mesmo vale para a **matéria**: o produto cobre **só o ramo cível**
+([D-29](../06-operacao/02-decisoes-e-riscos.md#d-29--escopo-cível-sem-o-ramo-criminal)). Uma busca por tema criminal não devolve nada, e a tela
+precisa dizer que é escopo — não que não existem decisões.
+
 ## Roadmap
 
 - **Chatbot** — assistente que responde em linguagem natural consultando o DW. Está
@@ -84,5 +88,6 @@ estados. A tela declara o escopo, e o [chatbot](05-chatbot.md) também.
 
 ## Fora do escopo
 
+- **Matéria criminal** — o produto é só cível ([D-29](../06-operacao/02-decisoes-e-riscos.md#d-29--escopo-cível-sem-o-ramo-criminal)).
 - **Alerta de mudança de entendimento** ("me avise se essa tese virar").
 - **Comparação entre dois temas** lado a lado.

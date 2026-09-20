@@ -226,8 +226,10 @@ coberto", e o universo declarado do produto é três.
 Mérito e recurso nunca são somados.
 
 **Por quê.** Descoberto na primeira carga real: em matéria penal — a **maior
-área da base** — "procedência" é condenação. "98% favorável" faria um advogado
-ler exatamente o contrário do que o dado diz.
+área da primeira amostra** (496 de 1.641 julgados) — "procedência" é condenação.
+"98% favorável" faria um advogado ler exatamente o contrário do que o dado diz.
+O penal saiu do escopo em [D-29](#d-29--escopo-cível-sem-o-ramo-criminal); o problema
+continua no cível.
 
 **Custo.** Contrato de API mais verboso: todo percentual carrega um rótulo de
 polaridade junto. É o preço de não induzir o usuário a erro.
@@ -465,6 +467,54 @@ Testes não contam como banco: são descartáveis (Testcontainers).
 
 ---
 
+### D-29 · Escopo cível, sem o ramo criminal
+
+**Decisão.** *(20/09/2026)* O produto atende **só ao ramo cível**. Matéria penal não
+aparece em busca, temas, detalhamento nem no chatbot.
+
+**Interpretação adotada.** "Cível" é tudo o que **não é penal** dentro dos TJs: inclui
+fazenda pública e tributário (Execução Fiscal), consumidor, família, previdenciário e as
+demais áreas. Se a intenção for só a área `CIVIL`, o escopo é bem menor e esta decisão
+precisa ser refeita.
+
+**Motivo.** Decisão do time; a justificativa não foi registrada.
+
+**O que ela toca no DW** — medido em 20/09/2026 no banco da carga:
+
+| | Penal | Total |
+|---|---|---|
+| Processos ligados a tema `PENAL` | 987 (8,5%) | 11.609 |
+| Eventos desses processos | 118.511 (25,6%) | 463.016 |
+| Temas `PENAL` | 85 (20,8%) | 408 |
+| Artigos de doutrina ligados a tema `PENAL` | 1.047 (de 7.242 ligados a algum tema) | 52.696 |
+
+O penal pesa pouco em processos e muito em eventos: a execução da pena gera muito
+evento por processo. Também **não é mais a maior área**: 70% dos processos são de
+fazenda (Execução Fiscal). A premissa de [D-15](#d-15--a-palavra-favorável-não-existe-no-schema)
+era da primeira amostra, de 1.641 julgados.
+
+**O que não muda.** O D-15 continua valendo. A inversão de polaridade existe no cível
+também: em *Embargos à Execução* a procedência favorece o devedor, e em *Execução
+Fiscal* a autora é a Fazenda. Só saem os exemplos penais.
+
+**O que fica a fazer** — nada disso foi feito:
+
+- decidir o destino do dado penal já carregado: esconder na leitura ou refazer a carga
+  sem ele;
+- o coletor deixa de trazer classes penais; como o `scraping/` não está versionado
+  ([R-15](#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito)), só quem
+  roda a carga faz isso;
+- as telas e o [chatbot](../01-produto/05-chatbot.md) declaram o escopo, e o chatbot
+  recusa pergunta criminal;
+- corrigir a curadoria antes de filtrar por `subject_area = 'PENAL'`: o rótulo derrubaria
+  temas que não são penais — *Averbação/Cômputo de tempo de serviço de segurado
+  especial* (previdenciário) e, provavelmente, *Esbulho / Turbação / Ameaça* (ação
+  possessória: 28 processos, nenhum de ação penal).
+
+**Custo.** Menos dado na vitrine: 85 dos 408 temas e um quarto dos eventos.
+
+---
+
 ## Riscos
 
 Ordenados por impacto. **Status revisado em 15/09/2026**, após a primeira carga
@@ -681,6 +731,8 @@ dado do caso dele.
 | ~~Acesso a dados: Dapper ou EF Core?~~ | ✅ Dapper (D-26) | — |
 | ~~Quantos bancos o projeto tem?~~ | ✅ três: carga, homologação, produção (D-28) | — |
 | Com que frequência rodar a carga manual? | time | frescor do dado exibido |
+| Dado penal já carregado: esconder na leitura ou refazer a carga sem ele? | time | D-29 |
+| "Cível" é tudo o que não é penal, ou só a área `CIVIL`? | time | D-29 |
 | ~~Só produção, ou produção + staging no Coolify?~~ | substituída: produção é o cliente (D-21) | — |
 | ~~A VPS Hostinger + Coolify continua, como homologação?~~ | ✅ não — simulação em rede Tailscale (D-24) | — |
 | ~~"Só funcionários" é restrição de rede ou exige login?~~ | ✅ só rede, sem login (D-23) | — |

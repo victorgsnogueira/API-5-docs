@@ -6,6 +6,11 @@
 > era hipótese: o produto **exibiria a conclusão invertida** para a maior área
 > da base.
 
+> **O escopo mudou depois desta página** ([D-29](../06-operacao/02-decisoes-e-riscos.md#d-29--escopo-cível-sem-o-ramo-criminal)): o produto agora
+> só atende o ramo cível. Os exemplos penais abaixo (Ação Penal, Habeas Corpus, tráfico)
+> contam **como o erro foi descoberto**, não o que o produto mostra. O problema continua
+> no cível — *Embargos à Execução* e *Execução Fiscal* invertem o resultado do mesmo jeito.
+
 ## O problema, em uma frase
 
 > **"Favorável" não quer dizer nada sem dizer "favorável a quem".**
