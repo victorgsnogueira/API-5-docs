@@ -132,14 +132,14 @@ O que isso implica:
 
 | Antes (VPS Hostinger + Coolify — descartada) | Agora (intranet do cliente) |
 |---|---|
-| deploy automático no merge da `main` | o CI **gera o pacote de versão**; quem instala é o cliente, seguindo o manual |
+| deploy automático no merge da `main` | o CI **publica uma release** (zip da API e do frontend), base do **pacote de versão**; quem instala é o cliente, seguindo o manual |
 | contêineres Docker | serviços Windows |
 | TLS automático do Coolify | certificado interno do cliente, configurado no NGINX |
 | variáveis injetadas pelo Coolify | arquivo de configuração / variável do serviço, na máquina do cliente |
 | monitoramento nosso | o cliente opera; nós entregamos health check e log em arquivo |
 
 > ⚠ **Conflito com o desafio.** O desafio cobra "deploy automático". Com a produção na
-> mão do cliente, o que o CI entrega automaticamente é o pacote de versão.
+> mão do cliente, o que o CI entrega automaticamente são as releases que compõem o pacote de versão.
 > Ver [R-17](02-decisoes-e-riscos.md#r-17--deploy-automático-exigido-pelo-desafio--produção-no-cliente-).
 
 ---

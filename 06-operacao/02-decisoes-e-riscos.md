@@ -498,8 +498,9 @@ integridade que não dependem de embedding e comparar a ordenação com acento.
 O desafio cobra CI/CD e **deploy automático**. Produção, porém, é instalada pelo
 cliente a partir de arquivos buildados — não há deploy automático possível ali.
 
-**Mitigação.** O CI gera o **pacote de versão** automaticamente (artefato/release a
-cada merge na `main`). Confirmar com o professor/cliente que isso atende o requisito.
+**Mitigação.** O CI publica uma **release** automaticamente a cada merge na `main` (tag
+`vX.Y.Z`, zip da API ou do frontend e `.sha256`), salvo `release:none` — ver
+[Versionamento e releases](../07-justificativas/04-versionamento-e-releases.md). Confirmar com o professor/cliente que isso atende o requisito.
 
 ### R-15 · O pipeline de carga fica fora de repositório 🟠 *(risco aceito)*
 
@@ -619,8 +620,8 @@ o resumo) não foi feito.
 ### R-07 · DevOps é requisito e ainda não existe 🟠
 
 CI/CD, deploy automático, monitoramento e documentação são cobrados explicitamente, e
-valem nota. Só o frontend tem CI (lint, typecheck, build — sem teste). Backend sem
-workflow, nada de deploy nem monitoramento.
+valem nota. Backend e frontend já têm CI (build, testes e verificação de formatação),
+com o check obrigatório para merge na `main` e nas `usX`. Falta deploy e monitoramento.
 
 **Mitigação.** Começar cedo e pequeno: `Dockerfile` e pipeline de build já na primeira
 semana de código. Containerizar no fim do projeto é onde os prazos morrem. Ver

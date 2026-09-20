@@ -66,6 +66,88 @@ RATIO-35-0.1-Implementar-documentação-API
 
 ---
 
+## Proteção da `main` e das branches de US
+
+No `API5-Backend` e no `API5-Frontend`, o fluxo é imposto pelo GitHub com **dois
+rulesets** por repositório (Settings → Rulesets): `main rules` e `us* rules`. Os dois
+estão com enforcement ativo e **lista de bypass vazia** — as regras valem para todos,
+inclusive administradores. Os repositórios têm a mesma configuração; a única diferença é
+o check de CI exigido.
+
+Na prática: **ninguém dá push direto na `main` nem nas `usX`**. Todo código entra por
+pull request, a partir de uma branch de task.
+
+### `main rules` — a `main`
+
+| Item | Configuração |
+|---|---|
+| Alvo | só a branch padrão, `main` |
+| Pull request obrigatório | sim — não há push direto |
+| Aprovações necessárias | 1 |
+| Quem aprova | team **Code Reviewers**, em todos os arquivos (padrão `**`) |
+| Métodos de merge permitidos | só **merge** (sem squash nem rebase) |
+| Exclusão da branch | bloqueada |
+| Force push | bloqueado |
+| Status checks | obrigatórios (GitHub Actions): o CI do repositório (**`Backend checks`** ou **`Frontend checks`**) e **`Release label`** |
+| Branch atualizada antes do merge | exigida — o PR precisa conter a `main` atual |
+
+### `us* rules` — as branches de user story
+
+| Item | Configuração |
+|---|---|
+| Alvo | `refs/heads/us*` (`us1`, `us2`…) |
+| Pull request obrigatório | sim — não há push direto |
+| Aprovações necessárias | **0**, sem reviewer obrigatório — a revisão fica no PR `usX` → `main` |
+| Métodos de merge permitidos | só **merge** |
+| Exclusão da branch | **livre** — a `usX` pode ser apagada depois de mergeada |
+| Force push | bloqueado |
+| Status checks | obrigatório: o CI do repositório (**`Backend checks`** ou **`Frontend checks`**); **sem** `Release label` |
+| Branch atualizada antes do merge | exigida — o PR de task precisa conter a `usX` atual |
+
+### Como fica o fluxo
+
+| PR | O que o GitHub exige para o merge |
+|---|---|
+| task → `usX` | CI verde e branch atualizada; **sem aprovação** e sem label de release |
+| `usX` → `main` | CI verde, `Release label` (um label `release:*` no PR), branch atualizada e **1 aprovação** do team Code Reviewers |
+
+O team **Code Reviewers** (organização `Concord-API`) tem 3 membros: Victor Nogueira
+(`victorgsnogueira`), Thiago (`thiagosabreu`) e Richard Leonardo Cordeiro
+(`RichardCordeiro`). A aprovação de 1 pessoa do team basta, mas o PR precisa de pelo
+menos uma aprovação de um membro do team.
+
+Cada check é o job do `.github/workflows/ci.yml` do repositório: `Backend checks` (job
+`tests`) e `Frontend checks` (job `checks`) — ver
+[DevOps e infraestrutura](../06-operacao/03-devops-e-infra.md). O nome do check no
+ruleset tem que ser idêntico ao `name:` do job; se o job for renomeado, os rulesets
+precisam ser atualizados, senão o PR fica esperando um check que nunca roda.
+
+O check `Release label` vem do workflow `release-label.yml`: falha se o PR não tiver
+**exatamente um** label `release:*`. É ele que decide se o merge gera uma versão — ver
+[Versionamento e releases](04-versionamento-e-releases.md). Ele só roda em PR para a
+`main`, e por isso só o `main rules` o exige.
+
+Como a branch do PR precisa estar atualizada com a base, cada merge numa `usX` obriga as
+demais tasks abertas a atualizar e rodar o CI de novo. É o preço de testar sempre sobre
+o código mais recente.
+
+Não estão ativos: descarte de aprovações antigas quando entram novos commits, exigência
+de aprovação do push mais recente por outra pessoa, resolução obrigatória de conversas,
+Code Owners, commits assinados e criação de branch sem check (`do_not_enforce_on_create`
+desligado).
+
+> ⚠ **O que os rulesets não cobrem.**
+> - As branches de task não têm regra própria: podem receber push direto e force push.
+> - Sem "descartar aprovações antigas", um PR aprovado pode receber commits novos e
+>   ser mergeado sem nova revisão.
+> - A criação de uma `usX` nova pode ser recusada por ainda não ter check próprio. Se
+>   acontecer, ligar "Do not require status checks on creation" no `us* rules`.
+> - Só entram na regra branches cujo nome começa com `us`.
+
+Os repositórios de documentação (`API-5`, `API-5-docs`) não foram verificados aqui.
+
+---
+
 ## Repositórios de documentação
 
 As branches dos repositórios de documentação **não são ligadas a tasks**, então não há
@@ -132,18 +214,20 @@ A estrutura de branches define onde o pipeline roda. Ver
 | Evento | O que o pipeline deve fazer |
 |---|---|
 | Pull request de task → `usX` | build + testes — **teste falhando bloqueia o merge** ([TDD](03-tdd.md)) |
-| Pull request de `usX` → `main` | build + testes da aplicação, incluindo integração |
-| Merge na `main` | gera o **pacote de versão** para o cliente |
+| Pull request de `usX` → `main` | build + testes da aplicação, incluindo integração; exige label `release:*` |
+| Merge na `main` | publica uma **release** (tag `vX.Y.Z`, zip e `.sha256`), salvo `release:none` — ver [Versionamento e releases](04-versionamento-e-releases.md) |
 
 Os 24 testes de integridade do DW pertencem à carga manual, executada separadamente.
 Não fazem parte do CI do backend ou do frontend. Os testes de integração da API usam
 PostgreSQL descartável com schema e dados mínimos preparados pelos próprios testes,
 sem executar raspagem, ETL ou NLP e sem acessar a homologação.
 
-> ⚠ O CI do `API5-Frontend` hoje dispara só em PR para `main`. Para cobrir a tabela
-> acima, o gatilho precisa incluir as branches `us*`. O `API5-Backend` ainda não tem CI.
+> O CI do `API5-Backend` e o do `API5-Frontend` disparam em PR e push para `main` e
+> `us*`, então a tabela acima é coberta. O merge na `main` e nas `usX` é bloqueado
+> se o check falhar. O `Release label` e a release seguem só a `main`.
 
-## Estado nos repositórios (19/09/2026)
+## Estado nos repositórios (20/09/2026)
 
-`API5-Backend` e `API5-Frontend` têm só a `main`, com um commit cada. Nenhuma branch
-`usX` criada ainda — o padrão começa a valer na primeira US.
+Nenhuma branch `usX` criada ainda em `API5-Backend` ou `API5-Frontend` — o padrão começa
+a valer na primeira US. Os dois repositórios têm os rulesets `main rules` e `us* rules`
+(ver [Proteção da `main` e das branches de US](#proteção-da-main-e-das-branches-de-us)).
