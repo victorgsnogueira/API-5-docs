@@ -163,6 +163,8 @@ Feito (na `initial-setup`):
 - [x] `ProblemDetails` com `title`/`detail` em português — inclusive o 400 de validação.
 - [x] `/health` e `/health/ready` com os [três estados](#health-check--os-três-estados).
 - [x] Log estruturado em arquivo (Serilog), `UseWindowsService()` e `UseForwardedHeaders`.
+- [x] Erro de configuração na subida vai **para o arquivo de log** — no serviço Windows
+      não há console, e sem isso a TI do cliente ficaria sem diagnóstico.
 
 Falta:
 
@@ -189,11 +191,16 @@ fixa versão.
 | `Moq` | testes | dublê; asserção é o `Assert` do xUnit — ver [TDD](../07-justificativas/03-tdd.md#backend--net) | 4.20.72 |
 | `Microsoft.AspNetCore.Mvc.Testing` | `Ratio.Api.Tests` | API em memória | 10.0.0 |
 | `Testcontainers.PostgreSql` | `Ratio.Infrastructure.Tests` | Postgres real (`postgres:16`, como produção — sem pgvector) no teste | 4.7.0 |
+| `Microsoft.Extensions.DependencyInjection` | `Ratio.Infrastructure.Tests` | montar um container de verdade no teste de registro | 10.0.0 |
 | `Microsoft.NET.Test.Sdk` + `coverlet.collector` | testes | runner e cobertura | 17.12.0 / 6.0.4 |
 
 **Fora da lista de propósito:** pacote de health check
-([por quê](#health-check--os-três-estados)). E `SSH.NET` está fixado no
-`Directory.Packages.props` sem ninguém referenciar — sobra de scaffold, a remover.
+([por quê](#health-check--os-três-estados)).
+
+**`SSH.NET` não se mexe.** Ninguém o referencia: é **pin transitivo**. O Testcontainers
+traz a versão 2024.2.0, que tem duas vulnerabilidades altas conhecidas, e o pin sobe
+para 2026.0.0 — tirar a linha faz o `restore` falhar com `NU1903`. Só sai quando o
+Testcontainers atualizar a dependência.
 
 ### Acesso a dados — Dapper
 
@@ -279,6 +286,10 @@ Corpo dos `503` — `application/problem+json`, com `title` e `detail` em portug
 instalação e a TI do cliente decidem olhando o `reason` — valor curto e estável — sem
 casar frase. O `detail` pode ser reescrito a qualquer momento; o `reason` só muda com
 aviso. Hoje existem dois: `sem carga publicada` e `banco inacessível`.
+
+**A consulta é indexada.** O readiness é `MAX(extracted_at)` na tabela de fatos, e o
+monitoramento bate nele de minuto em minuto: o índice `idx_fact_case_event_extracted_at`
+([DW](04-data-warehouse.md#schemas-e-objetos)) troca um seq scan de 535 ms por 0,26 ms.
 
 **`traceId` liga a resposta ao log.** É o mesmo identificador que aparece na linha do
 Serilog que registrou a falha — é ele que a TI do cliente manda para nós quando o

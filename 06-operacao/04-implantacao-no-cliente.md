@@ -70,7 +70,8 @@ Pontos que o desenho fixa:
 | Escutar só em `127.0.0.1` | o acesso é pelo NGINX |
 | Honrar `X-Forwarded-*` (`UseForwardedHeaders`) | atrás de proxy, para log e esquema (`https`) corretos |
 | Configuração por `appsettings.Production.json` **fora do pacote** ou variável de ambiente do serviço | connection string e caminhos são do cliente, não do build |
-| Log em **arquivo** com rotação (Serilog `File`) | no servidor do cliente não há console para ler log |
+| Log em **arquivo** com rotação (Serilog `File`), em **caminho absoluto** (`C:/ProgramData/Ratio/logs/`) | no servidor do cliente não há console para ler log; caminho relativo cairia onde o serviço estiver instalado, que a conta de serviço pode não poder escrever |
+| Falha de configuração na subida gravada nesse mesmo arquivo | o serviço que não sobe precisa dizer por quê — é o que a TI do cliente lê |
 | CORS: desnecessário em produção | origem única; manter lista explícita só para dev |
 
 ### Frontend

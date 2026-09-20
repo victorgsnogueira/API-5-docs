@@ -167,12 +167,19 @@ POSTGRES_INITDB_ARGS="--locale-provider=icu --icu-locale=pt-BR --encoding=UTF8 -
 |---|---|---|---|
 | `raw` | payload cru (JSONB) por fonte — `datajud_case`, `doctrine_article`, `tjmg_decision` | 3 | 12 (inclui GIN no `payload`) |
 | `staging` | DTO achatado — `case_event`, `case_decision`, `doctrine_article` | 3 | 8 |
-| `dw` | modelo dimensional: 2 fatos, 10 dimensões, 4 pontes, `strength_config` | 17 | 55 |
+| `dw` | modelo dimensional: 2 fatos, 10 dimensões, 4 pontes, `strength_config` | 17 | 56 |
 | `dw` | **9 views materializadas** — `case_current_result`, `topic_summary`, `topic_by_year`, `topic_by_court`, `topic_by_judging_body`, `theme_summary`, `theme_by_year`, `theme_by_court`, `theme_strength` | — | índice único em cada (permite `REFRESH … CONCURRENTLY`) |
 | `public` | só as extensões | — | — |
 
 Detalhe das tabelas: [Modelo dimensional](../03-dados/02-modelo-dimensional.md). Das
 views: [Agregados OLAP](../03-dados/03-agregados-olap.md).
+
+> **Um índice existe por causa da API, não da carga:**
+> `idx_fact_case_event_extracted_at` (migration `019`). O `/health/ready` roda
+> `MAX(extracted_at)` na tabela de fatos, e o monitoramento do cliente chama isso de
+> minuto em minuto: sem índice era seq scan paralelo em 463 mil linhas (**535 ms**, e
+> pior a cada carga); com ele, Index Only Scan Backward em **0,26 ms**. Ele viaja no
+> `pg_dump -n dw`, então homologação e produção o recebem prontos.
 
 ### Índice vetorial — não se aplica a produção
 
