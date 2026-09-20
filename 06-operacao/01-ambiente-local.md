@@ -199,7 +199,7 @@ repositório.**
 
 | Sintoma | Causa provável | Solução |
 |---|---|---|
-| API sobe mas `/health/ready` falha | banco vazio ou inacessível | conferir connection string; restaurar um dump |
+| API sobe mas `/health/ready` dá `503` | o campo `reason` diz qual | `sem carga publicada` → restaurar um dump; `banco inacessível` → conferir connection string e se o contêiner está de pé |
 | `docker` não conecta (`dockerDesktopLinuxEngine`) | Docker Desktop fechado | abrir o Docker Desktop e `docker start api5-dw` |
 | Porta 5433 ocupada | outro contêiner ou Postgres local | trocar a porta publicada |
 | Frontend com erro de CORS | origem fora da lista | acrescentar em `Cors__AllowedOrigins` e reiniciar a API |

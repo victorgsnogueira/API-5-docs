@@ -148,47 +148,52 @@ colunas `source` / `extracted_at` que toda linha do DW carrega.
 
 ## Estado atual e primeiras tarefas
 
-Todos os projetos existem; nenhum tem código de verdade (um commit, `initial commit`).
+A `main` ainda está em `initial commit`. O setup de verdade está na branch
+**`initial-setup`** (PR aberto): .NET 10, as camadas, Serilog, Dapper + Npgsql, os dois
+health checks, `ProblemDetails` em português e os primeiros testes.
 
-- [ ] **Subir para .NET 10** enquanto é scaffold ([R-14](../06-operacao/02-decisoes-e-riscos.md#r-14--net-8-sai-de-suporte-durante-o-projeto-)).
-- [ ] **Remover o scaffold `WeatherForecast`** (`Ratio.Api/WeatherForecast.cs` e
-      `Controllers/WeatherForecastController.cs`) antes que apareça no Swagger.
-- [ ] Substituir os `Class1.cs` e `UnitTest1.cs` — **o primeiro código de cada camada
-      nasce de um teste** ([TDD](../07-justificativas/03-tdd.md)).
-- [ ] Criar `Ratio.Api.Tests` (testes HTTP com `WebApplicationFactory`).
-- [ ] Connection string por variável de ambiente (`ConnectionStrings__Ratio`).
-- [ ] CORS com **lista explícita** de origens, nunca `*`.
-- [ ] `ProblemDetails` com `title`/`detail` em português para todo erro.
-- [ ] Expor `/health` e `/health/ready` para o [monitoramento e a verificação pós-instalação](../06-operacao/03-devops-e-infra.md).
-- [ ] Log estruturado (Serilog) — pré-requisito de observabilidade.
+Feito (na `initial-setup`):
+
+- [x] **.NET 10** ([R-14](../06-operacao/02-decisoes-e-riscos.md#r-14--net-8-sai-de-suporte-durante-o-projeto-)).
+- [x] Scaffold fora: `WeatherForecast`, `Class1.cs`, `UnitTest1.cs`.
+- [x] `Ratio.Api.Tests` com `WebApplicationFactory`; `Ratio.Infrastructure.Tests` com Testcontainers.
+- [x] Connection string por variável de ambiente (`ConnectionStrings__Ratio`) — **a API
+      não sobe sem ela**, em vez de subir e quebrar na primeira consulta.
+- [x] CORS com **lista explícita** (`Cors:AllowedOrigins`), nunca `*`.
+- [x] `ProblemDetails` com `title`/`detail` em português — inclusive o 400 de validação.
+- [x] `/health` e `/health/ready` com os [três estados](#health-check--os-três-estados).
+- [x] Log estruturado em arquivo (Serilog), `UseWindowsService()` e `UseForwardedHeaders`.
+
+Falta:
+
+- [ ] **Primeira rota de domínio** (`GET /api/topics`) — hoje só o health existe, e ela
+      **nasce de um teste** ([TDD](../07-justificativas/03-tdd.md)).
 - [ ] Workflow de CI — **não existe `.github/` no repo**: build + test + pacote de versão.
 - [ ] Publicação **self-contained `win-x64`** rodando como **serviço Windows**, escutando
-      em `127.0.0.1` atrás do NGINX, com `UseForwardedHeaders` e log em arquivo — ver
+      em `127.0.0.1` atrás do NGINX — ver
       [Implantação no cliente](../06-operacao/04-implantacao-no-cliente.md#backend).
 
 ## Pacotes
 
-Já referenciados:
+Versões ficam **centralizadas** em `Ratio/Directory.Packages.props`; nenhum `.csproj`
+fixa versão.
 
-| Pacote | Onde | Versão |
-|---|---|---|
-| `Swashbuckle.AspNetCore` | `Ratio.Api` | 6.6.2 |
-| `xunit` + `xunit.runner.visualstudio` | testes | 2.5.3 |
-| `Microsoft.NET.Test.Sdk` | testes | 17.8.0 |
-| `coverlet.collector` | testes | 6.0.0 |
+| Pacote | Onde | Para quê | Versão |
+|---|---|---|---|
+| `Swashbuckle.AspNetCore` | Api | Swagger — exposto **só em Development** | 6.6.2 |
+| `Npgsql` | Infrastructure | driver Postgres | 9.0.3 |
+| `Dapper` | Infrastructure | acesso a dados (ver abaixo) | 2.1.35 |
+| `Serilog.AspNetCore` + `Serilog.Sinks.File` | Api | log estruturado, em arquivo com rotação (no cliente não há console) | 9.0.0 / 6.0.0 |
+| `Microsoft.Extensions.Hosting.WindowsServices` | Api | rodar como serviço Windows | 10.0.0 |
+| `xunit` + `xunit.runner.visualstudio` | testes | framework e `Assert` | 2.9.3 / 2.8.2 |
+| `Moq` | testes | dublê; asserção é o `Assert` do xUnit — ver [TDD](../07-justificativas/03-tdd.md#backend--net) | 4.20.72 |
+| `Microsoft.AspNetCore.Mvc.Testing` | `Ratio.Api.Tests` | API em memória | 10.0.0 |
+| `Testcontainers.PostgreSql` | `Ratio.Infrastructure.Tests` | Postgres real (`postgres:16`, como produção — sem pgvector) no teste | 4.7.0 |
+| `Microsoft.NET.Test.Sdk` + `coverlet.collector` | testes | runner e cobertura | 17.12.0 / 6.0.4 |
 
-A adicionar:
-
-| Pacote | Onde | Para quê |
-|---|---|---|
-| `Npgsql` | Infrastructure | driver Postgres |
-| `Dapper` | Infrastructure | acesso a dados (ver abaixo) |
-| `Serilog.AspNetCore` + `Serilog.Sinks.File` | Api | log estruturado, em arquivo com rotação (no cliente não há console) |
-| `Microsoft.Extensions.Hosting.WindowsServices` | Api | rodar como serviço Windows |
-| `AspNetCore.HealthChecks.NpgSql` | Api | `/health/ready` |
-| `Moq` (≥ 4.20.70) | testes | dublê; asserção é o `Assert` do xUnit — ver [TDD](../07-justificativas/03-tdd.md#backend--net) |
-| `Microsoft.AspNetCore.Mvc.Testing` | `Ratio.Api.Tests` | API em memória |
-| `Testcontainers.PostgreSql` | `Ratio.Infrastructure.Tests` | Postgres real (`postgres:16`, como produção — sem pgvector) no teste |
+**Fora da lista de propósito:** pacote de health check
+([por quê](#health-check--os-três-estados)). E `SSH.NET` está fixado no
+`Directory.Packages.props` sem ninguém referenciar — sobra de scaffold, a remover.
 
 ### Acesso a dados — Dapper
 
@@ -219,8 +224,8 @@ Somente `GET` na camada de consulta.
 
 | Rota | Responde | Alimenta |
 |---|---|---|
-| `GET /health` | prontidão do processo | monitoramento, verificação pós-instalação |
-| `GET /health/ready` | prontidão **real**: há dado utilizável? | monitoramento |
+| `GET /health` | o processo está de pé | monitoramento |
+| `GET /health/ready` | há dado utilizável — e, se não houver, **por quê** ([três estados](#health-check--os-três-estados)) | monitoramento, verificação pós-instalação |
 | `GET /api/topics?q=&court=&period=&level=&minStrength=&limit=` | lista de temas | tela de resultados + filtros |
 | `GET /api/topics/{code}` | painel do tema: resumo, série anual, por tribunal, por órgão | detalhamento |
 | `GET /api/topics/{code}/decisions?court=&outcome=&limit=` | processos que sustentam o tema, com link para a origem | amostra auditável |
@@ -229,6 +234,60 @@ Somente `GET` na camada de consulta.
 
 `POST /api/chat` é a única rota de escrita-aparente, e mesmo ela não grava dado de
 domínio.
+
+### Health check — os três estados
+
+`GET /health` é *liveness*: responde `200` com o texto `Saudável` enquanto o processo
+estiver de pé. **Não toca no banco** — serve só para saber se o serviço Windows caiu.
+
+`GET /health/ready` é *readiness*, e responde a pergunta que importa na instalação:
+**há dado utilizável?** Ele distingue **três** situações, porque a ação de quem opera o
+servidor é diferente em cada uma:
+
+| Situação | HTTP | `reason` | O que quem opera faz |
+|---|---|---|---|
+| DW com carga publicada | `200` | — | nada |
+| Banco respondeu, mas o `dw` está vazio ou nem existe | `503` | `sem carga publicada` | restaurar o dump da última carga |
+| Banco não respondeu — parado, credencial errada, permissão faltando | `503` | `banco inacessível` | consertar o banco; a causa está no log em arquivo |
+
+Corpo do `200`:
+
+```json
+{ "status": "Pronto", "lastExtractionAt": "2026-09-15T12:00:00+00:00" }
+```
+
+Corpo dos `503` — `application/problem+json`, com `title` e `detail` em português
+([Idioma](#idioma)) e o membro de extensão **`reason`**:
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.6.4",
+  "title": "Não está pronto",
+  "status": 503,
+  "detail": "O banco respondeu, mas não há carga publicada no schema dw. Restaure o dump da última carga.",
+  "traceId": "00-db47d42c4a3c205bac87639059c36632-a92174375b146617-00",
+  "reason": "sem carga publicada"
+}
+```
+
+**`reason` é o campo do contrato; `detail` é prosa.** Monitoramento, script de
+instalação e a TI do cliente decidem olhando o `reason` — valor curto e estável — sem
+casar frase. O `detail` pode ser reescrito a qualquer momento; o `reason` só muda com
+aviso. Hoje existem dois: `sem carga publicada` e `banco inacessível`.
+
+**`traceId` liga a resposta ao log.** É o mesmo identificador que aparece na linha do
+Serilog que registrou a falha — é ele que a TI do cliente manda para nós quando o
+`/health/ready` acusar `banco inacessível`.
+
+**Um `503` de banco vazio é esperado numa instalação nova.** O servidor sobe antes de o
+dump ser restaurado; o `reason` é o que diz à TI do cliente que falta a carga, e não que
+a instalação está quebrada.
+
+**Por que não um pacote de health check.** `AspNetCore.HealthChecks.NpgSql` responde
+"o banco aceitou conexão" — o que não separa banco **vazio** de banco **fora do ar**, nem
+devolve a data da última carga. Como é exatamente essa distinção que a
+[implantação no cliente](../06-operacao/04-implantacao-no-cliente.md) precisa, o endpoint
+é escrito à mão sobre a porta `ILastExtractionReader`, e o pacote saiu da lista.
 
 ### Campos que as telas exigem
 

@@ -35,13 +35,24 @@ intranet ([D-24](02-decisoes-e-riscos.md#d-24--simulação-da-intranet-numa-rede
 **Health check é contrato, não enfeite.** É por ele que a instalação é verificada. A
 API precisa expor:
 
-| Endpoint | Responde |
-|---|---|
-| `/health` | o processo está de pé (*liveness*) |
-| `/health/ready` | há dado utilizável no DW, e de quando é a última carga (*readiness*) |
+| Endpoint | Responde | Quando não está bem |
+|---|---|---|
+| `/health` | o processo está de pé (*liveness*) | não responde |
+| `/health/ready` | há dado utilizável no DW, e de quando é a última carga (*readiness*) | `503` com o campo **`reason`** |
 
 O segundo é o que importa de verdade: uma API que sobe apontando para um banco vazio
 está "no ar" e inútil.
+
+**Os dois `503` não são a mesma coisa**, e o `reason` é o que os separa:
+
+| `reason` | Significa | Ação |
+|---|---|---|
+| `sem carga publicada` | o banco respondeu; falta restaurar o dump do `dw` | restaurar a carga |
+| `banco inacessível` | o banco não respondeu — parado, credencial, permissão | consertar o banco; a causa está no log em arquivo |
+
+Por isso o monitoramento olha o `reason`, não só o status: um pede uma carga, o outro é
+incidente de infraestrutura. Contrato completo em
+[Backend .NET](../02-arquitetura/02-backend-dotnet.md#health-check--os-três-estados).
 
 **Configuração fora do código.** Nada de connection string em `appsettings.json`
 versionado nem dentro do pacote. A configuração é da máquina onde roda.
