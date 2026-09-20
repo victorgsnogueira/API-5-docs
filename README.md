@@ -116,7 +116,7 @@ Os padrões e as ferramentas do projeto, e por que foram escolhidos.
 
 ## Próximos desbloqueios, em ordem
 
-1. **Um fluxo vertical fino** — `GET /api/topics` + tela de resultados, ponta a ponta, por TDD.
+1. **Um fluxo vertical fino** — `GET /api/themes` + tela de resultados, ponta a ponta, por TDD.
 2. **Pacote de versão completo** — juntar a release da API, a do frontend, `nginx.conf`, dump do `dw`
    e scripts ([Versionamento e releases](07-justificativas/04-versionamento-e-releases.md)).
 3. **Manual de implantação e spec das máquinas** — o cliente instala sozinho, a partir só

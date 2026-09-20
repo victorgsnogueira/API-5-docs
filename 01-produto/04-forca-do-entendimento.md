@@ -188,8 +188,10 @@ está certo. Os que importam:
   Ficam em `dw.strength_config`.
 - Uma tese com 95% de concordância em 8 julgamentos ainda pontua alto em concordância.
   O peso do volume atenua, mas considere um piso mínimo de `julgados` para exibir o
-  grau textual. **Concreto na carga atual:** *Roubo Majorado* pontua 74 com
-  **8 julgados**.
+  grau textual. **Concreto na carga atual:** *Rescisão do contrato e devolução do
+  dinheiro* pontua 85 com **9 julgados**. **Parcialmente resolvido em 20/09/2026
+  ([D-32](../06-operacao/02-decisoes-e-riscos.md#d-32--piso-de-n-para-exibir-percentual)):** abaixo de 2 julgados a tela mostra a contagem em vez do
+  percentual. A nota e o grau continuam sendo calculados para qualquer n.
 - A recência usa apenas o **ano** da última decisão, não a densidade recente. Um tema
   com uma decisão em 2026 e nenhuma desde 2019 pontua igual a um julgado toda semana.
 - **Novo:** "procedência em parte" está somando com procedência no

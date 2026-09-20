@@ -309,7 +309,7 @@ Atualizado após a carga real de 15/09/2026.
 | Amostra auditável (processo, órgão, data, desfecho) | DataJud + TPU | 🟢 **18.002 processos** |
 | Link para o processo na origem | mapeamento por tribunal | 🟢 **100% dos processos**: TJSP `direto` (reverificado), TJRJ `portal` |
 | Série anual / por órgão | DW | 🟢 **implementado** |
-| Doutrina invocada | DOAJ + SciELO + OAI-PMH | 🟢 **52.696 artigos**, 13.870 ligados a tema |
+| Doutrina relacionada | DOAJ + SciELO + OAI-PMH | 🟢 **52.696 artigos**, 13.870 ligados a tema |
 | **Polaridade do resultado** | DataJud + classe processual | 🟢 **implementada** — ver [Polaridade](05-polaridade-do-resultado.md). **Nova exigência**, descoberta na carga |
 | Jurisprudência qualificada | **PANGEA** (não investigada) | 🔴 sem fonte |
 | Citação de acórdão · inteiro teor | repositório do tribunal | 🔴 **bloqueado nos 4 tribunais** (captcha/ToS) |

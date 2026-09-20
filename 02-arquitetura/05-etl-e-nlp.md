@@ -8,7 +8,7 @@
 ## Separação da aplicação
 
 Raspagem, ETL e NLP são executados separadamente, fora dos repositórios do backend e
-do frontend. Os coletores, scripts de normalização, migrations do DW e os 24 testes
+do frontend. Os coletores, scripts de normalização, migrations do DW e os 36 testes
 de integridade pertencem ao processo de carga; não entram no build nem no CI da API.
 
 A API apenas consulta o schema `dw` já publicado, via Dapper e com acesso de leitura.
@@ -206,7 +206,7 @@ produziu a base atual.
    3 NORMALIZAR   nlp_*.py                embeddings · temas · área · doutrina↔tema
    4 REVISAR      curadoria humana        clusters novos aceitos/rejeitados por nome
    5 AGREGAR      REFRESH MATERIALIZED    na ordem de dependência
-   6 VALIDAR      24 testes de integridade   ── qualquer linha retornada = PARA
+   6 VALIDAR      36 testes de integridade   ── qualquer linha retornada = PARA
    7 PUBLICAR     publish_dw.sh           carga ──► homologação; dump ──► pacote de produção
    8 REGISTRAR    data, fontes, contagens   no README da carga e na Decisões
 ```
@@ -233,6 +233,7 @@ python scraping/scripts/nlp_cluster_subjects.py 0.20  # PROPÕE clusters
 python scraping/scripts/nlp_curate_themes.py          # 4. aplica a curadoria revisada
 python scraping/scripts/nlp_load_themes.py            # dim_theme + bridge_theme_topic
 python scraping/scripts/nlp_link_doctrine.py 0.55 10  # doutrina -> tema (semântico + léxico)
+docker exec -i api5-dw psql -U dw_admin -d api5_dw -v ON_ERROR_STOP=1 < scraping/sql/025_theme_area_curation.sql  # área dos temas sem tag
 
 # 5. agregar — a ordem importa
 #    case_current_result → topic_* → theme_summary/by_year/by_court → theme_strength
@@ -240,7 +241,13 @@ python scraping/scripts/nlp_link_doctrine.py 0.55 10  # doutrina -> tema (semân
 # 6. validar — todas as consultas devem voltar VAZIAS
 docker exec -i api5-dw psql -U dw_admin -d api5_dw < scraping/sql/011_nlp_integrity_tests.sql
 docker exec -i api5-dw psql -U dw_admin -d api5_dw < scraping/sql/014_strength_link_tests.sql
+docker exec -i api5-dw psql -U dw_admin -d api5_dw < scraping/sql/021_civil_scope_tests.sql
+docker exec -i api5-dw psql -U dw_admin -d api5_dw < scraping/sql/027_search_area_tests.sql
 ```
+
+`nlp_load_themes.py` consulta `dw.theme_registry` antes de inserir cada tema, para manter a
+[chave pública](../06-operacao/02-decisoes-e-riscos.md#d-31--chave-pública-do-tema) entre cargas. A recarga usa `TRUNCATE ... RESTART IDENTITY`, que
+**não** toca o registro — e ele não pode ser truncado à mão.
 
 Comandos completos (inclusive a lista de `REFRESH`) em `scraping/README.md`.
 
@@ -264,7 +271,7 @@ RATIO_LOADER_PASSWORD=... bash scraping/scripts/publish_dw.sh ratio-homolog
 ```
 
 O script faz o `pg_dump -n dw` da carga, o `pg_restore --clean --single-transaction` no
-destino, reaplica o `SELECT` do `ratio_api`, **roda os 24 testes no destino** e sai com
+destino, reaplica o `SELECT` do `ratio_api`, **roda os 36 testes no destino** e sai com
 erro se algum não vier vazio.
 
 **Produção** — o mesmo dump vai no pacote de versão, e a TI do cliente restaura:

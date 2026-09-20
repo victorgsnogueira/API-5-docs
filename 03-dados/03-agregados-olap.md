@@ -143,12 +143,11 @@ com os componentes e a polaridade abertos.
 
 | Bloco de tela | Agregado necessário | Depende de | Estado |
 |---|---|---|---|
-| *Doutrina invocada* (citações) | doutrina × tema | fonte de doutrina | 🟢 **feito** — 9.186 ligações |
+| *Doutrina relacionada* | doutrina × tema | fonte de doutrina | 🟢 **feito** — 13.870 ligações, por similaridade ([D-33](../06-operacao/02-decisoes-e-riscos.md#d-33--histórias-removidas-do-backlog-e-doutrina-relacionada)) |
 | *Fundamentos invocados* | fundamento × tema × resultado | inteiro teor + NLP | 🔴 |
-| *Jurisprudência qualificada* | precedente × tema × aderência | PANGEA ou equivalente | 🔴 |
 | Mediana de valor, P25/P75 | medida numérica no fato | inteiro teor | 🔴 |
 
-Os três que faltam dependem do **inteiro teor**, que é a lacuna estrutural que
+Os dois que faltam dependem do **inteiro teor**, que é a lacuna estrutural que
 sobrou depois da investigação de fontes. Ver
 [Fontes](01-fontes.md) e [Limitações](04-limitacoes-da-fonte.md).
 

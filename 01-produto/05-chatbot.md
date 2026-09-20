@@ -60,12 +60,12 @@ O modelo não recebe dados: recebe um conjunto de **funções** que ele pode cha
 uma correspondendo a uma consulta parametrizada e já validada.
 
 ```
-searchTopics(query, court?, period?)          -> lista de temas
-getTopicSummary(topicCode)                    -> volume, alinhamento, período
-getTopicByYear(topicCode)                     -> série anual
-getTopicByCourt(topicCode)                    -> recorte por tribunal
-getTopicByJudgingBody(topicCode, court)       -> colegialidade
-listDecisions(topicCode, court?, outcome?)    -> processos com link para a origem
+searchThemes(query, court?, period?)          -> lista de temas
+getThemeSummary(themeKey)                    -> volume, alinhamento, período
+getThemeByYear(themeKey)                     -> série anual
+getThemeByCourt(themeKey)                    -> recorte por tribunal
+getThemeByJudgingBody(themeKey, court)       -> colegialidade
+listCases(themeKey, court?, outcome?)        -> processos com link para a origem
 ```
 
 O modelo escolhe a ferramenta, o backend executa o SQL, o modelo redige a resposta com

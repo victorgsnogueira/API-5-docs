@@ -33,15 +33,15 @@ A linha divisória: **chave é código (inglês), valor é retorno (português).
 
 | O quê | Idioma | Exemplo |
 |---|---|---|
-| Identificador C#, tabela, coluna | inglês | `TopicSummary`, `dw.fact_case_event` |
-| Rota | inglês | `GET /api/topics/{code}/decisions` |
+| Identificador C#, tabela, coluna | inglês | `ThemeSummary`, `dw.fact_case_event` |
+| Rota | inglês | `GET /api/themes/{key}/cases` |
 | **Chave** do JSON | inglês (camelCase) | `"strengthScore"`, `"polarityLabel"` |
 | **Valor** de dado | português | `"name": "Inscrição indevida em cadastro de inadimplentes"` |
 | Rótulo / enum exposto ao usuário | português | `"level": "Divergente"` |
 | Motivo de dado ausente | português | `"reason": "O DataJud não publica o relator."` |
 | **Erro** (`ProblemDetails.title` / `detail`) | português | `"title": "Tema não encontrado"` |
 | Mensagem de validação | português | `"O parâmetro 'limit' deve estar entre 1 e 100."` |
-| Log | inglês | `"Topic {Code} not found"` — log é para o time, não para o usuário |
+| Log | inglês | `"Theme {Key} not found"` — log é para o time, não para o usuário |
 | Swagger — descrição das rotas | português | é documentação de quem consome a API |
 
 **Por que as chaves ficam em inglês:** elas são código dos dois lados — viram
@@ -52,14 +52,14 @@ frontend não traduz nada — é o que garante que a tela e a API digam a mesma 
 
 ```csharp
 // certo — identificador em inglês, retorno em português
-public sealed record TopicSummary(int Code, string Name, int Cases, string StrengthLevel);
+public sealed record ThemeSummary(long Key, string Name, int Cases, string StrengthLevel);
 // Name = "Atraso de voo"   StrengthLevel = "Em formação"
 
 return Problem(title: "Tema não encontrado", statusCode: 404);
 
 // errado
 public sealed record ResumoTema(int Codigo, string Nome, int Processos);
-return Problem(title: "Topic not found");     // o usuário lê isso
+return Problem(title: "Theme not found");     // o usuário lê isso
 ```
 
 ### Vocabulário do domínio — PT → EN
@@ -82,8 +82,8 @@ acrescente linhas conforme aparecerem, não invente sinônimos.
 | câmara / turma | `panel` | |
 | grau / instância | `courtLevel` | `First`, `Second`, `Superior` |
 | relator | `reporterJudge` | |
-| tema | `topic` | a entidade central do produto |
-| assunto (TPU) | `subject` | o código do CNJ que origina o tema |
+| tema | `theme` | a entidade central do produto; chave pública `theme_key` |
+| assunto (TPU) | `subject` | o código do CNJ que origina o tema; no DW a tabela ainda se chama `dim_topic` |
 | classe processual | `caseClass` | |
 | procedência | `Granted` | enum `DecisionOutcome` |
 | improcedência | `Denied` | |
@@ -132,8 +132,8 @@ Infrastructure fornece o **adaptador**. A Api é o host.
 
 | Projeto | Contém | Nunca contém |
 |---|---|---|
-| `Ratio.Domain` | `Topic`, `Case`, `CaseEvent`, `DecisionOutcome`, o cálculo do `StrengthScore` | SQL, HTTP, atributos de framework |
-| `Ratio.Application` | casos de uso (`SearchTopics`, `GetTopicDetail`, `ListDecisions`), DTOs, interfaces de repositório | Npgsql, `HttpClient` |
+| `Ratio.Domain` | `Theme`, `Case`, `CaseEvent`, `DecisionOutcome`, o cálculo do `StrengthScore` | SQL, HTTP, atributos de framework |
+| `Ratio.Application` | casos de uso (`SearchThemes`, `GetThemeDetail`, `ListCases`), DTOs, interfaces de repositório | Npgsql, `HttpClient` |
 | `Ratio.Infrastructure` | repositórios de leitura sobre Postgres | regra de negócio, DDL, cliente de fonte externa |
 | `Ratio.Api` | controllers, DI, CORS, Swagger, health checks | consulta SQL |
 
@@ -171,7 +171,7 @@ Feito (na `initial-setup`):
 
 Falta:
 
-- [ ] **Primeira rota de domínio** (`GET /api/topics`) — hoje só o health existe, e ela
+- [ ] **Primeira rota de domínio** (`GET /api/themes`) — hoje só o health existe, e ela
       **nasce de um teste** ([TDD](../07-justificativas/03-tdd.md)).
 - [ ] **Pacote de versão completo** — o CI e a release do backend já existem (`.github/workflows/`), mas a release publica só o zip da API; falta juntar com NGINX, dump e manual.
 - [ ] Publicação **self-contained `win-x64`** rodando como **serviço Windows**, escutando
@@ -241,10 +241,10 @@ Somente `GET` na camada de consulta.
 |---|---|---|
 | `GET /health` | o processo está de pé | monitoramento |
 | `GET /health/ready` | há dado utilizável — e, se não houver, **por quê** ([três estados](#health-check--os-três-estados)) | monitoramento, verificação pós-instalação |
-| `GET /api/topics?q=&court=&period=&level=&minStrength=&limit=` | lista de temas | tela de resultados + filtros |
-| `GET /api/topics/{code}` | painel do tema: resumo, série anual, por tribunal, por órgão | detalhamento |
-| `GET /api/topics/{code}/decisions?court=&outcome=&limit=` | processos que sustentam o tema, com link para a origem | amostra auditável |
-| `GET /api/topics/{code}/export?format=csv` | exportação | botão `EXPORTAR CSV` |
+| `GET /api/themes?q=&court=&period=&level=&minStrength=&limit=` | lista de temas | tela de resultados + filtros |
+| `GET /api/themes/{key}` | painel do tema: resumo, série anual, por tribunal, por órgão | detalhamento |
+| `GET /api/themes/{key}/cases?court=&outcome=&limit=` | processos que sustentam o tema, com link para a origem | amostra auditável |
+| `GET /api/themes/{key}/export?format=csv` | exportação | botão `EXPORTAR CSV` |
 | `POST /api/chat` | pergunta em linguagem natural | [chatbot](../01-produto/05-chatbot.md) |
 
 `POST /api/chat` é a única rota de escrita-aparente, e mesmo ela não grava dado de

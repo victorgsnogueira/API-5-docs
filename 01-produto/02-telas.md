@@ -23,7 +23,7 @@ Justiça em meio-tom, quase apagada — presença, não decoração.
 a tela ensina o que se busca aqui. Busca vazia não é erro: devolve os temas de maior
 volume.
 
-**API.** `GET /api/topics?q=` (sem termo, retorna os temas de maior volume).
+**API.** `GET /api/themes?q=` (sem termo, retorna os temas de maior volume).
 
 ---
 
@@ -78,7 +78,7 @@ Painel que se abre abaixo do cabeçalho, quatro colunas, sem sombra:
 
 O checkbox marcado é um quadrado vermelho cheio — sem ícone de "check".
 
-**API.** `GET /api/topics?q=<termo>&court=&period=&level=&minStrength=&limit=` — o
+**API.** `GET /api/themes?q=<termo>&court=&period=&level=&minStrength=&limit=` — o
 contrato ainda não existe; ver [Backend .NET](../02-arquitetura/02-backend-dotnet.md#contrato-da-api).
 
 ---
@@ -165,8 +165,8 @@ exportar tabelas (CSV)`.
 **Regra de tabela.** Texto em serifa, número em mono alinhado à direita, cabeçalho em
 mono 10px uppercase `#8B8478`. Barra de distribuição de 5–9px sem raio.
 
-**API.** `GET /api/topics/{code}` (resumo, série, por tribunal, por órgão) e
-`GET /api/topics/{code}/decisions` (amostra auditável).
+**API.** `GET /api/themes/{key}` (resumo, série, por tribunal, por órgão) e
+`GET /api/themes/{key}/cases` (amostra auditável).
 
 ---
 
@@ -178,10 +178,10 @@ Estes blocos do detalhamento **não têm fonte hoje** e dependem de trabalho adi
 |---|---|---|
 | Citação de acórdão / inteiro teor | DataJud entrega metadado, não texto | repositório do TJSP/TJRJ/TJMG · PANGEA |
 | Fundamentos invocados | exige NLP sobre o texto da decisão | depende do inteiro teor |
-| Jurisprudência qualificada | precedentes com efeito vinculante | [PANGEA](../03-dados/01-fontes.md#fonte-2--pangea--pdpj), a investigar |
-| Doutrina invocada | não é dado judicial | artigo com link · referência de livro curada |
+| Jurisprudência qualificada | precedentes com efeito vinculante | **removido do backlog** ([D-33](../06-operacao/02-decisoes-e-riscos.md#d-33--histórias-removidas-do-backlog-e-doutrina-relacionada)) |
+| Doutrina relacionada | não é dado judicial | artigo com link, ligado ao tema por similaridade ([D-33](../06-operacao/02-decisoes-e-riscos.md#d-33--histórias-removidas-do-backlog-e-doutrina-relacionada)) |
 | Valor fixado (quantum) | não é campo estruturado | depende do inteiro teor |
-| Relator | não vem estruturado e consistente | raspagem ou inteiro teor |
+| Relator | não vem estruturado e consistente | **removido do backlog** ([D-33](../06-operacao/02-decisoes-e-riscos.md#d-33--histórias-removidas-do-backlog-e-doutrina-relacionada)) |
 
 Nenhuma dessas fontes está confirmada. Antes de construir cada bloco, decida: **outra
 fonte, extração por NLP, ou não entra na entrega.** Mockup não é promessa de dado.

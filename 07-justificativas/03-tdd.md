@@ -92,12 +92,12 @@ E com dublê, num caso de uso da Application:
 
 ```csharp
 [Fact]
-public async Task Unknown_topic_returns_not_found()
+public async Task Unknown_theme_returns_not_found()
 {
-    var repository = new Mock<ITopicRepository>();
+    var repository = new Mock<IThemeRepository>();
     repository.Setup(r => r.GetByCodeAsync(999, It.IsAny<CancellationToken>()))
-              .ReturnsAsync((TopicDetail?)null);
-    var useCase = new GetTopicDetail(repository.Object);
+              .ReturnsAsync((ThemeDetail?)null);
+    var useCase = new GetThemeDetail(repository.Object);
 
     var result = await useCase.ExecuteAsync(999, CancellationToken.None);
 
@@ -204,7 +204,7 @@ O [pipeline de carga](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo
 Python, roda separadamente e fica fora dos repositórios e do CI do backend e do
 frontend. Também fica fora do escopo formal de TDD da aplicação. Ele tem duas redes próprias:
 
-- **24 testes de integridade em SQL** contra o DW, obrigatórios a cada carga;
+- **36 testes de integridade em SQL** contra o DW, obrigatórios a cada carga;
 - funções puras de transformação (`clean()`, extratores, mapa de polaridade) são
   candidatas naturais a **pytest** — recomendado, não exigido.
 

@@ -92,7 +92,7 @@ O job `Backend checks` é o check **obrigatório** para merge na `main` e nas `u
 configurado nos rulesets (ver
 [Proteção da `main` e das branches de US](../07-justificativas/01-branches.md#proteção-da-main-e-das-branches-de-us)).
 
-Raspagem, ETL, NLP, migrations da carga e os 24 testes de integridade do DW ficam
+Raspagem, ETL, NLP, migrations da carga e os 36 testes de integridade do DW ficam
 fora do repositório e do CI do backend. Os testes da API preparam seu próprio banco
 descartável; não dependem da máquina de carga, da Tailscale, da homologação ou de um
 dump completo. A API em execução apenas consulta o `dw` publicado.
@@ -150,7 +150,7 @@ Docusaurus), aí sim vira um site estático a hospedar.
 ## Testes de integridade do DW — requisito explícito
 
 O desafio pede "testes automatizados validando integridade dos dados e consistência das
-consultas". Os 24 testes SQL validam os dados no processo separado de carga manual.
+consultas". Os 36 testes SQL validam os dados no processo separado de carga manual.
 Os testes de integração do backend validam as consultas da API contra PostgreSQL
 descartável no CI. São responsabilidades distintas.
 
@@ -233,6 +233,6 @@ extração aparece na tela, não só no log.
 3. **Toda migration da carga deve ser versionada separadamente do backend** (pendência R-15). Em produção, o schema chega pelo `pg_restore` da
    carga validada — ninguém roda DDL à mão lá.
 4. **A carga é idempotente.** Isso é o que torna reprocessamento seguro.
-5. **Nada sobe para produção sem os 24 testes de integridade vazios.**
+5. **Nada sobe para produção sem os 36 testes de integridade vazios.**
 6. **Nada entra na `main` com teste falhando** — o CI bloqueia o merge. Ver [TDD](../07-justificativas/03-tdd.md).
 7. **`Dockerfile` desde cedo.** Containerizar no fim do projeto é onde os prazos morrem.

@@ -182,16 +182,28 @@ pedem também **precedentes** e **doutrina** ligados ao tema.
     │  │                                      │
     │  │ bridge_case_topic                    ├─ outcome_sk (dim_decision_outcome)
     │  ▼                                      └─ polarity_reference  ← novo
-    │ dim_topic (assunto TPU, 447)
+    │ dim_topic (assunto TPU, 1.075)
     │     │  bridge_theme_topic        ┌── dim_doctrine (52.696)
     │     ▼                            │      ▲
-    │  dim_theme (408) ────────────────┘  bridge_topic_doctrine
+    │  dim_theme (1.049) ──────────────┘  bridge_topic_doctrine
     │
     └─ dim_case_class ─ claimant_type  ← novo
 ```
 
 Agregados por cima: `case_current_result` → `theme_summary` · `theme_by_year` ·
 `theme_by_court` · `theme_strength` (+ equivalentes no grão de assunto).
+
+**O que a camada de consumo acrescentou (20/09/2026):**
+
+| Objeto | Para quê | Decisão |
+|---|---|---|
+| `dim_theme.theme_key` + `theme_registry` | chave pública do tema, estável entre cargas | [D-31](../06-operacao/02-decisoes-e-riscos.md#d-31--chave-pública-do-tema) |
+| `dim_theme.search_vector`, `theme_name_norm` (e o mesmo em `dim_topic`) | colunas geradas para a busca em português | [D-30](../06-operacao/02-decisoes-e-riscos.md#d-30--busca-de-temas-em-português) |
+| `search_synonym` | jargão forense → vocabulário da TPU | [D-30](../06-operacao/02-decisoes-e-riscos.md#d-30--busca-de-temas-em-português) |
+| `theme_area_curation` | área do produto nos temas sem tag, com a base de cada decisão (`basis`); `stretched` marca a aproximação | — |
+| `strength_config.methodology_version`, `min_judged_for_percentage` | versão da metodologia e piso de n | [D-32](../06-operacao/02-decisoes-e-riscos.md#d-32--piso-de-n-para-exibir-percentual) |
+| `data_provenance`, `theme_provenance` | fonte, data de extração e contagem, por bloco | — |
+| `theme_case_export` | linha por processo julgado de cada tema (US-15 e US-27) | — |
 
 ## Checklist de auditoria — respondido
 

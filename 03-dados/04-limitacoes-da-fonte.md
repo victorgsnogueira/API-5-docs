@@ -181,6 +181,10 @@ Boa parte do que os mockups mostram **não tem lastro hoje**. As opções, por b
 | Valor / quantum | texto + NLP + coluna de medida no fato | — | remover do escopo |
 | Relator | raspagem nos três tribunais | inteiro teor + NLP | remover do escopo |
 
+> **Decidido em 20/09/2026 ([D-33](../06-operacao/02-decisoes-e-riscos.md#d-33--histórias-removidas-do-backlog-e-doutrina-relacionada)).** Jurisprudência qualificada, relator e
+> inteiro teor na aplicação saíram do backlog (US-18, US-22, US-23). Doutrina ficou, mas
+> como doutrina **relacionada**, por similaridade semântica.
+
 **Não existe opção D:** exibir dado plausível gerado por modelo. O público-alvo cita o
 que lê aqui em peça e em decisão; um número inventado destrói o produto e não é um
 risco reputacional recuperável.

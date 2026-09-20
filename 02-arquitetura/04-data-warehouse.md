@@ -49,7 +49,7 @@ O projeto tem **três bancos**, e eles **não são iguais**, de propósito
 
 ```
    CARGA  (api5-dw)                  raw · staging · nlp · dw   + pgvector
-      │  coleta → NLP → agregados → 24 testes
+      │  coleta → NLP → agregados → 36 testes
       │
       │  scraping/scripts/publish_dw.sh   (pg_dump -n dw → pg_restore)
       ├──────────────────────────► HOMOLOGAÇÃO (ratio-homolog)    só dw, sem pgvector
@@ -70,7 +70,7 @@ O projeto tem **três bancos**, e eles **não são iguais**, de propósito
 | `default_text_search_config` | `english` ⚠ | **`portuguese`** | **`portuguese`** (fixar na instalação) |
 | Usuários | `dw_admin` (superusuário) | `ratio_loader` (dono do `dw`) · `ratio_api` (**só `SELECT`**) | idem |
 | Quem acessa | só quem roda a carga | o time e a API em desenvolvimento, pela Tailscale | funcionários do cliente, via API |
-| Como muda | a cada rodada da carga | só por `publish_dw.sh`, **depois** dos 24 testes | a cada pacote de versão |
+| Como muda | a cada rodada da carga | só por `publish_dw.sh`, **depois** dos 36 testes | a cada pacote de versão |
 
 **A API nunca aponta para o banco da carga.** Ele tem superusuário, dado cru e carga pela
 metade. A API — em dev, homologação ou produção — lê só um banco com o `dw` publicado,
@@ -91,7 +91,7 @@ Os embeddings ficam em `nlp.topic_embedding` e `nlp.doctrine_embedding`
 > ✅ **Verificado em 19/09/2026:** `pg_dump -Fc -n dw` (14,7 MB) restaurado num
 > `postgres:16` **sem pgvector**, com ICU `pt-BR`: mesmas contagens (1.086.623 fatos,
 > 52.696 artigos, 1.049 temas, 13.870 ligações), as 9 views materializadas populadas, busca
-> com `unaccent` funcionando e **os 24 testes de integridade vazios**. Só é preciso criar
+> com `unaccent` funcionando e **os 36 testes de integridade vazios**. Só é preciso criar
 > `pg_trgm` e `unaccent` antes do restore.
 
 ### Imagem e versão
@@ -167,7 +167,7 @@ POSTGRES_INITDB_ARGS="--locale-provider=icu --icu-locale=pt-BR --encoding=UTF8 -
 |---|---|---|---|
 | `raw` | payload cru (JSONB) por fonte — `datajud_case`, `doctrine_article`, `tjmg_decision` | 3 | 12 (inclui GIN no `payload`) |
 | `staging` | DTO achatado — `case_event`, `case_decision`, `doctrine_article` | 3 | 8 |
-| `dw` | modelo dimensional: 2 fatos, 10 dimensões, 4 pontes, `strength_config`, `tpu_scope` | 18 | 59 |
+| `dw` | modelo dimensional: 2 fatos, 10 dimensões, 4 pontes, `strength_config`, `tpu_scope`, `theme_registry`, `search_synonym`, `theme_area_curation` | 21 | 68 |
 | `dw` | **9 views materializadas** — `case_current_result`, `topic_summary`, `topic_by_year`, `topic_by_court`, `topic_by_judging_body`, `theme_summary`, `theme_by_year`, `theme_by_court`, `theme_strength` | — | índice único em cada (permite `REFRESH … CONCURRENTLY`) |
 | `public` | só as extensões | — | — |
 

@@ -256,7 +256,7 @@ artigo sem tema é recuperável, artigo no tema errado não é (mesma lógica do
 
 **Decisão.** Não existe carga diária nem job agendado. A raspagem é feita **à mão**,
 quando o time decide atualizar a base: coletar → normalizar (NLP + curadoria) →
-agregar → validar (24 testes) → subir para produção por `pg_dump`/`pg_restore` do
+agregar → validar (36 testes) → subir para produção por `pg_dump`/`pg_restore` do
 schema `dw`. Exatamente o processo que produziu a base atual. *(19/09/2026)*
 
 **Por quê.** O pipeline tem um passo humano que não automatiza — a
@@ -267,7 +267,7 @@ a leitura.
 
 **Consequências.**
 - o pipeline fica em **Python** (onde está o NLP), fora dos repositórios e do CI
-  do backend e do frontend, incluindo migrations da carga e seus 24 testes SQL;
+  do backend e do frontend, incluindo migrations da carga e seus 36 testes SQL;
 - a API passa a ser **somente leitura** também no banco (papel `ratio_api` só com
   `SELECT`);
 - some o contêiner de ETL e o alarme de "carga não rodou";
@@ -411,7 +411,7 @@ Windows e entregá-lo no pacote, sem nenhum uso.
 
 **Consequência.** Os embeddings foram movidos para o schema `nlp` (migration `018`),
 que nunca sobe. Verificado: o dump do `dw` restaura num Postgres 16 sem pgvector com os
-24 testes de integridade vazios. Ver [Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção--os-três-bancos).
+36 testes de integridade vazios. Ver [Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção--os-três-bancos).
 
 **Custo.** Busca semântica em tempo de requisição (busca por significado, chatbot) fica
 fora. Se entrar, esta decisão é revertida e o pgvector para Windows volta a ser problema.
@@ -432,12 +432,12 @@ migrations do pipeline de carga.
 ### D-27 · Rotas do frontend em português
 
 **Decisão.** As URLs do frontend são em português: `/`, `/busca?q=`,
-`/tema/$code?aba=resumo|base`. *(19/09/2026)*
+`/tema/$key?aba=resumo|base`. *(19/09/2026)*
 
 **Por quê.** A URL é o que o usuário vê e compartilha — é texto de tela, não
 identificador. É a exceção à regra de código em inglês ([D-06](#d-06--código-em-inglês-retorno-da-api-em-português)).
 O resto continua em inglês: componentes, funções, o nome do parâmetro de rota e as
-rotas da **API** (`/api/topics`).
+rotas da **API** (`/api/themes`).
 
 ---
 
@@ -452,7 +452,7 @@ rotas da **API** (`/api/topics`).
 | **Produção** (cliente) | só `dw`, sem pgvector, Postgres nativo Windows | funcionários do cliente |
 
 A homologação é **separada** da carga e só muda por `scraping/scripts/publish_dw.sh`,
-que publica o `dw` e roda os 24 testes no destino.
+que publica o `dw` e roda os 36 testes no destino.
 
 **Por quê.**
 - a homologação precisa testar **o mesmo caminho da produção** — restaurar o dump num
@@ -519,6 +519,134 @@ triplicou e passou a ter os três tribunais.
 
 ---
 
+### D-30 · Busca de temas em português
+
+**Decisão.** *(20/09/2026)* A busca da US-01 roda no próprio Postgres, com dois mecanismos
+em paralelo, atrás da função `dw.search_themes(consulta, limite)`:
+
+- **busca textual** com a configuração `dw.pt_unaccent` (português + `unaccent`);
+- **similaridade de trigramas** (`word_similarity`) sobre o nome normalizado do tema.
+
+Abaixo de 3 caracteres não consulta; abaixo de **0,5 de rank** corta. A busca vazia é
+`dw.search_themes_top`, os temas de maior volume.
+
+**Por quê.** Os dois mecanismos cobrem falhas diferentes. Testado contra os cenários da
+US-01: a busca textual sozinha devolvia nada para "inscricao indevida em cadastro de
+inadimplentes"; o trigrama sozinho pontuava uma consulta fora de escopo ("contrato de
+arrendamento de satélite") em 0,485, acima do erro de digitação legítimo (0,450).
+O piso de 0,5 foi **medido**: fora de escopo chega a 0,364, acertos legítimos ficam entre
+0,62 e 2,65.
+
+**O que a medição mostrou.**
+
+- **O `unaccent` degrada o stemmer português** — `indenização` vira `indenizaca`, mas
+  `indenizações` vira `indenizaco`. Plural e flexão ficam por conta do trigrama.
+- O cenário "negativação indevida" da US-01 **não é erro de digitação, é sinônimo**:
+  "negativação" não existe no vocabulário da TPU, e o tema chama-se *Inclusão Indevida em
+  Cadastro de Inadimplentes*. Resolvido pela tabela `dw.search_synonym`.
+
+**Custo.** `dw.search_synonym` é **curadoria**, hoje com quatro entradas (`negativacao`,
+`negativado`, `serasa`, `spc`). É ela que faz a busca em linguagem natural funcionar, e
+não escala sozinha: cada jargão forense ausente da TPU precisa de uma linha.
+
+---
+
+### D-31 · Chave pública do tema
+
+**Decisão.** *(20/09/2026)* A chave pública do tema é `dim_theme.theme_key`, atribuída por
+`dw.theme_registry` na **primeira vez** que o nome aparece e **nunca reatribuída**. Os
+valores de hoje (1 a 1.049) foram congelados, então a chave que já existia é a que vale.
+
+**Por quê.** `theme_sk` é `GENERATED ALWAYS` e a carga usa `TRUNCATE ... RESTART
+IDENTITY`: a cada recarga o `theme_sk` é renumerado, e um link compartilhado (US-13)
+apontaria para outro tema. Verificado numa transação revertida: com `TRUNCATE` e
+reinserção em ordem aleatória, **1.049 de 1.049 chaves se mantêm**, enquanto o `theme_sk`
+muda em 1.047.
+
+**Custo.** `theme_registry` é a memória das chaves já publicadas e **não pode ser truncada
+nem descartada**. `nlp_load_themes.py` a consulta antes de inserir, e o teste 32 falha se
+um tema ficar sem chave. O slug do nome (1.045 distintos em 1.049) ficou como alternativa
+não adotada: renomear um tema quebraria o link.
+
+---
+
+### D-32 · Piso de n para exibir percentual
+
+**Decisão.** *(20/09/2026)* Abaixo de **2 julgados** a tela mostra a **contagem**
+("1 decisão"), nunca um percentual. O valor fica em
+`strength_config.min_judged_for_percentage`, para a API ler de um só lugar.
+
+**Por quê.** 347 dos 709 temas com julgado têm exatamente **um** caso julgado. Sem piso,
+metade do catálogo abriria com "100% das decisões" sobre n = 1, que é exatamente o que a
+US-09 diz evitar.
+
+**Efeito hoje.** 362 temas mostram percentual e 347 mostram só a contagem. O valor 2 é
+decisão de produto, não estatística: com n = 2 o percentual ainda é frágil, e o piso pode
+subir sem mudar o modelo.
+
+**O que não resolve.** O piso vale para a exibição do percentual, não para o score. Um tema
+com n = 1 continua com nota e grau calculados; ver os
+[ajustes em aberto](../01-produto/04-forca-do-entendimento.md#ajustes-em-aberto).
+
+---
+
+### D-33 · Histórias removidas do backlog e doutrina relacionada
+
+**Decisão.** *(20/09/2026)* Saem do backlog: **US-18** (precedentes qualificados),
+**US-22** (relator) e **US-23** (inteiro teor na aplicação). A **US-21** (doutrina) foi
+reescrita: de *doutrina invocada, com posição no debate* para *doutrina **relacionada** ao
+tema*. Com a saída delas o total é de 29 histórias; a Sprint 1 passa a 9 histórias e 44
+pontos.
+
+**Por quê.**
+
+- **US-18** — não há fonte verificada de súmulas, temas repetitivos e IRDR para os três
+  tribunais, e nada disso existe na base. A pré-condição da DoR nunca foi respondida.
+- **US-22** — o DataJud não publica o relator; a coluna `reporter_judge` existe e está
+  vazia em todos os processos.
+- **US-23** — o inteiro teor está bloqueado nos quatro tribunais testados
+  ([fonte 4](../03-dados/01-fontes.md#fonte-4--repositórios-de-jurisprudência-dos-tribunais)),
+  e a própria história exige **guardar** o texto, o que mudaria o modelo (NFR-01) e a
+  análise de LGPD (NFR-21). Um link de consulta tira o usuário da aplicação, então não a
+  atende; a conferência do usuário fica coberta pela US-15.
+- **US-21** — o dado que existe são **13.870 ligações por similaridade semântica** entre
+  o assunto e o título do artigo (cosseno ≥ 0,55). Nenhuma doutrina foi *invocada* por
+  decisão alguma, e não há campo de posição no debate. A história agora declara o que o
+  dado é.
+
+**Custo.** O bloco de jurisprudência qualificada, o relator e o inteiro teor deixam de ter
+lugar na tela. Reabrir qualquer um exige uma fonte nova, declarada.
+
+---
+
+### D-34 · `themes` na API, `theme_key` na rota
+
+**Decisão.** *(20/09/2026)* A API expõe **`/api/themes`** e **`/api/themes/{key}`**, onde
+`key` é o `theme_key` ([D-31](#d-31--chave-pública-do-tema)). No código: `Theme`,
+`ThemeSummary`, `SearchThemes`, `GetThemeDetail`. O parâmetro de rota do frontend passa de
+`$code` para `$key`. A amostra auditável passa de `/decisions` para **`/cases`** (caso de
+uso `ListCases`, ferramenta do chatbot `listCases`).
+
+**Por que `/cases`.** O fato tem grão de movimentação e `fact_case_decision` está vazio: o
+que a rota devolve são **processos**, um por linha, o mesmo grão de `dw.theme_case_export`.
+Chamar de `decisions` prometeria um dado que o modelo não tem.
+
+**Por quê.** O vocabulário do backend dizia `tema → topic`, mas o DW chama o tema de
+`dim_theme` e o **assunto** da TPU de `dim_topic`. Ficar com `topics` deixaria o C# dizendo
+`Topic` para ler `theme_summary`, `theme_strength` e `search_themes`, e `Subject` para ler
+`dim_topic` — a palavra apontando para coisas opostas em cada lado. Com `themes`, sobra um
+único nome legado: a tabela `dim_topic` (e as pontes e agregados `topic_*`), que é o assunto.
+
+**Onde o inglês do produto diz `topic`.** O README, o backlog e os requisitos funcionais
+em inglês usam *topic* para o tema. Lá é texto de produto, não identificador: **topic =
+tema = `theme` no código**. O *assunto* é *subject*.
+
+**Custo.** Nenhum código foi escrito ainda (a primeira rota nasce por TDD), então só o
+contrato mudou. Renomear `dim_topic` para `dim_subject` seria o conserto completo, mas
+mexe em nove views materializadas, nos scripts e nos testes; fica fora.
+
+---
+
 ## Riscos
 
 Ordenados por impacto. **Status revisado em 15/09/2026**, após a primeira carga
@@ -576,7 +704,7 @@ a aplicação com schema e dados mínimos em banco descartável.
 
 ### R-01 · Blocos do mockup sem fonte 🟠 *(era 🔴 — reduzido, não eliminado)*
 
-**Resolvido:** a **doutrina** deixou de ser lacuna (52.696 artigos, 9.186 ligados
+**Resolvido:** a **doutrina** deixou de ser lacuna (52.696 artigos, 13.870 ligados
 a tema, via DOAJ/SciELO/OAI-PMH).
 
 **Continua sem fonte, e agora com motivo confirmado:** citação de acórdão,

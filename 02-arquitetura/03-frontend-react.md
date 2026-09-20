@@ -10,19 +10,19 @@ Três telas, detalhadas em [Telas](../01-produto/02-telas.md):
 
 | Rota | Tela | API |
 |---|---|---|
-| `/` | Busca | `GET /api/topics?q=` (sugestões / temas de maior volume) |
-| `/busca?q=…` | Resultados + filtros | `GET /api/topics?q=…` |
-| `/tema/$code?aba=resumo\|base` | Detalhamento (abas Resumo / Base analítica) | `GET /api/topics/{code}` e `/decisions` |
+| `/` | Busca | `GET /api/themes?q=` (sugestões / temas de maior volume) |
+| `/busca?q=…` | Resultados + filtros | `GET /api/themes?q=…` |
+| `/tema/$key?aba=resumo\|base` | Detalhamento (abas Resumo / Base analítica) | `GET /api/themes/{key}` e `/cases` |
 
 > **Estado no repo:** existem `routes/index.tsx`, `routes/result.tsx` e
 > `routes/details.tsx` — a rota de detalhe ainda **não recebe o código do tema**.
-> Renomear para `routes/busca.tsx` e `routes/tema.$code.tsx` na primeira task de tela.
+> Renomear para `routes/busca.tsx` e `routes/tema.$key.tsx` na primeira task de tela.
 
 **Rotas em português.** A URL é o que o usuário vê, copia e manda para um colega — é
 texto de tela, não identificador. Por isso é a exceção à regra de código em inglês
 ([D-27](../06-operacao/02-decisoes-e-riscos.md#d-27--rotas-do-frontend-em-português)).
-O nome do parâmetro de rota (`$code`) fica em inglês: ele não aparece na URL, só no
-código. A **API** continua com rotas em inglês (`/api/topics`).
+O nome do parâmetro de rota (`$key`) fica em inglês: ele não aparece na URL, só no
+código. A **API** continua com rotas em inglês (`/api/themes`).
 
 A aba do detalhamento é **search param validado** (`?aba=base`), não estado local: o
 usuário vai querer mandar o link da base analítica para um colega. O TanStack Router
@@ -93,9 +93,9 @@ API5-Frontend/
     │       │   ├── __root.tsx
     │       │   ├── index.tsx       /
     │       │   ├── result.tsx      → renomear: busca.tsx
-    │       │   └── details.tsx     → renomear: tema.$code.tsx
-    │       ├── api/                (a criar) client.ts + topics.ts: schemas zod + funções
-    │       ├── features/           (a criar) search/ · results/ · topic/
+    │       │   └── details.tsx     → renomear: tema.$key.tsx
+    │       ├── api/                (a criar) client.ts + themes.ts: schemas zod + funções
+    │       ├── features/           (a criar) search/ · results/ · theme/
     │       └── components/         componentes de tela
     └── packages/ui/                o design system
         └── src/
@@ -177,7 +177,7 @@ Cada uma dessas regras é um teste que nasce vermelho. Ver [TDD](../07-justifica
 
 | O quê | Idioma | Exemplo |
 |---|---|---|
-| Identificador — componente, função, variável, tipo | **inglês** | `AlignmentBar`, `searchTopics` |
+| Identificador — componente, função, variável, tipo | **inglês** | `AlignmentBar`, `searchThemes` |
 | **Rota** — a URL que o usuário vê, e portanto o nome do arquivo em `routes/` | **português** | `/busca`, `/tema/123?aba=base` |
 | Chave do JSON da API (e portanto do tipo TS) | **inglês** | `strengthScore`, `polarityLabel` |
 | Texto que o usuário lê — rótulo, título, mensagem, estado vazio | **português** | "Base analítica", "consultar no tribunal" |

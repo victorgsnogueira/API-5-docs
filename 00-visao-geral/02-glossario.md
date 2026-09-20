@@ -94,3 +94,4 @@ se sobrepõem.
 heterogêneos em um mesmo **tema**, e extrair fundamentos e valores de texto livre.
 
 **Tema** — a entidade central do produto. Ver [O que é um tema](../01-produto/03-tema-modelo-conceitual.md).
+No código e na API é `theme` ([D-34](../06-operacao/02-decisoes-e-riscos.md#d-34--themes-na-api-theme_key-na-rota)); nos textos de produto em inglês, *topic*. **Não confundir com *assunto*** (*subject*), o código da TPU que origina o tema — no banco, `dim_topic`.
