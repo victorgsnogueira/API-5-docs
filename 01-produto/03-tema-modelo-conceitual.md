@@ -61,8 +61,8 @@ A recomendação abaixo foi seguida à risca. Resultado, na recarga cível de
 20/09/2026: **1.075 assuntos da TPU → 1.049 temas**, dos quais 23 vieram de
 agrupamento semântico (consolidando 49 assuntos) e 1.026 foram mantidos 1:1.
 
-`dim_topic` (assunto bruto) **não foi destruída** — `dim_theme` é uma camada
-acima, ligada por `bridge_theme_topic`. A pergunta "de onde saiu esse tema?" tem
+`dim_subject` (assunto bruto) **não foi destruída** — `dim_theme` é uma camada
+acima, ligada por `bridge_theme_subject`. A pergunta "de onde saiu esse tema?" tem
 resposta em SQL, e há teste que falha se algum tema perder o lastro.
 
 Detalhes do método, dos erros do algoritmo e da curadoria:

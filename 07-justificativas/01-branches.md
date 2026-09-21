@@ -217,7 +217,7 @@ A estrutura de branches define onde o pipeline roda. Ver
 | Pull request de `usX` → `main` | build + testes da aplicação, incluindo integração; exige label `release:*` |
 | Merge na `main` | publica uma **release** (tag `vX.Y.Z`, zip e `.sha256`), salvo `release:none` — ver [Versionamento e releases](04-versionamento-e-releases.md) |
 
-Os 36 testes de integridade do DW pertencem à carga manual, executada separadamente.
+Os 37 testes de integridade do DW pertencem à carga manual, executada separadamente.
 Não fazem parte do CI do backend ou do frontend. Os testes de integração da API usam
 PostgreSQL descartável com schema e dados mínimos preparados pelos próprios testes,
 sem executar raspagem, ETL ou NLP e sem acessar a homologação.

@@ -24,7 +24,7 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 | Aviso | Onde |
 |---|---|
 | ⚠ O `prototipo/` **não é fonte de verdade** — nem o código, nem o contrato, nem a modelagem | [Protótipo](05-prototipo/01-prototipo-referencia.md) |
-| ✅ A **modelagem do DW existe e está carregada** — 1.086.623 linhas de fato, só cível | [Modelo dimensional](03-dados/02-modelo-dimensional.md) |
+| ✅ A **modelagem do DW existe e está carregada** — 1.086.623 linhas de fato, só cível | [Modelagem dos três bancos](03-dados/06-modelagem-dos-bancos.md) |
 | 🔴 **"Favorável" sem dizer a quem inverte a leitura** — leia antes de exibir percentual | [Polaridade do resultado](03-dados/05-polaridade-do-resultado.md) |
 | ⚠ O que depende de **inteiro teor** segue sem fonte — os 4 tribunais estão bloqueados | [Limitações da fonte](03-dados/04-limitacoes-da-fonte.md) |
 | ⚠ Código **em inglês**; tudo o que a API devolve (dados, rótulos, erros) **em português** | [Idioma](02-arquitetura/02-backend-dotnet.md#idioma) |
@@ -71,7 +71,8 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 
 ### 03 · Dados
 - [Fontes de dados](03-dados/01-fontes.md) — DataJud, PANGEA, JusBrasil, tribunais, doutrina
-- [Modelo dimensional](03-dados/02-modelo-dimensional.md) — esquema implementado · checklist respondido
+- [Modelo dimensional](03-dados/02-modelo-dimensional.md) — o raciocínio de modelagem · checklist respondido
+- [Modelagem dos três bancos](03-dados/06-modelagem-dos-bancos.md) — **o modelo vigente**: cada tabela e coluna do `dw`, `etl`, `raw`, `staging` e `nlp`, com tipos, propósito e preenchimento
 - [Agregados OLAP](03-dados/03-agregados-olap.md) — as consultas que alimentam cada tela
 - [Limitações da fonte](03-dados/04-limitacoes-da-fonte.md) — **o que não dá para prometer**
 - [Polaridade do resultado](03-dados/05-polaridade-do-resultado.md) — **leitura obrigatória antes de exibir qualquer percentual**
@@ -94,6 +95,10 @@ Os padrões e as ferramentas do projeto, e por que foram escolhidos.
 - [Padrão de commits](07-justificativas/02-commits.md) — convenção semântica, em inglês
 - [TDD](07-justificativas/03-tdd.md) — o padrão de desenvolvimento, backend e frontend
 - [Versionamento e releases](07-justificativas/04-versionamento-e-releases.md) — labels `release:*`, tag `vX.Y.Z`, o que cada merge na `main` publica
+
+### 08 · Backlog
+- [Product Backlog](08-backlog/product-backlog.md) — as 29 histórias, por prioridade, estimativa e sprint
+- [Tasks do projeto](08-backlog/tasks/README.md) — as tasks de cada sprint: [Sprint 1](08-backlog/tasks/sprint-1.md) · [Sprint 2](08-backlog/tasks/sprint-2.md) · [Sprint 3](08-backlog/tasks/sprint-3.md)
 
 ---
 

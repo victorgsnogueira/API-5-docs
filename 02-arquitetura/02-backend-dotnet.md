@@ -83,7 +83,7 @@ acrescente linhas conforme aparecerem, não invente sinônimos.
 | grau / instância | `courtLevel` | `First`, `Second`, `Superior` |
 | relator | `reporterJudge` | |
 | tema | `theme` | a entidade central do produto; chave pública `theme_key` |
-| assunto (TPU) | `subject` | o código do CNJ que origina o tema; no DW a tabela ainda se chama `dim_topic` |
+| assunto (TPU) | `subject` | o código do CNJ que origina o tema; no DW a tabela é `dim_subject` ([D-35](../06-operacao/02-decisoes-e-riscos.md#d-35--o-banco-do-cliente-é-o-dw-um-só-modelo-dw-nos-três-bancos)) |
 | classe processual | `caseClass` | |
 | procedência | `Granted` | enum `DecisionOutcome` |
 | improcedência | `Denied` | |

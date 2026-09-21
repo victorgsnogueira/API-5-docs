@@ -1,5 +1,10 @@
 # Modelo dimensional
 
+> **Esta página é o registro do raciocínio de modelagem.** O modelo vigente, tabela por tabela e coluna por
+> coluna, com tipos e preenchimento reais, está em [Modelagem dos três bancos](06-modelagem-dos-bancos.md)
+> ([D-35](../06-operacao/02-decisoes-e-riscos.md#d-35--o-banco-do-cliente-é-o-dw-um-só-modelo-dw-nos-três-bancos)). Nas seções de proposta abaixo, `dim_topic`, `bridge_*_topic` e `fact_case_decision`
+> aparecem como foram propostos: hoje são `dim_subject` e `bridge_*_subject`, e a `fact_case_decision` foi removida.
+
 > ## ✅ Esquema implementado e carregado — 15/09/2026
 >
 > Deixou de ser proposta. Existe um esquema rodando com **1.086.623 linhas de
@@ -9,9 +14,9 @@
 > |---|---|
 > | **Grão do fato** | ✅ **movimentação processual** (Opção A) — o DataJud entrega o array `movimentos`, que é a fonte de eventos que a Opção A pressupunha |
 > | Chave natural do fato | ✅ `(processo, movimento, timestamp)` — carga idempotente verificada rodando o mesmo lote duas vezes |
-> | `dim_topic` | ✅ assunto da TPU (Opção A), **mais** uma camada de tema semântico por cima (`dim_theme`) |
+> | `dim_subject` (antes `dim_topic`) | ✅ assunto da TPU (Opção A), **mais** uma camada de tema semântico por cima (`dim_theme`) |
 > | `dim_movement.result_category` | ✅ 6 códigos conferidos contra a TPU/CNJ; os outros 257 entram como neutros |
-> | Precedentes e doutrina no modelo | ✅ `dim_doctrine` + `bridge_topic_doctrine` implementadas. Precedente segue sem fonte |
+> | Precedentes e doutrina no modelo | ✅ `dim_doctrine` + `bridge_subject_doctrine` implementadas. Precedente segue sem fonte |
 > | Proveniência | ✅ `source` + `source_url` + `extracted_at` em toda linha carregada |
 >
 > **Nova exigência descoberta na carga:**
@@ -79,9 +84,9 @@ A recomendação foi seguida. O que confirmou a escolha, na prática:
 
 Houve um período em que a Opção B (grão = decisão) foi adotada, enquanto o
 DataJud estava fora do escopo e a única fonte possível seria um repositório de
-jurisprudência. A tabela `fact_case_decision` desse desenho **continua existindo
-e vazia**, pronta para quando houver inteiro teor. Não são versões concorrentes:
-são grãos diferentes para fontes diferentes.
+jurisprudência. A tabela `fact_case_decision` desse desenho **existiu, vazia**, à espera
+de inteiro teor, e foi **removida** na [D-35](../06-operacao/02-decisoes-e-riscos.md#d-35--o-banco-do-cliente-é-o-dw-um-só-modelo-dw-nos-três-bancos):
+sem fonte para ela, o modelo não a carrega.
 
 ## Proposta inicial de esquema
 
@@ -180,12 +185,12 @@ pedem também **precedentes** e **doutrina** ligados ao tema.
                     ▼   ▼   ▼
  dim_case ──────> fact_case_event <────── dim_movement
     │  │                                      │
-    │  │ bridge_case_topic                    ├─ outcome_sk (dim_decision_outcome)
+    │  │ bridge_case_subject                  ├─ outcome_sk (dim_decision_outcome)
     │  ▼                                      └─ polarity_reference  ← novo
-    │ dim_topic (assunto TPU, 1.075)
-    │     │  bridge_theme_topic        ┌── dim_doctrine (52.696)
+    │ dim_subject (assunto TPU, 1.075)
+    │     │  bridge_theme_subject      ┌── dim_doctrine (52.696)
     │     ▼                            │      ▲
-    │  dim_theme (1.049) ──────────────┘  bridge_topic_doctrine
+    │  dim_theme (1.049) ──────────────┘  bridge_subject_doctrine
     │
     └─ dim_case_class ─ claimant_type  ← novo
 ```
@@ -197,10 +202,10 @@ Agregados por cima: `case_current_result` → `theme_summary` · `theme_by_year`
 
 | Objeto | Para quê | Decisão |
 |---|---|---|
-| `dim_theme.theme_key` + `theme_registry` | chave pública do tema, estável entre cargas | [D-31](../06-operacao/02-decisoes-e-riscos.md#d-31--chave-pública-do-tema) |
-| `dim_theme.search_vector`, `theme_name_norm` (e o mesmo em `dim_topic`) | colunas geradas para a busca em português | [D-30](../06-operacao/02-decisoes-e-riscos.md#d-30--busca-de-temas-em-português) |
+| `dim_theme.theme_key` + `etl.theme_registry` | chave pública do tema, estável entre cargas | [D-31](../06-operacao/02-decisoes-e-riscos.md#d-31--chave-pública-do-tema) |
+| `dim_theme.search_vector`, `theme_name_norm` (e o mesmo em `dim_subject`) | colunas geradas para a busca em português | [D-30](../06-operacao/02-decisoes-e-riscos.md#d-30--busca-de-temas-em-português) |
 | `search_synonym` | jargão forense → vocabulário da TPU | [D-30](../06-operacao/02-decisoes-e-riscos.md#d-30--busca-de-temas-em-português) |
-| `theme_area_curation` | área do produto nos temas sem tag, com a base de cada decisão (`basis`); `stretched` marca a aproximação | — |
+| `etl.theme_area_curation` | área do produto nos temas sem tag, com a base de cada decisão (`basis`); `stretched` marca a aproximação | — |
 | `strength_config.methodology_version`, `min_judged_for_percentage` | versão da metodologia e piso de n | [D-32](../06-operacao/02-decisoes-e-riscos.md#d-32--piso-de-n-para-exibir-percentual) |
 | `data_provenance`, `theme_provenance` | fonte, data de extração e contagem, por bloco | — |
 | `theme_case_export` | linha por processo julgado de cada tema (US-15 e US-27) | — |
@@ -210,8 +215,8 @@ Agregados por cima: `case_current_result` → `theme_summary` · `theme_by_year`
 - [x] **O grão está declarado por escrito?** Sim: uma linha = uma movimentação.
 - [x] **Cada dimensão tem chave natural clara e estável?** Sim — número CNJ,
       código da TPU, sigla do tribunal, nome do assunto, DOI/URL do artigo.
-- [x] **Toda relação N:N passa por ponte?** Sim: `bridge_case_topic`,
-      `bridge_theme_topic`, `bridge_topic_doctrine`.
+- [x] **Toda relação N:N passa por ponte?** Sim: `bridge_case_subject`,
+      `bridge_theme_subject`, `bridge_subject_doctrine`.
 - [x] **Proveniência em tudo que é carregado?** Sim, e há teste que falha se
       faltar.
 - [x] **A carga é idempotente?** Sim — `natural_key` no fato e

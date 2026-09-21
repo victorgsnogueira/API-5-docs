@@ -200,7 +200,8 @@ recurso, que a Opção B perderia.
 **Custo.** Volume alto — média de **43,8 movimentos por processo**; 18.378
 processos renderam 1.086.623 linhas. Postgres absorve sem esforço.
 
-**Nota.** `fact_case_decision` (grão = decisão publicada) existe e está vazia,
+**Nota.** `fact_case_decision` (grão = decisão publicada) existia e estava vazia; foi removida na
+[D-35](#d-35--o-banco-do-cliente-é-o-dw-um-só-modelo-dw-nos-três-bancos). O trecho a seguir é o registro da época:
 para quando houver inteiro teor. São grãos diferentes para fontes diferentes,
 não versões concorrentes.
 
@@ -256,7 +257,7 @@ artigo sem tema é recuperável, artigo no tema errado não é (mesma lógica do
 
 **Decisão.** Não existe carga diária nem job agendado. A raspagem é feita **à mão**,
 quando o time decide atualizar a base: coletar → normalizar (NLP + curadoria) →
-agregar → validar (36 testes) → subir para produção por `pg_dump`/`pg_restore` do
+agregar → validar (37 testes) → subir para produção por `pg_dump`/`pg_restore` do
 schema `dw`. Exatamente o processo que produziu a base atual. *(19/09/2026)*
 
 **Por quê.** O pipeline tem um passo humano que não automatiza — a
@@ -267,7 +268,7 @@ a leitura.
 
 **Consequências.**
 - o pipeline fica em **Python** (onde está o NLP), fora dos repositórios e do CI
-  do backend e do frontend, incluindo migrations da carga e seus 36 testes SQL;
+  do backend e do frontend, incluindo migrations da carga e seus 37 testes SQL;
 - a API passa a ser **somente leitura** também no banco (papel `ratio_api` só com
   `SELECT`);
 - some o contêiner de ETL e o alarme de "carga não rodou";
@@ -411,7 +412,7 @@ Windows e entregá-lo no pacote, sem nenhum uso.
 
 **Consequência.** Os embeddings foram movidos para o schema `nlp` (migration `018`),
 que nunca sobe. Verificado: o dump do `dw` restaura num Postgres 16 sem pgvector com os
-36 testes de integridade vazios. Ver [Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção--os-três-bancos).
+37 testes de integridade vazios. Ver [Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção--os-três-bancos).
 
 **Custo.** Busca semântica em tempo de requisição (busca por significado, chatbot) fica
 fora. Se entrar, esta decisão é revertida e o pgvector para Windows volta a ser problema.
@@ -452,7 +453,7 @@ rotas da **API** (`/api/themes`).
 | **Produção** (cliente) | só `dw`, sem pgvector, Postgres nativo Windows | funcionários do cliente |
 
 A homologação é **separada** da carga e só muda por `scraping/scripts/publish_dw.sh`,
-que publica o `dw` e roda os 36 testes no destino.
+que publica o `dw` e roda os 37 testes no destino.
 
 **Por quê.**
 - a homologação precisa testar **o mesmo caminho da produção** — restaurar o dump num
@@ -506,7 +507,7 @@ A base cresceu porque a mesma recarga corrigiu dois erros antigos:
 - **a amostra deixou de ser o que o tribunal mais processa.** Antes, 70% eram Execução
   Fiscal. Agora a cota é por área do direito, e nenhuma área domina.
 
-`dim_topic` ganhou `subject_code` e `tpu_area`, a área **oficial** da TPU. Isso expôs um
+`dim_subject` (então `dim_topic`) ganhou `subject_code` e `tpu_area`, a área **oficial** da TPU. Isso expôs um
 erro na área do produto: a regra de palavra-chave `"regime"` marcava como PENAL o tema
 *Averbação/Cômputo de tempo de serviço de segurado especial (regime de economia
 familiar)*, que é previdenciário. As regras penais saíram da curadoria.
@@ -627,7 +628,7 @@ lugar na tela. Reabrir qualquer um exige uma fonte nova, declarada.
 `$code` para `$key`. A amostra auditável passa de `/decisions` para **`/cases`** (caso de
 uso `ListCases`, ferramenta do chatbot `listCases`).
 
-**Por que `/cases`.** O fato tem grão de movimentação e `fact_case_decision` está vazio: o
+**Por que `/cases`.** O fato tem grão de movimentação e `fact_case_decision` estava vazio (removida na D-35): o
 que a rota devolve são **processos**, um por linha, o mesmo grão de `dw.theme_case_export`.
 Chamar de `decisions` prometeria um dado que o modelo não tem.
 
@@ -635,15 +636,61 @@ Chamar de `decisions` prometeria um dado que o modelo não tem.
 `dim_theme` e o **assunto** da TPU de `dim_topic`. Ficar com `topics` deixaria o C# dizendo
 `Topic` para ler `theme_summary`, `theme_strength` e `search_themes`, e `Subject` para ler
 `dim_topic` — a palavra apontando para coisas opostas em cada lado. Com `themes`, sobra um
-único nome legado: a tabela `dim_topic` (e as pontes e agregados `topic_*`), que é o assunto.
+único nome legado: a tabela `dim_topic` (e as pontes e agregados `topic_*`), que é o assunto. **Atualização:** a
+[D-35](#d-35--o-banco-do-cliente-é-o-dw-um-só-modelo-dw-nos-três-bancos) renomeou a tabela para `dim_subject`, então
+não sobrou nenhum `topic` no banco.
 
 **Onde o inglês do produto diz `topic`.** O README, o backlog e os requisitos funcionais
 em inglês usam *topic* para o tema. Lá é texto de produto, não identificador: **topic =
 tema = `theme` no código**. O *assunto* é *subject*.
 
 **Custo.** Nenhum código foi escrito ainda (a primeira rota nasce por TDD), então só o
-contrato mudou. Renomear `dim_topic` para `dim_subject` seria o conserto completo, mas
+contrato mudou. Renomear `dim_topic` para `dim_subject` seria o conserto completo, e foi feito depois, na D-35; na época
 mexe em nove views materializadas, nos scripts e nos testes; fica fora.
+
+---
+
+### D-35 · O banco do cliente é o DW: um só modelo `dw` nos três bancos
+
+**Decisão.** *(20/09/2026)* O banco que o cliente recebe **é o Data Warehouse**: o schema `dw`, com modelagem
+dimensional e o grão declarado da [D-13](#d-13--grão-do-fato-movimentação-processual-opção-a) (movimentação
+processual). Homologação e produção têm **o mesmo modelo**; o banco da carga tem esse mesmo `dw` mais os schemas
+de trabalho (`etl`, `raw`, `staging`, `nlp`). A regra de corte é por schema: o que está em `dw` é entregue, o que
+está fora fica na carga. A descrição completa, tabela por tabela, está em
+[Modelagem dos três bancos](../03-dados/06-modelagem-dos-bancos.md).
+
+**O que mudou no modelo.** Feito a partir do que a fonte consegue e não consegue entregar:
+
+- **saíram** `fact_case_decision` e `bridge_decision_topic` (vazias, dependiam do inteiro teor), as quatro views
+  `topic_*` (grão de assunto, sem consumidor), `raw.tjmg_decision`, `staging.case_decision` e as colunas
+  `case_number_legacy`, `is_curated`, `dim_topic.subject_area` e `cluster_id`;
+- **passaram para o schema `etl`** as tabelas que são memória da carga: `theme_registry`, `theme_area_curation`
+  e `tpu_scope`;
+- **foram renomeados** `dim_topic` → `dim_subject` e as pontes `*_topic` → `*_subject`, o que fecha a colisão de
+  vocabulário da [D-34](#d-34--themes-na-api-theme_key-na-rota): `topic` deixa de existir no banco;
+- **entraram** `theme_by_judging_body` (câmara por tema, US-17), `theme_time_to_decision` (US-30),
+  `data_provenance` como agregado materializado (a view levava 1,15 s por chamada) e restrições de domínio
+  (`CHECK`) e de obrigatoriedade no que antes só o carregador garantia.
+
+**Por quê.** Com a carga manual e a produção só recebendo o resultado, manter um segundo modelo para o cliente
+obrigaria uma transformação a cada publicação. Um modelo só torna a publicação uma troca de dados e permite,
+adiante, migrations versionadas sobre o mesmo schema (NFR-03).
+
+**Como foi verificado.** A cadeia de migrations `001` a `028` construída do zero num banco vazio produz um schema
+**idêntico** ao do banco da carga (comparação de `pg_dump -s`, zero diferença) e a baseline
+`scraping/sql/baseline/dw_schema.sql` se reconstrói sozinha. Isso revelou uma deriva: `dim_doctrine` era única por
+`(source, article_url)` no banco, mas a migration `004` dizia `(source, title, publication_year)`; alguém
+alterou o banco à mão. Foi corrigido na `028`. A homologação recebeu o modelo por troca atômica do schema `dw`,
+com 37 testes vazios.
+
+**O que não muda.** O [D-25](#d-25--produção-sem-pgvector-embeddings-ficam-na-carga) (sem pgvector em produção) e o
+[D-28](#d-28--três-bancos-carga-homologação-e-produção) (três bancos). A produção **ainda não existe**: será o mesmo
+`dw` da homologação.
+
+**Custo.** A publicação passou a substituir o schema `dw` inteiro, o que é mais simples e mais seguro (não deixa
+objeto velho para trás), mas não aplica alteração incremental: mudar uma coluna em produção sem recarregar
+exigirá o runner de migrations, que ainda é tarefa a fazer. O NFR-03 fica, até lá, atendido pelo `dw` gerado e
+validado na carga, nunca alterado à mão no destino.
 
 ---
 

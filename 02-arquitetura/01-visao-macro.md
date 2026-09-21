@@ -16,7 +16,7 @@
 │  Transform  achatar ──► staging · traduzir códigos · polaridade     │
 │  Normalize  NLP: embeddings · temas + curadoria · doutrina↔tema     │
 │  Load       upsert idempotente, com proveniência em toda linha      │
-│  Validate   36 testes de integridade ── só sobe se todos passarem   │
+│  Validate   37 testes de integridade ── só sobe se todos passarem   │
 │                          pasta scraping/ — Python + SQL  (D-17)     │
 └──────────────────────────┬──────────────────────────────────────────┘
                            │  pg_dump / pg_restore do schema dw

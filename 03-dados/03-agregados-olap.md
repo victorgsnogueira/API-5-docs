@@ -1,5 +1,14 @@
 # Agregados OLAP
 
+> ## Atualização de 20/09/2026 — [D-35](../06-operacao/02-decisoes-e-riscos.md#d-35--o-banco-do-cliente-é-o-dw-um-só-modelo-dw-nos-três-bancos)
+>
+> Os agregados no grão de **assunto** (`topic_summary`, `topic_by_year`, `topic_by_court`,
+> `topic_by_judging_body`) **foram removidos**: nenhuma rota nem história os lê. O que a tela consome
+> são os agregados no grão de **tema**, e ganharam dois: `theme_by_judging_body` (câmara por tema) e
+> `theme_time_to_decision` (tempo até a decisão). `data_provenance` virou agregado materializado.
+> As seções abaixo sobre `topic_*` ficam como registro do desenho original; as definições vigentes,
+> coluna por coluna, estão em [Modelagem dos três bancos](06-modelagem-dos-bancos.md#45--agregados).
+
 > ## ✅ Implementados — 15/09/2026
 >
 > A cadeia proposta aqui foi construída e roda sobre a carga real. Mudou uma
@@ -42,10 +51,10 @@ fact_case_event + dim_movement
         ▼
 case_current_result        o desfecho VIGENTE de cada processo
         │
-        ├──> topic_summary          selo de força e cabeçalho
-        ├──> topic_by_year          série anual / alinhamento por ano
-        ├──> topic_by_court         alinhamento por tribunal
-        └──> topic_by_judging_body  colegialidade / divergência interna
+        ├──> topic_summary          selo de força e cabeçalho              (removido na D-35)
+        ├──> topic_by_year          série anual / alinhamento por ano       (removido na D-35)
+        ├──> topic_by_court         alinhamento por tribunal                (removido na D-35)
+        └──> topic_by_judging_body  colegialidade / divergência interna     (removido na D-35)
 ```
 
 A ordem do `REFRESH` importa: o resultado vigente primeiro; as demais dependem dele.
@@ -132,8 +141,9 @@ existe um nível acima, que é o que a tela consome:
 
 ```
 case_current_result
-      ├──> topic_summary · topic_by_year · topic_by_court · topic_by_judging_body
-      └──> theme_summary · theme_by_year · theme_by_court · theme_strength
+      └──> theme_summary · theme_by_year · theme_by_court · theme_by_judging_body
+           theme_time_to_decision · theme_strength
+data_provenance   (lê o fato e a doutrina)
 ```
 
 `theme_strength` é a [nota de força](../01-produto/04-forca-do-entendimento.md),

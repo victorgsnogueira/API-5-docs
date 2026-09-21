@@ -204,7 +204,7 @@ O [pipeline de carga](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo
 Python, roda separadamente e fica fora dos repositórios e do CI do backend e do
 frontend. Também fica fora do escopo formal de TDD da aplicação. Ele tem duas redes próprias:
 
-- **36 testes de integridade em SQL** contra o DW, obrigatórios a cada carga;
+- **37 testes de integridade em SQL** contra o DW, obrigatórios a cada carga;
 - funções puras de transformação (`clean()`, extratores, mapa de polaridade) são
   candidatas naturais a **pytest** — recomendado, não exigido.
 

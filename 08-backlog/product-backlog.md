@@ -1,3 +1,5 @@
+> As tasks de cada sprint, com camada, estimativa e dependências, estão em [Tasks do projeto](tasks/README.md).
+
 ### Escala de estimativa
 
 | SP | Significado | Camadas | Incerteza |
