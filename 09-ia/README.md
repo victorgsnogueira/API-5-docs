@@ -15,12 +15,59 @@ seu assistente para cá.
 
 ## Como usar com o Claude Code
 
-Sem copiar nada para dentro do repositório de código:
+Sem copiar nada para dentro do repositório de código. Os comandos abaixo são do
+PowerShell, no Windows.
 
-- **Contexto global:** copie o conteúdo de `CLAUDE.md` (e o do repositório em que vai
-  trabalhar) para o seu `~/.claude/CLAUDE.md`, ou peça ao assistente, no começo da
-  sessão, para ler estes arquivos pelo link do GitHub.
-- **Skill:** copie a pasta `skills/plano-task/` para `~/.claude/skills/plano-task/`. Depois
-  é só chamar `/plano-task <id da task>`.
+### 1. GitHub CLI
+
+A skill lê a task no board com o `gh`, usando a conta de quem roda. Basta ser membro da
+org `Concord-API`; não precisa de token nem de permissão de projeto, porque quem move os
+cards é a automação.
+
+```powershell
+winget install --id GitHub.cli
+```
+
+Feche e abra o terminal, e faça o login:
+
+```powershell
+gh auth login
+```
+
+Responda **GitHub.com** → **HTTPS** → **Yes** (usar nas credenciais do git) →
+**Login with a web browser** e cole o código na página que abrir.
+
+Confira:
+
+```powershell
+gh issue list -R Concord-API/API-5 --search "1.2" --json number,title
+```
+
+Tem que voltar a task 1.2. Se der erro de acesso, a conta não está na org ou o login foi
+feito com outra conta.
+
+### 2. Esta wiki ao lado dos repositórios
+
+A skill lê o detalhe da task em `Docs/08-backlog/tasks/`, então a wiki fica clonada numa
+pasta `Docs`, na mesma pasta dos repositórios de código:
+
+```powershell
+git clone https://github.com/victorgsnogueira/API-5-docs Docs
+```
+
+### 3. Skill e contexto
+
+```powershell
+New-Item -ItemType Directory -Force "$HOME\.claude\skills"
+Copy-Item -Recurse Docs\09-ia\skills\plano-task "$HOME\.claude\skills\plano-task"
+```
+
+Abra uma sessão nova do Claude Code e chame `/plano-task <id da task>`.
+
+Para o assistente conhecer as regras, copie o conteúdo de `CLAUDE.md` (e o do
+repositório em que vai trabalhar) para o seu `~/.claude/CLAUDE.md`, ou peça ao
+assistente, no começo da sessão, para ler estes arquivos.
+
+Quando a skill mudar aqui, rode `git pull` na pasta `Docs` e copie a pasta de novo.
 
 Quando uma regra mudar, mude aqui primeiro; é esta pasta que os outros assistentes leem.
