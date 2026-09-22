@@ -308,6 +308,74 @@ devolve a data da última carga. Como é exatamente essa distinção que a
 [implantação no cliente](../06-operacao/04-implantacao-no-cliente.md) precisa, o endpoint
 é escrito à mão sobre a porta `ILastExtractionReader`, e o pacote saiu da lista.
 
+### `GET /api/themes` — contrato da Sprint 1
+
+Contrato fechado da lista de temas, para o frontend (0.14, 1.10 a 1.13) desenvolver com
+MSW em paralelo à implementação (1.5 a 1.8, 2.3 a 2.5). O frontend valida a resposta com
+`zod`; **mudar um campo exige avisar as duas pontas**. Os filtros (`court`, `period`,
+`level`, `minStrength`) entram na Sprint 2 (US-04) e não fazem parte deste contrato.
+
+**Requisição**
+
+| Parâmetro | Tipo | Regra |
+|---|---|---|
+| `q` | texto, opcional | vazio ou ausente → os temas de maior volume (1.7); de 1 a 2 caracteres → `400` (1.6) |
+| `limit` | inteiro, opcional | padrão `20`, máximo `100` |
+
+**`200` — lista**
+
+```json
+{
+  "query": "inscricao indevida",
+  "total": 1,
+  "themes": [
+    {
+      "themeKey": 412,
+      "name": "Inscrição indevida em cadastro de inadimplentes",
+      "subjectArea": "CONSUMIDOR",
+      "judgedCount": 144,
+      "strengthScore": 78,
+      "level": "Dominante",
+      "outcome": {
+        "upheld": 142,
+        "rejected": 2,
+        "upheldRatio": 0.9861,
+        "polarityLabel": "acolhimento da pretensão do autor"
+      },
+      "lastDecisionDate": "2026-08-30"
+    }
+  ]
+}
+```
+
+| Campo | Regra |
+|---|---|
+| `themeKey` | chave pública e estável (`dw.dim_theme.theme_key`), **nunca** o `theme_sk` (D-34) |
+| `name` | rótulo curado do tema, em português |
+| `subjectArea` | tag da área (`CONSUMIDOR`, `BANCARIO`…) ou `null` quando não classificada |
+| `judgedCount` | processos com resultado apurado; tema com `0` não aparece (1.8) |
+| `strengthScore`, `level` | nota de força e o grau: `Consolidada`, `Dominante`, `Em formação` ou `Divergente` ([Força](../01-produto/04-forca-do-entendimento.md)); a lista vem ordenada por `strengthScore` decrescente, empate por `judgedCount` (2.3, 2.4) |
+| `outcome.upheldRatio` | **`null` abaixo do piso de `n`** — a tela mostra só as contagens (D-32) |
+| `outcome.polarityLabel` | o texto que diz **a quem** o percentual se refere; nunca exibir percentual sem ele |
+| `lastDecisionDate` | `AAAA-MM-DD` ou `null` |
+
+Nenhum número de processo aparece nesta resposta (1.5).
+
+**Nenhum resultado** — `200` com `"total": 0` e `"themes": []`. A mensagem de escopo
+("Nenhum tema encontrado para «termo» no escopo TJSP, TJRJ e TJMG.") é montada pelo
+frontend (1.13).
+
+**`400` — termo curto demais** — `application/problem+json`:
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+  "title": "Requisição inválida",
+  "status": 400,
+  "detail": "Digite ao menos 3 caracteres para buscar."
+}
+```
+
 ### Campos que as telas exigem
 
 Levantados percorrendo os mockups. Nenhum é opcional se o bloco correspondente entrar
