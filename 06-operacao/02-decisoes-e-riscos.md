@@ -694,6 +694,49 @@ validado na carga, nunca alterado à mão no destino.
 
 ---
 
+### D-36 · Uma única credencial para a API, sem separar migração e leitura
+
+**Decisão.** *(22/09/2026)* A API se conecta ao banco com **uma única connection string** (`ConnectionStrings:Ratio`),
+usada tanto para aplicar a migration (`V001` em diante) quanto para servir as consultas. A API **não cria, não
+gerencia e não dá grant a nenhum usuário de banco** — isso é do DBA, ou do cliente em produção. O único requisito é
+que o usuário da connection string tenha permissão para criar os schemas `dw` e `migrations` na primeira subida.
+
+**Por quê.** A proposta original (uma credencial para migrar e outra, só leitura, para servir) presumia que a API
+soubesse quantos usuários o banco do cliente teria e quais grants cada um precisava — algo que **não é decisão
+nossa**: em produção, o banco é do cliente, e nem sabemos hoje quantos usuários ele vai ter. Uma API que tenta
+gerenciar usuário de banco em cima de um ambiente que não controla é fragilidade, não segurança.
+
+**O que não muda.** O `DatabaseMigrator` (`Ratio.Infrastructure/Migrations`) continua responsável só pela
+migration em si — schema, tabelas, índices — nunca por usuário, papel ou grant. Ver [Modelagem dos três
+bancos](../03-dados/06-modelagem-dos-bancos.md#7--homologação-e-produção).
+
+---
+
+### D-37 · LLM só na descoberta de temas, offline; narrativa por template
+
+**Decisão.** *(22/09/2026)* Uma LLM pode **ajudar a propor** agrupamento de assuntos em temas (junto ou no lugar do
+clustering por embedding), mas só numa ferramenta de descoberta, rodada manualmente, fora do CI, com revisão
+humana antes de qualquer entrada virar curadoria. **Nenhuma chamada de LLM roda dentro da carga automática** que
+o pipeline executa a cada sprint. A narrativa dos resultados (task `9.4`) é gerada por **template determinístico**
+sobre os números já contados do agregado, sem LLM.
+
+**Por quê.**
+- **`theme_key` estável** ([decisão inicial do produto](../01-produto/03-tema-modelo-conceitual.md)) exige que o
+  mesmo nome de tema sempre volte com a mesma chave. Uma LLM reagrupando a cada carga quebraria isso sem ninguém
+  ter mudado nada.
+- **Reprodutibilidade e auditoria**, já exigidas pelo desenho da camada semântica: uma chamada de LLM em produção
+  é não determinística por natureza — a mesma entrada pode sair diferente, sem explicação.
+- **A regra do piso de `n`** ([D-32](#d-32--piso-de-n-para-exibir-percentual)) é rígida e numérica; um template a
+  aplica sempre, uma LLM pode esquecer.
+- **Sem custo nem chave de API em produção** — nem na carga, nem na intranet do cliente (que não tem internet,
+  [D-21](#d-21--produção-na-intranet-do-cliente-em-windows-server)).
+
+**Onde a LLM pode entrar de verdade.** Só na etapa de descoberta de agrupamento de temas (equivalente ao
+`nlp_cluster_subjects.py` da fase de descoberta), como ferramenta auxiliar de quem revisa — nunca decidindo
+sozinha, nunca em produção.
+
+---
+
 ## Riscos
 
 Ordenados por impacto. **Status revisado em 15/09/2026**, após a primeira carga

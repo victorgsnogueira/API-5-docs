@@ -104,7 +104,7 @@ pull request, a partir de uma branch de task.
 | Exclusão da branch | bloqueada |
 | Force push | bloqueado |
 | Status checks | obrigatórios (GitHub Actions): o CI do repositório (**`Backend checks`** ou **`Frontend checks`**) e **`Release label`** |
-| Branch atualizada antes do merge | exigida — o PR precisa conter a `main` atual |
+| Branch atualizada antes do merge | **desligada** no `API5-Backend` e no `API5-Pipeline`; ainda ligada no `API5-Frontend` — ver a nota abaixo |
 
 ### `us* rules` — as branches de user story
 
@@ -117,7 +117,7 @@ pull request, a partir de uma branch de task.
 | Exclusão da branch | **livre** — a `usX` pode ser apagada depois de mergeada |
 | Force push | bloqueado |
 | Status checks | obrigatório: o CI do repositório (**`Backend checks`** ou **`Frontend checks`**); **sem** `Release label` |
-| Branch atualizada antes do merge | exigida — o PR de task precisa conter a `usX` atual |
+| Branch atualizada antes do merge | **desligada** no `API5-Backend` e no `API5-Pipeline`; ainda ligada no `API5-Frontend` — ver a nota abaixo |
 
 ### Como fica o fluxo
 
@@ -142,9 +142,27 @@ O check `Release label` vem do workflow `release-label.yml`: falha se o PR não 
 [Versionamento e releases](04-versionamento-e-releases.md). Ele só roda em PR para a
 `main`, e por isso só o `main rules` o exige.
 
-Como a branch do PR precisa estar atualizada com a base, cada merge numa `usX` obriga as
-demais tasks abertas a atualizar e rodar o CI de novo. É o preço de testar sempre sobre
-o código mais recente.
+> **Por que "branch atualizada antes do merge" foi desligada no `API5-Backend` e no
+> `API5-Pipeline`.** A `us0` é permanente — recebe merge de `main` e manda merge pra
+> `main` repetidas vezes ao longo do projeto, uma por task do Technical Foundation.
+> Cada merge `us0 → main` cria um commit de merge novo na `main`, que a `us0` só
+> carrega de volta se alguém sincronizar `main → us0` **antes** de começar a próxima
+> task. Isso já não aconteceu uma vez, e travou os dois lados ao mesmo tempo: a `us0`
+> não conseguia mergear na `main` porque a `main` tinha um commit que ela não tinha, e
+> mergear `main` de volta na `us0` exigia o oposto — nenhum admin conseguia passar por
+> cima, porque a lista de bypass está vazia. A saída foi desligar essa exigência: os
+> checks continuam obrigatórios sobre o commit real do PR, só deixou de exigir que a
+> branch já contenha, letra por letra, o último commit da outra ponta. Isso é
+> recomendação do próprio GitHub para branches de integração de longa duração como a
+> `us0`, que recebem merge nos dois sentidos — diferente de uma `usX` normal, que só
+> recebe de `main` e só devolve uma vez, ao terminar.
+>
+> **O `API5-Frontend` ainda não passou por isso** porque a `us0` dele só recebeu uma
+> task até agora. Fica pendente desligar lá também, antes que o mesmo problema apareça.
+
+Como a branch do PR precisa estar atualizada com a base **nos repositórios onde essa
+exigência continua ligada**, cada merge numa `usX` obriga as demais tasks abertas a
+atualizar e rodar o CI de novo.
 
 Não estão ativos: descarte de aprovações antigas quando entram novos commits, exigência
 de aprovação do push mais recente por outra pessoa, resolução obrigatória de conversas,
@@ -213,6 +231,14 @@ problema numa task não bloqueia as demais da mesma US.
 **Revisão em porções pequenas.** Uma branch por task gera pull requests do tamanho de
 uma task — revisáveis de verdade, em vez de um diff gigante no fim da US.
 
+> **Uma task é uma unidade só, mesmo que o trabalho dela tenha várias fases.** Uma task
+> grande (a `0.13`, por exemplo, com 99h) pode ser implementada em várias etapas
+> internas, cada uma com seus próprios commits `test:`/`feat:`. Isso **não** vira várias
+> branches nem vários merges pra `usX`: é tudo na mesma branch de task, e ela só
+> mergeia pra `usX`/`us0` **uma vez**, quando a task inteira está pronta — do mesmo
+> jeito que a `usX` só mergeia pra `main` quando a US inteira termina. Mergear uma fase
+> por vez fecha a issue da task antes da hora e obriga a reabrir na mão.
+
 ### Por que um padrão diferente para documentação
 
 Documentação não passa pelo board como task, então não há chave para usar. O prefixo
@@ -241,8 +267,18 @@ sem executar raspagem, ETL ou NLP e sem acessar a homologação.
 > `us*`, então a tabela acima é coberta. O merge na `main` e nas `usX` é bloqueado
 > se o check falhar. O `Release label` e a release seguem só a `main`.
 
-## Estado nos repositórios (20/09/2026)
+## Estado nos repositórios (22/09/2026)
 
-Nenhuma branch `usX` criada ainda em `API5-Backend` ou `API5-Frontend` — o padrão começa
-a valer na primeira US. Os dois repositórios têm os rulesets `main rules` e `us* rules`
-(ver [Proteção da `main` e das branches de US](#proteção-da-main-e-das-branches-de-us)).
+Os três repositórios de código (`API5-Backend`, `API5-Frontend`, `API5-Pipeline`) têm os
+rulesets `main rules` e `us* rules` (ver [Proteção da `main` e das branches de
+US](#proteção-da-main-e-das-branches-de-us)). O Technical Foundation (`us0`) já entregou
+tasks em todos os três:
+
+| Repositório | Tasks já mergeadas na `us0` | Na `main`? |
+|---|---|---|
+| `API5-Backend` | `0.69`, `0.12` | sim |
+| `API5-Frontend` | `0.69` | sim |
+| `API5-Pipeline` | `0.13` | esperando aprovação |
+
+Nenhuma branch `usX` (US de verdade, `us1` em diante) foi criada ainda — o padrão começa
+a valer na primeira US.

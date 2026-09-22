@@ -123,6 +123,42 @@ O job `Frontend checks` é o check **obrigatório** para merge na `main` e nas `
 configurado nos rulesets (ver
 [Proteção da `main` e das branches de US](../07-justificativas/01-branches.md#proteção-da-main-e-das-branches-de-us)).
 
+### `API5-Pipeline`
+
+**Existe** — `.github/workflows/ci.yml` (workflow `Pipeline CI`, job `Pipeline checks`),
+em `push`/`pull_request` para `main` e `us*`, e também sob demanda:
+
+```
+push / pull request
+  ├── pip install -r requirements.txt
+  ├── ruff check                          (lint)
+  └── pytest                              ← TDD, com PostgreSQL descartável (Testcontainers)
+```
+
+O job `Pipeline checks` é o check **obrigatório** pros mesmos rulesets dos outros dois
+repositórios. Não tem workflow de release: o pipeline não gera artefato versionado
+pro cliente, ele só roda do nosso lado e produz o arquivo de carga (ver [Modelagem dos
+três bancos](../03-dados/06-modelagem-dos-bancos.md)).
+
+**O arquivo de carga é gerado com `pg_dump`, não por um `COPY` escrito à mão.** A
+ordenação por dependência de chave estrangeira entre as tabelas do `dw` já é resolvida
+pelo próprio `pg_dump --data-only`; reimplementar isso à mão seria refazer algo que a
+ferramenta do Postgres já faz, testado há décadas. O pipeline só compõe o arquivo em
+volta: `BEGIN`, um `TRUNCATE` com todas as tabelas do `dw` e `RESTART IDENTITY CASCADE`,
+o que o `pg_dump` gerou, um `REFRESH MATERIALIZED VIEW` por matview, `COMMIT`.
+
+> **Cuidado ao reaproveitar essa geração fora do pipeline.** O `pg_dump` roda numa
+> conexão nova, separada de quem chamou a geração. Se essa chamada acontecer **dentro**
+> de uma transação que ainda não commitou (por exemplo, logo depois de um `TRUNCATE`),
+> o `pg_dump` fica esperando o lock de leitura que a transação aberta ainda segura, e
+> quem chamou fica esperando o `pg_dump` — nenhum dos dois solta. A função que gera o
+> arquivo (`pipeline.run.run`) já commita antes de chamar o `pg_dump`; qualquer código
+> novo que gere o arquivo por fora dela precisa fazer o mesmo.
+
+Os testes que exigem `pg_dump` de verdade rodam ele **dentro do próprio contêiner** do
+Postgres descartável (via `docker exec`), não na máquina que roda o teste — por isso o
+runner de CI não precisa ter o `pg_dump` instalado.
+
 ### Release — backend e frontend
 
 Além do CI, cada repositório tem dois workflows que cuidam da versão, idênticos nos dois.

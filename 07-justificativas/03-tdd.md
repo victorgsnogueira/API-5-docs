@@ -30,6 +30,12 @@ Três regras que tornam o ciclo real, e não teatro:
 3. **Refatorar só no verde.** Mudança de comportamento e mudança de estrutura não
    acontecem ao mesmo tempo.
 
+**Código de produção e de teste não levam comentário**, em nenhum repositório do
+projeto — nem código, nem SQL. O nome de função, variável e teste é que explica o
+comportamento; se precisar de um comentário pra entender, o nome está errado. Pendência
+ou decisão de implementação é avisada fora do código (na task, no PR ou aqui nos Docs),
+nunca como comentário deixado pra trás.
+
 ---
 
 ## Backend — .NET
