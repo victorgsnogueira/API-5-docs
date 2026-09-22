@@ -4,7 +4,7 @@ Quebra do [Product Backlog](../product-backlog.md) em tasks, separada por sprint
 
 | Arquivo | Conteúdo |
 |---|---|
-| [`sprint-1.md`](sprint-1.md) | Sprint 1 · 07/09 a 27/09 · 9 Stories · 44 SP · 69 tasks |
+| [`sprint-1.md`](sprint-1.md) | Sprint 1 · 07/09 a 27/09 · 9 Stories · 44 SP · 70 tasks |
 | [`sprint-2.md`](sprint-2.md) | Sprint 2 · 05/10 a 25/10 · 13 Stories · 65 SP · 88 tasks |
 | [`sprint-3.md`](sprint-3.md) | Sprint 3 · 02/11 a 22/11 · 7 Stories · 40 SP · 57 tasks |
 
@@ -12,7 +12,7 @@ Quebra do [Product Backlog](../product-backlog.md) em tasks, separada por sprint
 
 - **Título da task:** curto, imperativo, em inglês (o código é em inglês — [Idioma](../../02-arquitetura/02-backend-dotnet.md#idioma)). Sem tag de camada no texto: camada é o campo `Layer`.
 - **Descrição:** só quando carrega informação que o título não dá, em tópicos: `Data:` (o que o dado ou o contrato tem), `Message:` (texto exato mostrado ao usuário), `Verifies:` (o que o teste prova) e `Depends:` (outras tasks).
-- **Estimativa:** em horas, **menos de 8h**, e nenhuma task de Story passa de 6h. A exceção são as três tasks do Technical Foundation da Sprint 1 (0.12, 0.13 e 0.14): foram agrupadas de propósito para caberem num board enxuto, e a estimativa delas é a soma das partes. São propostas para refinar com o time, não compromissos.
+- **Estimativa:** em horas, **menos de 8h**, e nenhuma task de Story passa de 6h. A exceção são as três primeiras tasks do Technical Foundation da Sprint 1 (0.12, 0.13 e 0.14): foram agrupadas de propósito para caberem num board enxuto, e a estimativa delas é a soma das partes. São propostas para refinar com o time, não compromissos.
 - **`Layer`:** `Backend` · `Frontend` · `ETL` · `Test`, as quatro do padrão do time, mais **`DevOps`** (CI, empacotamento, implantação) e **`Docs`** (manuais e páginas de metodologia), acrescentadas porque há trabalho que não cabe nas quatro. `ETL` é o pipeline de dados; o schema do banco é `Backend`, porque nasce no repositório do backend.
 - **Numeração:** `X.Y` pertence à Story `US-X`; `0.Y` é Technical Foundation, sem Story-mãe. Os IDs são únicos no projeto inteiro.
 - **🔒:** Story sem fonte de dado hoje. A primeira task é um spike, a segunda registra a decisão, e as de implementação só são puxáveis depois dela.
@@ -22,10 +22,10 @@ Quebra do [Product Backlog](../product-backlog.md) em tasks, separada por sprint
 
 | Sprint | Stories | SP | Tasks | Horas | Foundation | Stories (tasks) |
 |---|---:|---:|---:|---:|---:|---:|
-| Sprint 1 | 9 | 44 | 69 | 396h | 3 (163h) | 66 (233h) |
+| Sprint 1 | 9 | 44 | 70 | 401h | 4 (168h) | 66 (233h) |
 | Sprint 2 | 13 | 65 | 88 | 303h | 6 (25h) | 82 (278h) |
 | Sprint 3 | 7 | 40 | 57 | 212h | 14 (56h) | 43 (156h) |
-| **Total** | **29** | **149** | **214** | **911h** | | |
+| **Total** | **29** | **149** | **215** | **916h** | | |
 
 Horas por camada:
 
@@ -35,7 +35,7 @@ Horas por camada:
 | Frontend | 99h | 108h | 30h | 237h |
 | ETL | 135h | 41h | 2h | 178h |
 | Test | 10h | 34h | 38h | 82h |
-| DevOps | 0h | 7h | 26h | 33h |
+| DevOps | 5h | 7h | 26h | 38h |
 | Docs | 0h | 6h | 16h | 22h |
 
 > **Compare esses totais com a capacidade real do time antes de puxar a Sprint 1.** A Sprint 1 concentra a base do projeto (schema, pipeline, carga e esqueleto de tela) e é a que mais pesa em horas; a soma das horas de uma sprint não é a soma dos story points dela, porque parte do trabalho está no bloco Technical Foundation e não pertence a nenhuma Story.
@@ -88,4 +88,4 @@ A numeração é a do backlog. Cada uma tem uma task cujo entregável é escreve
 | `0.8`, `0.9` TanStack Query, cliente e schemas | absorvidos na 0.14 |
 | `0.10`, `0.11` MSW e Vitest no CI | já entregues |
 
-O Technical Foundation da Sprint 1 foi compactado em três tasks, uma por frente (schema, pipeline e frontend). As das Sprints 2 e 3 continuam separadas e podem ser compactadas do mesmo jeito quando chegarem ao board. As tasks das Stories foram renumeradas, e o que mudou de história saiu do conjunto: US-05, US-18, US-22 e US-23 não existem mais no backlog.
+O Technical Foundation da Sprint 1 foi compactado em três tasks, uma por frente (schema, pipeline e frontend), e depois ganhou a 0.69, que automatiza o board. As das Sprints 2 e 3 continuam separadas e podem ser compactadas do mesmo jeito quando chegarem ao board. As tasks das Stories foram renumeradas, e o que mudou de história saiu do conjunto: US-05, US-18, US-22 e US-23 não existem mais no backlog.

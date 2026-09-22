@@ -1,6 +1,6 @@
 # Tasks — Sprint 1
 
-**Janela:** 07/09 a 27/09/2026 · **9 Stories · 44 SP** · 69 tasks · 396h
+**Janela:** 07/09 a 27/09/2026 · **9 Stories · 44 SP** · 70 tasks · 401h
 
 Convenções, camadas e o resumo geral em [README](README.md). O padrão da `Iteration` é `Sprint 1` em tudo o que está neste arquivo.
 
@@ -10,9 +10,9 @@ Convenções, camadas e o resumo geral em [README](README.md). O padrão da `Ite
 
 | Bloco | Tasks | Horas |
 |---|---:|---:|
-| Technical Foundation | 3 | 163h |
+| Technical Foundation | 4 | 168h |
 | Stories | 66 | 233h |
-| **Total** | **69** | **396h** |
+| **Total** | **70** | **401h** |
 
 **Já entregues antes deste arquivo** (não viram task): `0.10` Set up MSW for the frontend test suite (Test); `0.11` Run the Vitest suite in the frontend CI workflow (Frontend).
 
@@ -25,7 +25,7 @@ Issue container. Tasks sem Story-mãe, numeração `0.Y`: o que a sprint precisa
 ```
 Priority: Must
 Estimate: —
-Tasks técnicas sem User Story associada: 3 tasks · 163h.
+Tasks técnicas sem User Story associada: 4 tasks · 168h.
 ```
 
 ### Foundation
@@ -35,6 +35,7 @@ Tasks técnicas sem User Story associada: 3 tasks · 163h.
 | 0.12 | Create the `dw` schema migration and apply it on API startup | Backend | 48h |
 | 0.13 | Create the pipeline repository that produces the load file | ETL | 99h |
 | 0.14 | Set up the frontend skeleton against the API contract | Frontend | 16h |
+| 0.69 | Sync the task board from branch and pull request events | DevOps | 5h |
 
 **Descrições**
 
@@ -47,6 +48,9 @@ Tasks técnicas sem User Story associada: 3 tasks · 163h.
 - **0.14**
   - `Data:` rotas `busca.tsx` e `tema.$key.tsx`, TanStack Query no loader, cliente da API com schemas zod, chamadas por caminho relativo (`/api/...`), formatadores de número e data em português
   - `Verifies: resposta fora do contrato quebra no parse, não no meio da tela`
+- **0.69**
+  - `Data:` workflow e script nos repositórios de código que leem o ID da task no nome da branch, acham a issue no API-5 e movem o card: push da branch → In Progress; PR aberto para `us*` → Review, com o link do PR comentado na issue; PR mergeado → Done e issue fechada; PR fechado sem merge → In Progress. O token fica no secret da organização `BOARD_TOKEN`
+  - `Verifies:` branch fora do padrão não mexe no board; issue inexistente só avisa; sem o secret o workflow avisa e não falha; os testes do script rodam no CI com um `gh` falso
 
 ---
 
