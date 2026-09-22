@@ -1,6 +1,6 @@
 # Tasks — Sprint 1
 
-**Janela:** 07/09 a 27/09/2026 · **9 Stories · 44 SP** · 70 tasks · 401h
+**Janela:** 07/09 a 27/09/2026 · **9 Stories · 44 SP** · 72 tasks · 410h
 
 Convenções, camadas e o resumo geral em [README](README.md). O padrão da `Iteration` é `Sprint 1` em tudo o que está neste arquivo.
 
@@ -10,9 +10,9 @@ Convenções, camadas e o resumo geral em [README](README.md). O padrão da `Ite
 
 | Bloco | Tasks | Horas |
 |---|---:|---:|
-| Technical Foundation | 4 | 168h |
+| Technical Foundation | 6 | 177h |
 | Stories | 66 | 233h |
-| **Total** | **70** | **401h** |
+| **Total** | **72** | **410h** |
 
 **Já entregues antes deste arquivo** (não viram task): `0.10` Set up MSW for the frontend test suite (Test); `0.11` Run the Vitest suite in the frontend CI workflow (Frontend).
 
@@ -25,7 +25,7 @@ Issue container. Tasks sem Story-mãe, numeração `0.Y`: o que a sprint precisa
 ```
 Priority: Must
 Estimate: —
-Tasks técnicas sem User Story associada: 4 tasks · 168h.
+Tasks técnicas sem User Story associada: 6 tasks · 177h.
 ```
 
 ### Foundation
@@ -36,6 +36,8 @@ Tasks técnicas sem User Story associada: 4 tasks · 168h.
 | 0.13 | Create the pipeline repository that produces the load file | ETL | 99h |
 | 0.14 | Set up the frontend skeleton against the API contract | Frontend | 16h |
 | 0.69 | Sync the task board from branch and pull request events | DevOps | 5h |
+| 0.70 | Map verified movement codes to decision outcomes in the pipeline | ETL | 3h |
+| 0.71 | Add the pipeline command that harvests and builds the load file | ETL | 6h |
 
 **Descrições**
 
@@ -51,6 +53,12 @@ Tasks técnicas sem User Story associada: 4 tasks · 168h.
 - **0.69**
   - `Data:` workflow e script nos repositórios de código que leem o ID da task no nome da branch, acham a issue no API-5 e movem o card: push da branch → In Progress; PR aberto para `us*` → Review, com o link do PR comentado na issue; PR mergeado → Done e issue fechada; PR fechado sem merge → In Progress. O token fica no secret da organização `BOARD_TOKEN`
   - `Verifies:` branch fora do padrão não mexe no board; issue inexistente só avisa; sem o secret o workflow avisa e não falha; os testes do script rodam no CI com um `gh` falso
+- **0.70**
+  - `Data:` os códigos de movimento conferidos (219, 220, 221, 237, 238, 239) ligados ao resultado (`Granted`, `Denied`, `PartiallyGranted`) e marcados como conferidos; o resultado `Dismissed` semeado junto dos outros; código novo continua entrando como `Neutral` e não conferido
+  - `Verifies:` um processo com movimento de procedência vira julgado em `case_current_result`; código fora da lista não conta; um código já conferido não é rebaixado por uma carga nova
+- **0.71**
+  - `Data:` comando único (`python -m pipeline`) que lê a configuração do ambiente, coleta o DataJud por tribunal e área com cota, e roda transform, carga dimensional, temas e o arquivo de carga; chave pública do DataJud e caminho do arquivo por variável de ambiente
+  - `Verifies:` com a coleta simulada, o comando gera o arquivo de carga; sem `DATABASE_URL` o comando falha com mensagem clara; nenhum teste faz chamada de rede
 
 ---
 
