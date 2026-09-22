@@ -96,7 +96,7 @@ Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main
 - **1.1**
   - `Data:` `unaccent` aplicado antes do radical; o radical degrada (`indenização` → `indenizaca`), por isso plural e flexão ficam com a similaridade de trigramas
   - `Verifies: "inscricao indevida" e "inscrição indevida" geram o mesmo vetor de busca; palavras distintas continuam distintas`
-- **1.2** — `Data: vetor de busca e nome normalizado gerados pelo banco; índices GIN de texto e de trigrama`
+- **1.2** — `Data: vetor de busca e nome normalizado gerados pelo banco; índices GIN de texto e de trigrama` · [guia da task](guias/1.2.md)
 - **1.3**
   - `Data: corta abaixo de 0,5 de rank, medido: fora de escopo chega a 0,36 e os acertos ficam entre 0,62 e 2,65`
   - `Verifies: "contrato de arrendamento de satélite" devolve vazio; "negativacao indevda" recupera o tema por similaridade; "inscricao indevida" e "inscrição indevida" devolvem o mesmo tema`

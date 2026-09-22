@@ -7,6 +7,7 @@ Quebra do [Product Backlog](../product-backlog.md) em tasks, separada por sprint
 | [`sprint-1.md`](sprint-1.md) | Sprint 1 · 07/09 a 27/09 · 9 Stories · 44 SP · 72 tasks |
 | [`sprint-2.md`](sprint-2.md) | Sprint 2 · 05/10 a 25/10 · 13 Stories · 65 SP · 88 tasks |
 | [`sprint-3.md`](sprint-3.md) | Sprint 3 · 02/11 a 22/11 · 7 Stories · 40 SP · 57 tasks |
+| [`guias/`](guias/) | guia de implementação por task, quando a task precisa de contexto técnico além da descrição |
 
 ## Como ler
 
