@@ -1,6 +1,6 @@
 # Tasks — Sprint 1
 
-**Janela:** 07/09 a 27/09/2026 · **9 Stories · 44 SP** · 107 tasks · 396h
+**Janela:** 07/09 a 27/09/2026 · **9 Stories · 44 SP** · 69 tasks · 396h
 
 Convenções, camadas e o resumo geral em [README](README.md). O padrão da `Iteration` é `Sprint 1` em tudo o que está neste arquivo.
 
@@ -10,9 +10,9 @@ Convenções, camadas e o resumo geral em [README](README.md). O padrão da `Ite
 
 | Bloco | Tasks | Horas |
 |---|---:|---:|
-| Technical Foundation | 41 | 163h |
+| Technical Foundation | 3 | 163h |
 | Stories | 66 | 233h |
-| **Total** | **107** | **396h** |
+| **Total** | **69** | **396h** |
 
 **Já entregues antes deste arquivo** (não viram task): `0.10` Set up MSW for the frontend test suite (Test); `0.11` Run the Vitest suite in the frontend CI workflow (Frontend).
 
@@ -25,177 +25,28 @@ Issue container. Tasks sem Story-mãe, numeração `0.Y`: o que a sprint precisa
 ```
 Priority: Must
 Estimate: —
-Tasks técnicas sem User Story associada: 41 tasks · 163h.
+Tasks técnicas sem User Story associada: 3 tasks · 163h.
 ```
 
-### Schema and migrations
+### Foundation
 
 | # | Task | Layer | Est. |
 |---|---|---|---:|
-| 0.6 | Create a read-only database role for the API | Backend | 2h |
-| 0.12 | Add the migration runner that applies versioned SQL scripts on startup | Backend | 6h |
-| 0.13 | Take a database lock so two starts never migrate at once | Backend | 3h |
-| 0.14 | Use one connection string to migrate and another, read-only, to serve | Backend | 3h |
-| 0.15 | Create migration V001 with the court, judging-body, class, case, movement, outcome and date dimensions | Backend | 6h |
-| 0.16 | Add the subject, theme and doctrine dimensions and their bridges to V001 | Backend | 5h |
-| 0.17 | Add the event fact to V001 | Backend | 4h |
-| 0.18 | Add the score configuration to V001 | Backend | 3h |
-| 0.19 | Apply the migrations in the integration-test fixture | Test | 4h |
-| 0.20 | Test that a migrated empty database reports "not loaded" on readiness | Test | 3h |
-| 0.69 | Create the current-result aggregate, one result per case | Backend | 4h |
-| 0.70 | Create the theme summary aggregate | Backend | 5h |
+| 0.12 | Create the `dw` schema migration and apply it on API startup | Backend | 48h |
+| 0.13 | Create the pipeline repository that produces the load file | ETL | 99h |
+| 0.14 | Set up the frontend skeleton against the API contract | Frontend | 16h |
 
 **Descrições**
 
-- **0.6**
-  - `Data:` GRANT de USAGE no schema `dw` e SELECT nas tabelas, nada além
-  - `Verifies:` um INSERT com esse papel falha com `permission denied`
 - **0.12**
-  - `Data: scripts SQL embutidos no assembly, aplicados em ordem; um journal guarda versão e data`
-  - `Verifies: a segunda execução não aplica nada`
-- **0.13** — `Verifies: duas instâncias subindo juntas aplicam cada migration uma única vez`
+  - `Data:` a `V001` com dimensões, fato, pontes, configuração do score e agregados, conforme a [Modelagem dos três bancos](../../03-dados/06-modelagem-dos-bancos.md); o runner aplica na subida com lock; uma credencial para migrar e outra, só leitura, para servir
+  - `Verifies:` num Postgres vazio só com `unaccent` e `pg_trgm`, a API sobe e cria tudo; a segunda subida não aplica nada; o Testcontainers usa as mesmas migrations; `/health/ready` informa "não carregado" com banco vazio
+- **0.13**
+  - `Data: repositório novo com CI e credenciais por variável de ambiente; TPU e recorte cível; coleta do DataJud (mais recente primeiro, só processos julgados, cota por área do direito); carga idempotente; polaridade e links para o tribunal; embeddings locais, curadoria e temas com chave estável; arquivo de carga com TRUNCATE, COPY e REFRESH numa transação`
+  - `Verifies:` banco vazio migrado pela API + arquivo de carga = testes de integridade todos vazios; nenhum código penal entra no `dw`
 - **0.14**
-  - `Data:` `ConnectionStrings:RatioMigration` só na subida; `ConnectionStrings:Ratio` para servir
-  - `Verifies: a conexão de serviço não escreve; falha de migração impede a subida e é gravada no log em arquivo`
-- **0.15**
-  - `Data:` chaves substitutas `_sk`; `case_number` único; `court_level`, `secrecy_level` e polaridade com `CHECK`; `source` e `extracted_at` em toda dimensão de conteúdo
-  - `Verifies:` aplica num banco vazio que só tem `unaccent` e `pg_trgm`
-- **0.16**
-  - `Data:` `theme_key` público e único; `bridge_subject_doctrine` com método, score e modelo de embedding
-  - `Verifies: ligação de doutrina sem método é rejeitada pelo banco`
-- **0.17**
-  - `Data:` grão = movimentação processual ([D-13](../../06-operacao/02-decisoes-e-riscos.md#d-13--grão-do-fato-movimentação-processual-opção-a)); `natural_key` única
-  - `Verifies: inserir o mesmo evento duas vezes falha na chave natural`
-- **0.18**
-  - `Data:` pesos 0,45 / 0,25 / 0,20 / 0,10; `min_judged_for_percentage` = 2; `methodology_version`
-  - `Verifies: pesos que não somam 1,0 são rejeitados`
-- **0.19** — `Verifies: o Testcontainers sobe com o mesmo schema que a API cria em produção`
-- **0.20** — `Verifies:` `/health/ready` distingue banco vazio de banco indisponível — os três estados
-- **0.69**
-  - `Data: o último movimento verificado que define resultado (procedência, improcedência ou parcial); só cerca de 31% dos processos têm resultado, o resto é andamento sem julgamento`
-  - `Verifies:` índice único por processo, para o `REFRESH CONCURRENTLY` não bloquear a leitura
-- **0.70**
-  - `Data: processos, processos com resultado, acolhidos e rejeitados nas duas polaridades, período e última decisão; nenhuma coluna com a palavra "favorável"`
-  - `Verifies: a contagem do agregado bate com a contagem direta no fato (teste de integridade)`
-
-### Pipeline repository and load path
-
-| # | Task | Layer | Est. |
-|---|---|---|---:|
-| 0.21 | Create the pipeline repository with the branch, commit and CI standards | DevOps | 4h |
-| 0.22 | Read the database credentials from environment variables | ETL | 2h |
-| 0.23 | Create the load database from the same migrations plus the pipeline schemas | ETL | 5h |
-| 0.24 | Seed the courts, outcomes and calendar reference data | ETL | 3h |
-| 0.25 | Generate the load script with truncate, copy and aggregate refresh in one transaction | ETL | 6h |
-| 0.26 | Verify the load script on an empty migrated database | Test | 4h |
-| 0.27 | Run the integrity tests in the pipeline CI | DevOps | 3h |
-
-**Descrições**
-
-- **0.21** — `Data: as mesmas convenções do projeto: branches por task, commits em inglês só com o assunto`
-- **0.22** — `Verifies: nenhum segredo no repositório — varredura no CI`
-- **0.23**
-  - `Data:` o `dw` vem das migrations do backend; `etl`, `raw`, `staging` e `nlp` são do pipeline e nunca vão para a homologação nem para a produção; pgvector só aqui
-  - `Verifies:` o schema `dw` da carga é idêntico ao que a API cria (comparação de `pg_dump -s`)
-- **0.24**
-  - `Data: 3 tribunais, 5 desfechos e o calendário de 1940 a 2027`
-  - `Verifies: rodar duas vezes não duplica`
-- **0.25**
-  - `Data: TRUNCATE, COPY das tabelas e REFRESH dos agregados na ordem, dentro de uma transação`
-  - `Verifies: falha no meio não deixa o banco pela metade`
-  - `Data:` o arquivo é o que a homologação e o cliente carregam com `psql -f`
-- **0.26**
-  - `Verifies: banco vazio migrado + script + testes de integridade = todos vazios`
-  - `Data:` os agregados chegam vazios depois de uma restauração só de dados; o `REFRESH` no fim do script é o que os popula
-
-### Base data pipeline
-
-| # | Task | Layer | Est. |
-|---|---|---|---:|
-| 0.28 | Download the TPU tables and derive the civil scope | ETL | 5h |
-| 0.29 | Harvest DataJud civil cases per court, newest first, only cases with a judgment | ETL | 6h |
-| 0.30 | Stratify the harvest quota by area of law | ETL | 4h |
-| 0.31 | Store the raw documents idempotently by payload hash | ETL | 3h |
-| 0.32 | Flatten each document into events and subjects | ETL | 5h |
-| 0.33 | Resolve the movement names the source omits from the TPU | ETL | 3h |
-| 0.34 | Load the case, class, judging-body and subject dimensions | ETL | 5h |
-| 0.35 | Load the event fact idempotently by natural key | ETL | 4h |
-| 0.36 | Guard the civil scope in the query, the transform and the load | ETL | 4h |
-| 0.37 | Apply the movement semantics and the claimant rules after the load | ETL | 4h |
-| 0.38 | Apply the source link per court after the load | ETL | 3h |
-
-**Descrições**
-
-- **0.28**
-  - `Data: classes e assuntos cíveis e penais separados pela raiz da TPU, nunca por palavra no nome`
-  - `Verifies: nenhum código penal entra na lista cível`
-- **0.29**
-  - `Data:` `terms` na classe cível, `must_not` nos assuntos penais, `terms` em `movimentos.codigo` [219, 220, 221, 237, 238, 239], ordenação por `@timestamp` decrescente
-  - `Verifies:` todo processo coletado traz ao menos um julgamento e `dataHora` preenchida
-- **0.30**
-  - `Data: cota por área do direito, e não pelo que o tribunal mais processa`
-  - `Verifies: nenhuma área concentra a amostra (a Execução Fiscal chegou a 70%)`
-- **0.31** — `Verifies: coletar de novo não duplica documento`
-- **0.32** — `Data:` `assuntos` pode vir como lista aninhada; evento sem `dataHora` é descartado, nunca datado por suposição ([D-11](../../06-operacao/02-decisoes-e-riscos.md#d-11--nada-de-dado-inventado))
-- **0.33** — `Data: códigos sem nome que nem a TPU nomeia são descartados e contados na saída`
-- **0.34**
-  - `Data:` `subject_code` obrigatório: assunto sem código não entra
-  - `Verifies: carregar duas vezes não duplica dimensão`
-- **0.35**
-  - `Data:` `número do processo | código da movimentação | instante`
-  - `Verifies: o mesmo lote carregado duas vezes deixa a contagem igual`
-- **0.36** — `Verifies:` a carga aborta se um assunto ou uma classe penal chegar ao `dw`
-- **0.37**
-  - `Data:` os 6 códigos verificados com sua polaridade; classe → quem propõe (`fazenda`, `credor`, `defesa`, `autor_particular`, `acusacao`)
-  - `Verifies: código conferido sem polaridade falha; classe sem regra fica sem proponente, nunca inferido`
-- **0.38**
-  - `Data: TJSP com link direto (e-SAJ); TJRJ e TJMG com link de portal, mais o número formatado`
-  - `Verifies: todo link tem tipo, e todo tipo tem link`
-
-### Themes
-
-| # | Task | Layer | Est. |
-|---|---|---|---:|
-| 0.39 | Generate the subject embeddings locally | ETL | 4h |
-| 0.40 | Propose the subject clusters for review | ETL | 4h |
-| 0.41 | Record the theme curation by subject name | ETL | 6h |
-| 0.42 | Load the themes and their bridge to subjects | ETL | 4h |
-| 0.43 | Assign a stable public key to every theme | ETL | 4h |
-| 0.44 | Curate the product area of the themes without a tag, recording the basis | ETL | 4h |
-
-**Descrições**
-
-- **0.39** — `Data:` modelo `paraphrase-multilingual-MiniLM-L12-v2`, sem chamada a API externa ([D-25](../../06-operacao/02-decisoes-e-riscos.md#d-25--produção-sem-pgvector-embeddings-ficam-na-carga))
-- **0.40** — `Data: a clusterização propõe, quem decide é a curadoria: em uma carga, 37 de 69 clusters foram rejeitados`
-- **0.41**
-  - `Data:` por nome de assunto, não por `cluster_id`, que muda a cada execução
-  - `Verifies: assunto sem decisão fica 1:1, degradando para a granularidade da TPU`
-- **0.42** — `Verifies: nenhum tema existe sem assunto de origem; nenhum assunto fica sem tema`
-- **0.43**
-  - `Data:` a chave é atribuída na primeira vez que o nome aparece e nunca reatribuída; o registro sobrevive à recarga ([D-31](../../06-operacao/02-decisoes-e-riscos.md#d-31--chave-pública-do-tema))
-  - `Verifies: recarregar com os temas em outra ordem mantém todas as chaves`
-- **0.44**
-  - `Data: a base de cada decisão fica registrada: classe processual dominante, assuntos que co-ocorrem ou raiz da TPU`
-  - `Verifies: todo tema com 5 ou mais julgados tem área do produto`
-
-### Frontend
-
-| # | Task | Layer | Est. |
-|---|---|---|---:|
-| 0.7 | Rename the frontend routes to `busca.tsx` and `tema.$key.tsx` | Frontend | 2h |
-| 0.8 | Add TanStack Query wired to the router loader | Frontend | 4h |
-| 0.9 | Create the API client and the zod schemas of the contract | Frontend | 5h |
-| 0.45 | Call the API through relative paths with a development proxy | Frontend | 2h |
-| 0.46 | Add the Portuguese number and date formatters | Frontend | 3h |
-
-**Descrições**
-
-- **0.7** — `Data:` a rota de detalhe recebe a chave pública do tema (`/tema/$key`, [D-34](../../06-operacao/02-decisoes-e-riscos.md#d-34--themes-na-api-theme_key-na-rota))
-- **0.9** — `Verifies: resposta fora do contrato quebra no parse, não no meio da tela`
-- **0.45** — `Data:` `/api/...` sem `VITE_API_URL`: o endereço do cliente não é conhecido no build
-- **0.46**
-  - `Data:` `12.418` e `21.08.2026`
-  - `Verifies: nenhum número é recalculado na tela, só formatado`
+  - `Data:` rotas `busca.tsx` e `tema.$key.tsx`, TanStack Query no loader, cliente da API com schemas zod, chamadas por caminho relativo (`/api/...`), formatadores de número e data em português
+  - `Verifies: resposta fora do contrato quebra no parse, não no meio da tela`
 
 ---
 
@@ -277,7 +128,7 @@ Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main
 
 - **2.1**
   - `Data: concordância, volume, cobertura e recência com os pesos da configuração; a concordância nunca mistura pretensão do autor com a do recorrente`
-  - `Depends: 0.18, 0.69, 0.70. O cálculo nasce aqui porque a ordenação precisa dele; a US-06 (Sprint 2) o valida, o expõe e o mostra`
+  - `Depends: 0.12. O cálculo nasce aqui porque a ordenação precisa dele; a US-06 (Sprint 2) o valida, o expõe e o mostra`
 - **2.2** — `Verifies: a fórmula não pode mentir: o teste recalcula a soma ponderada e falha se divergir`
 - **2.3** — `Verifies: relevância textual não decide a ordem; ela só decide quem entra na lista`
 - **2.5** — `Verifies: alto volume com decisões divididas não fica no topo só pelo volume`
@@ -513,3 +364,4 @@ Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main
 - **13.3** — `Verifies: voltar leva à aba anterior, não para fora do tema`
 
 *3 tasks · 8h*
+

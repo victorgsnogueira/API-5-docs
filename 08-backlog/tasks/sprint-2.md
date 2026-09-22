@@ -438,3 +438,4 @@ Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main
 - **37.4** — `Verifies: nenhuma citação é gerada sem lastro`
 
 *6 tasks · 22h*
+
