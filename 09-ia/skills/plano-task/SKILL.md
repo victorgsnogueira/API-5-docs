@@ -10,6 +10,7 @@ Entrega o plano de implementação de uma task **antes de tocar em qualquer arqu
 ## Regras
 
 - **Não crie, edite nem commite nada** ao rodar esta skill. Criar as branches locais é permitido só se o usuário pedir.
+- **Atribua a issue a quem está rodando a skill**, logo depois de achá-la no board: `gh issue edit <número> -R Concord-API/API-5 --add-assignee @me`. É a única mudança que a skill faz; se a issue já tiver outro responsável, não o remova e avise no início do plano.
 - Escreva em português, direto, sem enrolação.
 - Se não vier o ID da task, use a task em andamento na conversa; se não houver, pergunte.
 
@@ -27,7 +28,7 @@ Siga exatamente estas seções, nesta ordem.
 ### 1. Task e branch
 
 ```
-<id> <título da task>                      (#<número da issue>)
+<id> <título da task>                      (#<número da issue>) · atribuída a @<login>
 
 main
  └── us<N>                                  (us0 = Technical Foundation)
