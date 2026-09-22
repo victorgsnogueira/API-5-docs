@@ -104,7 +104,7 @@ pull request, a partir de uma branch de task.
 | Exclusão da branch | bloqueada |
 | Force push | bloqueado |
 | Status checks | obrigatórios (GitHub Actions): o CI do repositório (**`Backend checks`** ou **`Frontend checks`**) e **`Release label`** |
-| Branch atualizada antes do merge | **desligada** no `API5-Backend` e no `API5-Pipeline`; ainda ligada no `API5-Frontend` — ver a nota abaixo |
+| Branch atualizada antes do merge | **desligada** nos três repositórios — ver a nota abaixo |
 
 ### `us* rules` — as branches de user story
 
@@ -117,7 +117,7 @@ pull request, a partir de uma branch de task.
 | Exclusão da branch | **livre** — a `usX` pode ser apagada depois de mergeada |
 | Force push | bloqueado |
 | Status checks | obrigatório: o CI do repositório (**`Backend checks`** ou **`Frontend checks`**); **sem** `Release label` |
-| Branch atualizada antes do merge | **desligada** no `API5-Backend` e no `API5-Pipeline`; ainda ligada no `API5-Frontend` — ver a nota abaixo |
+| Branch atualizada antes do merge | **desligada** nos três repositórios — ver a nota abaixo |
 
 ### Como fica o fluxo
 
@@ -142,8 +142,8 @@ O check `Release label` vem do workflow `release-label.yml`: falha se o PR não 
 [Versionamento e releases](04-versionamento-e-releases.md). Ele só roda em PR para a
 `main`, e por isso só o `main rules` o exige.
 
-> **Por que "branch atualizada antes do merge" foi desligada no `API5-Backend` e no
-> `API5-Pipeline`.** A `us0` é permanente — recebe merge de `main` e manda merge pra
+> **Por que "branch atualizada antes do merge" foi desligada nos três repositórios.**
+> A `us0` é permanente — recebe merge de `main` e manda merge pra
 > `main` repetidas vezes ao longo do projeto, uma por task do Technical Foundation.
 > Cada merge `us0 → main` cria um commit de merge novo na `main`, que a `us0` só
 > carrega de volta se alguém sincronizar `main → us0` **antes** de começar a próxima
@@ -156,9 +156,6 @@ O check `Release label` vem do workflow `release-label.yml`: falha se o PR não 
 > recomendação do próprio GitHub para branches de integração de longa duração como a
 > `us0`, que recebem merge nos dois sentidos — diferente de uma `usX` normal, que só
 > recebe de `main` e só devolve uma vez, ao terminar.
->
-> **O `API5-Frontend` ainda não passou por isso** porque a `us0` dele só recebeu uma
-> task até agora. Fica pendente desligar lá também, antes que o mesmo problema apareça.
 
 Como a branch do PR precisa estar atualizada com a base **nos repositórios onde essa
 exigência continua ligada**, cada merge numa `usX` obriga as demais tasks abertas a
