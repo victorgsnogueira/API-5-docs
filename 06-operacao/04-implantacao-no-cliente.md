@@ -107,6 +107,36 @@ Pontos que o desenho fixa:
 
 ---
 
+## Migrações do banco em produção
+
+**O banco do cliente nunca é recriado.** A cada sprint entregamos um build novo da
+API, um build novo do frontend e um dump novo da carga — mas o PostgreSQL do cliente
+continua o mesmo, incrementando: os dados da sprint anterior seguem lá quando a versão
+nova sobe.
+
+A API roda a migração **toda vez que sobe**, não só na primeira instalação. Quem decide
+o que aplicar é o journal do DbUp (`migrations.schema_versions`): cada script (`V001`,
+`V002`…) é aplicado uma única vez, na ordem do nome, e uma subida seguinte que não tem
+script novo não muda nada no schema. É esse mecanismo que permite o fluxo de sprints
+sem apagar o banco.
+
+Isso não é automático no sentido de "sem risco": a partir da segunda migração
+(`V002` em diante), rodar contra um banco de cliente com dado de verdade exige cuidado
+que rodar contra um banco vazio não exige.
+
+| Regra | Por quê |
+|---|---|
+| **Toda migração nova precisa ser segura contra dado que já existe.** Coluna `NOT NULL` sem `DEFAULT`, ou `CHECK` que uma linha atual não cumpre, derruba a migração — e a API não sobe — no banco do cliente, não no nosso | uma migração só é testada contra banco vazio até aqui; a partir da `V002` o teste também precisa rodar sobre um banco com dado carregado |
+| **API e pipeline saem sincronizados na mesma versão de schema por sprint.** O arquivo de carga (`TRUNCATE` + `COPY` + `REFRESH`) é escrito para o schema de uma versão específica; se a API já aplicou uma migração que o dump não espera, o `COPY` falha ou carrega errado | o pacote de versão entrega os dois juntos; a ordem de instalação é API primeiro (ela migra), carga depois |
+| **Migração que falha no meio não tem rollback automático.** A API simplesmente não sobe, e o banco do cliente fica no estado em que a migração parou | testar a migração antes de empacotar a versão é obrigatório; não existe "corrige depois no cliente" |
+| **Nunca editar um script já lançado.** O DbUp identifica pelo nome do arquivo; alterar `V001` depois de ela já ter rodado em algum ambiente faz o histórico divergir entre ambientes | toda correção de schema é uma migração nova (`V002`, `V003`…), mesmo que pequena |
+
+**Critério de aceite padrão, a partir da primeira task que criar uma migração além da
+`V001`:** a task só está pronta se a migração também foi testada subindo sobre um banco
+com dado carregado, e não só sobre banco vazio.
+
+---
+
 ## Acesso só de funcionários
 
 **Decidido: restrição de rede, sem login** ([D-23](02-decisoes-e-riscos.md#d-23--acesso-por-restrição-de-rede-sem-login)).

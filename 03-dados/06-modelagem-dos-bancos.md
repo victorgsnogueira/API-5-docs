@@ -29,7 +29,7 @@ Esta página descreve, tabela por tabela e coluna por coluna, o que cada banco d
 | pgvector | sim | não | não |
 | Quem escreve | o pipeline (usuário `dw_admin`) | só o publicador (`ratio_loader`) | só o instalador |
 | Quem lê | o pipeline | a API (`ratio_api`, somente `SELECT`) | a API (somente `SELECT`) |
-| Como ganha estrutura | migrations `001` a `028` | troca atômica do schema `dw` a cada publicação | o mesmo `dw` da homologação |
+| Como ganha estrutura | migrations `001` a `028` (histórico da fase de descoberta; o pipeline novo, na [0.13](../08-backlog/tasks/sprint-1.md), refaz isso do zero) | a **API cria o schema `dw`** na subida, por migration versionada (DbUp) | a mesma API, pelo instalador |
 | Tamanho hoje | 564 MB no `dw` (+ 261 MB `raw`, 509 MB `staging`, 107 MB `nlp`, 1128 kB `etl`) | ~564 MB | ainda não existe |
 
 **A regra de corte é uma só: o que está no schema `dw` vai para a homologação e para a produção; o que está fora dele fica na carga.** Por isso o modelo de homologação e o de produção são **idênticos**, e o banco de carga tem o mesmo `dw` mais os schemas de trabalho. Não existe um segundo modelo a manter, nem transformação entre a carga e o destino.
@@ -1082,16 +1082,18 @@ São o mesmo modelo: o schema `dw` da seção 4, sem nenhum dos schemas de traba
 
 | | Homologação | Produção |
 |---|---|---|
-| Estrutura | recriada a cada publicação, numa única transação (`DROP SCHEMA dw CASCADE` seguido do restore); se falhar, o destino fica como estava | a mesma, pelo instalador |
-| Dado | o do banco da carga no momento da publicação | o mesmo, depois de validado na homologação |
-| Dono do schema | `ratio_loader` | usuário de carga do cliente |
-| Acesso da API | `ratio_api`, só `USAGE` no schema e `SELECT` nas tabelas | equivalente, só leitura |
+| Estrutura | criada pela **API**, na subida, por migration versionada (DbUp — ver [0.12](../08-backlog/tasks/sprint-1.md)); ela nunca é recriada, só cresce migration a migration | a mesma mecânica, no servidor do cliente |
+| Dado | o arquivo de carga (`TRUNCATE` + `COPY` + `REFRESH`, numa transação) popula as tabelas do schema que a API já criou | o mesmo arquivo, depois de validado na homologação |
+| Dono do schema | o usuário da connection string da API | o usuário definido pelo cliente para a API, com os grants que a instalação exigir |
+| Acesso da API | a mesma connection string, sem papel separado só de leitura — ver [D-35](../06-operacao/02-decisoes-e-riscos.md#d-35--o-banco-do-cliente-é-o-dw-um-só-modelo-dw-nos-três-bancos) | igual |
 | Extensões | `pg_trgm` e `unaccent` (o pgvector não é necessário) | as mesmas |
-| Testes ao publicar | 37 testes do `dw`, todos têm que vir vazios | os mesmos |
+| Testes ao publicar | 37 testes do `dw`, todos têm que vir vazios antes da carga | os mesmos |
 
 A produção **ainda não existe** e ficará por último: a homologação é o ensaio dela. O que a homologação aprova é exatamente o que a produção recebe.
 
-O DDL completo do `dw` está em `scraping/sql/baseline/dw_schema.sql`, e a cadeia de migrations `001` a `028` construída do zero produz um schema idêntico ao do banco (verificado por comparação, com zero diferença).
+**A estrutura e a carga são dois passos separados, nessa ordem.** Primeiro a API sobe e migra (schema vazio, sem dado); depois o arquivo de carga popula. As regras de segurança desse fluxo — o que uma migration nova pode e não pode fazer contra um banco que já tem dado — estão em [Migrações do banco em produção](../06-operacao/04-implantacao-no-cliente.md#migrações-do-banco-em-produção).
+
+O DDL completo do `dw` desta página é a referência com que a migration `V001` da API foi escrita, e reproduz o schema descrito nas seções 4 a 6. A cadeia de migrations `001` a `028` citada nas tabelas acima é histórico da fase de descoberta, em `scraping/sql/`, e não é mais o mecanismo em uso.
 
 ---
 
