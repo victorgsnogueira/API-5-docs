@@ -29,6 +29,7 @@ Os caminhos citados aqui (`API5-Backend/…`, `prototipo/…`) pressupõem esse 
 | ⚠ O que depende de **inteiro teor** segue sem fonte — os 4 tribunais estão bloqueados | [Limitações da fonte](03-dados/04-limitacoes-da-fonte.md) |
 | ⚠ Código **em inglês**; tudo o que a API devolve (dados, rótulos, erros) **em português** | [Idioma](02-arquitetura/02-backend-dotnet.md#idioma) |
 | 🧪 **TDD**: nenhum código de produção sem um teste que falhou antes | [TDD](07-justificativas/03-tdd.md) |
+| 🤖 Vai desenvolver com IA? Aponte o assistente para o contexto pronto | [Desenvolver com IA](09-ia/README.md) |
 | 🏢 Produção é a **intranet do cliente** (Windows Server, NGINX); ele recebe **só arquivos buildados** | [Implantação no cliente](06-operacao/04-implantacao-no-cliente.md) |
 | ⚠ A carga do DW é **manual** e a pasta `scraping/` **não está versionada** | [D-17](06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) · [R-15](06-operacao/02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito) |
 
