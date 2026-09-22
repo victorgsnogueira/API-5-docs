@@ -1,16 +1,13 @@
 # Backend .NET
 
 Repositório `API5-Backend`, solução `Ratio/Ratio.slnx`, **ASP.NET Core** sobre
-**.NET 8**, `Nullable` e `ImplicitUsings` habilitados em todos os projetos.
+**.NET 10** (LTS), `Nullable` e `ImplicitUsings` habilitados em todos os projetos.
 
-> ⚠ **O .NET 8 sai de suporte em 10/11/2026** — antes do fim do projeto. O .NET 10 é
-> a LTS vigente (suporte até nov/2028). Migrar é trocar `net8.0` por `net10.0` nos
-> `.csproj` enquanto a solução ainda é scaffold; depois custa mais. Ver
-> [R-14](../06-operacao/02-decisoes-e-riscos.md#r-14--net-8-sai-de-suporte-durante-o-projeto-).
-
-**O backend é só a API de leitura.** A carga do DW é um
-[processo manual](05-etl-e-nlp.md#carga-manual--o-processo), fora do backend — ver
-[D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada).
+**O backend é a API de leitura e o dono do schema `dw`.** Ele cria e evolui o schema por
+migration na subida (DbUp, `Ratio.Infrastructure/Migrations/Scripts/V00N__*.sql`), mas
+não escreve dado: o dado vem do arquivo de carga do `API5-Pipeline` — ver
+[D-17](../06-operacao/02-decisoes-e-riscos.md#d-17--carga-manual-não-agendada) e
+[D-36](../06-operacao/02-decisoes-e-riscos.md#d-36--uma-única-credencial-para-a-api-sem-separar-migração-e-leitura).
 
 ## Por que .NET
 
@@ -134,8 +131,8 @@ Infrastructure fornece o **adaptador**. A Api é o host.
 |---|---|---|
 | `Ratio.Domain` | `Theme`, `Case`, `CaseEvent`, `DecisionOutcome`, o cálculo do `StrengthScore` | SQL, HTTP, atributos de framework |
 | `Ratio.Application` | casos de uso (`SearchThemes`, `GetThemeDetail`, `ListCases`), DTOs, interfaces de repositório | Npgsql, `HttpClient` |
-| `Ratio.Infrastructure` | repositórios de leitura sobre Postgres | regra de negócio, DDL, cliente de fonte externa |
-| `Ratio.Api` | controllers, DI, CORS, Swagger, health checks | consulta SQL |
+| `Ratio.Infrastructure` | repositórios de leitura sobre Postgres; as migrations do `dw` (`Migrations/`) | regra de negócio, cliente de fonte externa |
+| `Ratio.Api` | controllers, DI, CORS, Swagger, health checks, `Hosting/` (migração na subida) | consulta SQL |
 
 ### Multifonte na estrutura
 
@@ -148,11 +145,7 @@ colunas `source` / `extracted_at` que toda linha do DW carrega.
 
 ## Estado atual e primeiras tarefas
 
-A `main` ainda está em `initial commit`. O setup de verdade está na branch
-**`initial-setup`** (PR aberto): .NET 10, as camadas, Serilog, Dapper + Npgsql, os dois
-health checks, `ProblemDetails` em português e os primeiros testes.
-
-Feito (na `initial-setup`):
+Estado em 22/09/2026, na `main`:
 
 - [x] **.NET 10** ([R-14](../06-operacao/02-decisoes-e-riscos.md#r-14--net-8-sai-de-suporte-durante-o-projeto-)).
 - [x] Scaffold fora: `WeatherForecast`, `Class1.cs`, `UnitTest1.cs`.
@@ -168,11 +161,15 @@ Feito (na `initial-setup`):
       [Versionamento e releases](../07-justificativas/04-versionamento-e-releases.md).
 - [x] Erro de configuração na subida vai **para o arquivo de log** — no serviço Windows
       não há console, e sem isso a TI do cliente ficaria sem diagnóstico.
+- [x] **Schema `dw` criado pela API na subida** (0.12): `V001` com dimensões, fato,
+      pontes, `strength_config`, `case_current_result` e `theme_summary`; lock de
+      concorrência; journal em `migrations.schema_versions`.
+- [x] Na `us1` (US-01 em andamento): `V002`, configuração de busca `dw.pt_unaccent` (1.1).
 
 Falta:
 
-- [ ] **Primeira rota de domínio** (`GET /api/themes`) — hoje só o health existe, e ela
-      **nasce de um teste** ([TDD](../07-justificativas/03-tdd.md)).
+- [ ] **Primeira rota de domínio** (`GET /api/themes`, task 1.5) — contrato em
+      [`GET /api/themes` — contrato da Sprint 1](#get-apithemes--contrato-da-sprint-1).
 - [ ] **Pacote de versão completo** — o CI e a release do backend já existem (`.github/workflows/`), mas a release publica só o zip da API; falta juntar com NGINX, dump e manual.
 - [ ] Publicação **self-contained `win-x64`** rodando como **serviço Windows**, escutando
       em `127.0.0.1` atrás do NGINX — ver
