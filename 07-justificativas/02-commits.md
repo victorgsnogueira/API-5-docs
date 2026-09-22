@@ -14,6 +14,8 @@ repositórios do projeto.
 4. **Nenhum commit leva ferramenta de IA como coautora.** Remova qualquer
    `Co-Authored-By:` atribuído a IA. A regra não proíbe coautoria humana.
    [Por quê](#por-que-não-atribuir-coautoria-a-ia).
+5. **O commit tem só a linha do assunto.** Sem corpo descritivo: o que o commit faz cabe
+   na descrição curta, e o porquê fica no PR, na task ou nos Docs.
 
 ## Tipos
 
@@ -23,7 +25,7 @@ repositórios do projeto.
 | `fix:` | correção de bug ou comportamento inesperado |
 | `refactor:` | melhoria de código sem alterar comportamento |
 | `docs:` | atualização de documentação |
-| `test:` | teste **sem** mudança de código de produção — cobrir comportamento que já existia |
+| `test:` | adicionar ou alterar testes do projeto: unidade, integração, contrato, ponta a ponta |
 | `chore:` | tarefas de configuração, build ou manutenção |
 
 ## Formato
@@ -48,7 +50,7 @@ feat: add semantic search by legal topic
 | `docs: add branch naming standard` | `update docs` | sem tipo |
 | `fix: handle empty result set` | `fix: handle empty result set`<br>`Co-Authored-By: AI Assistant <ai@example.com>` | IA registrada como coautora |
 | `chore: configure CI pipeline for backend` | `chore: setup, fix tests and add endpoint` | três mudanças num commit só |
-| `test: cover empty doctrine state` | `feat: add tests` | teste sem código novo é `test:` |
+| `test: cover empty doctrine state` | `feat: add tests` | teste é `test:`, não `feat:` |
 
 ---
 
@@ -111,12 +113,13 @@ contribuição.
 
 O projeto segue [TDD](03-tdd.md). No histórico, isso aparece assim:
 
-- **Teste e implementação vão no mesmo commit**, com o tipo da mudança (`feat:`,
-  `fix:`). O ciclo vermelho → verde acontece na máquina; o commit registra o par já
-  verde. Assim nenhum commit da branch deixa o CI vermelho.
-- **`test:`** é só para commit que acrescenta teste sem tocar código de produção.
-- **Todo `fix:` traz o teste que reproduz o bug.** Um `fix:` sem teste é um bug que pode
-  voltar.
+- **O teste vai num commit `test:`, e o código que o faz passar vai no `feat:` ou `fix:`
+  seguinte.** O histórico mostra o ciclo do TDD: primeiro o teste que falha, depois o
+  código que o atende.
+- **O commit `test:` fica vermelho sozinho, e isso é esperado.** O CI roda no PR, sobre o
+  último commit da branch, então o que precisa estar verde é o PR, não cada commit.
+- **Todo `fix:` vem depois do `test:` que reproduz o bug.** Um `fix:` sem teste é um bug
+  que pode voltar.
 
 ## Estado nos repositórios (19/09/2026)
 

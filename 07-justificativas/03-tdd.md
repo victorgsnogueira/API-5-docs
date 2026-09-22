@@ -216,11 +216,10 @@ Não executam o pipeline nem exigem a base completa ou acesso à homologação.
 
 ## TDD, commits e branches
 
-- **Teste e implementação vão no mesmo commit** (`feat:` ou `fix:`). A branch nunca
-  recebe um commit vermelho — o histórico de cada commit compila e passa.
-- Commit **só de teste** (cobrir comportamento que já existia, sem mudar código) usa o
-  tipo `test:`. Ver [Padrão de commits](02-commits.md).
-- **Todo `fix:` começa por um teste que reproduz o bug.** O teste falha, o fix o faz
+- **O teste vai num commit `test:`, e a implementação no `feat:` ou `fix:` seguinte.** O
+  histórico mostra o ciclo: o teste que falha, depois o código que o faz passar. O que
+  precisa estar verde é o PR, não cada commit. Ver [Padrão de commits](02-commits.md).
+- **Todo `fix:` vem depois do `test:` que reproduz o bug.** O teste falha, o fix o faz
   passar, e o bug não volta sem alguém perceber.
 - O pull request de task → `usX` **não é aprovado com teste falhando** — o CI bloqueia.
   Ver [Padrão de branches](01-branches.md#relação-com-o-cicd).

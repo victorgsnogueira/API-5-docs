@@ -12,15 +12,15 @@ de documentação seguem [um padrão próprio](#repositórios-de-documentação)
 ```
 main                                          estável · recebe a US concluída
  │
- ├── us1                                      base da user story 1
- │    ├── RATIO-35-0.1-Implementar-documentação-API
- │    ├── RATIO-35-0.2-…
- │    └── RATIO-36-0.1-…
+ ├── us0                                      Technical Foundation (tasks 0.Y)
+ │    ├── 0.12-Create-the-dw-schema-migration-and-apply-it-on-API-startup
+ │    └── 0.14-Set-up-the-frontend-skeleton-against-the-API-contract
  │
- ├── us2                                      base da user story 2
- │    └── …
+ ├── us1                                      base da US-01
+ │    ├── 1.1-Add-the-Portuguese-text-search-configuration-with-accent-removal
+ │    └── 1.5-Create-GET-api-themes-returning-themes-never-cases
  │
- └── us3
+ └── us9                                      base da US-09
       └── …
 ```
 
@@ -29,8 +29,8 @@ Três níveis, cada um com um papel:
 | Nível | Nome | Nasce de | Volta para | Quando |
 |---|---|---|---|---|
 | Principal | `main` | — | — | sempre existe |
-| User story | `us1`, `us2`, `us3`… | `main` | `main` | ao concluir a US, após revisão e aprovação |
-| Task | `<task-pai>-<subtask>-<nome-da-task>` | a branch da US | a branch da US | ao concluir a task |
+| User story | `us0`, `us1`, `us2`… | `main` | `main` | ao concluir a US, após revisão e aprovação |
+| Task | `<id-da-task>-<Nome-da-task>` | a branch da US | a branch da US | ao concluir a task |
 
 ### `main`
 
@@ -39,30 +39,45 @@ story, **após revisão e aprovação**. Ninguém trabalha direto nela.
 
 ### `usX` — uma por user story
 
-Cada user story tem sua própria branch base (`us1`, `us2`, `us3`…). É nela que se
-integram todas as funcionalidades desenvolvidas durante aquele ciclo.
+Cada user story tem sua própria branch base, com o número da US sem zero à esquerda: a
+US-01 é `us1`, a US-09 é `us9`, a US-21 é `us21`. É nela que se integram todas as tasks
+daquela US.
+
+**`us0` é o Technical Foundation.** As tasks `0.Y` (schema, pipeline, esqueleto do
+frontend) não pertencem a nenhuma US, mas precisam de uma base protegida como as outras.
+O número 0 casa com a numeração delas, e o ruleset `us*` já cobre a branch.
 
 ### Branch de task
 
 Para cada nova funcionalidade ou correção, cria-se uma branch específica **a partir da
-branch da US** a que a task pertence. O nome vem da task no board:
+branch da US** a que a task pertence. O nome é o ID da task seguido do título dela no
+board:
 
 ```
-<chave-da-task-pai>-<número-da-subtask>-<Nome-da-task-com-hífen-no-lugar-de-espaço>
+<id-da-task>-<Nome-da-task-com-hífen-no-lugar-de-espaço>
 ```
 
 Exemplo:
 
 ```
-RATIO-35-0.1-Implementar-documentação-API
-│        │   └─ nome da task, espaços viram hífen
-│        └──── subtask
-└───────────── task pai no board
+0.12-Create-the-dw-schema-migration-and-apply-it-on-API-startup
+│    └─ título da task, espaços viram hífen
+└────── ID da task: 0.12 é do Technical Foundation (us0)
 ```
 
-> **Observação.** O git aceita acento em nome de branch, mas algumas ferramentas não
-> lidam bem com isso — URLs de pull request, terminais do Windows, gatilhos de CI. Se
-> aparecer problema, a saída é grafar sem acento (`Implementar-documentacao-API`).
+**O nome não repete a US.** O ID já diz a que US a task pertence (`1.1` é da US-01,
+`9.4` é da US-09, `0.Y` é do Technical Foundation) e é único no projeto inteiro. Também
+não leva o número da issue: a referência é o ID da task, que é o mesmo no board e nas
+[tasks do projeto](../08-backlog/tasks/README.md).
+
+Ao montar o nome:
+
+- sem acento, crase, aspas ou barra: `` `GET /api/themes` `` vira `GET-api-themes`;
+- sem espaço: cada espaço vira um hífen;
+- o título pode ser encurtado se ficar longo demais, desde que o ID continue no começo.
+
+> **Por que sem acento e sem símbolo.** O git aceita, mas algumas ferramentas não lidam
+> bem com isso: URLs de pull request, terminais do Windows, gatilhos de CI.
 
 ---
 
@@ -95,7 +110,7 @@ pull request, a partir de uma branch de task.
 
 | Item | Configuração |
 |---|---|
-| Alvo | `refs/heads/us*` (`us1`, `us2`…) |
+| Alvo | `refs/heads/us*` (`us0`, `us1`, `us2`…) |
 | Pull request obrigatório | sim — não há push direto |
 | Aprovações necessárias | **0**, sem reviewer obrigatório — a revisão fica no PR `usX` → `main` |
 | Métodos de merge permitidos | só **merge** |
@@ -188,8 +203,8 @@ sprint.
 
 ### Por que uma branch por task, nomeada pelo board
 
-**Rastreabilidade de ponta a ponta.** O nome da branch leva a chave da task
-(`RATIO-35`). De qualquer commit dá para chegar à task no board, e da task ao código —
+**Rastreabilidade de ponta a ponta.** O nome da branch começa pelo ID da task
+(`0.12`, `1.1`). De qualquer commit dá para chegar à task no board, e da task ao código —
 sem planilha de controle paralela.
 
 **Trabalho isolado.** Cada pessoa trabalha na sua task sem pisar no código de outra. Um
