@@ -4,19 +4,18 @@
 
 ```
 D:/Desenvolvimento/fatec/API/API-5/
-├── API-5/          documentação do SM   (repo)
-├── API5-Backend/   backend .NET 8       (repo)
-├── API5-Frontend/  frontend React       (repo)
-├── Docs/           esta wiki            (repo)
-├── scraping/       pipeline de carga do DW   ⚠ FORA de repositório
-├── prototipo-prod - versao 202609/   protótipo de dados (fora de repositório)
+├── API-5/          backlog e critérios de aceite da org   (repo)
+├── API5-Backend/   API .NET 10, dona do schema dw         (repo)
+├── API5-Frontend/  frontend React                          (repo)
+├── API5-Pipeline/  coleta e arquivo de carga do dw         (repo)
+├── Docs/           esta wiki                               (repo)
+├── scraping/       fase de descoberta — ⚠ histórico, não é mais o pipeline
 └── prototipo/      protótipo antigo     (repo) — ⚠ não é referência
 ```
 
-São **cinco repositórios git independentes**, mais duas pastas soltas. A `scraping/` é
-o pipeline que produziu o DW — **não está versionada** em lugar nenhum
-([R-15](02-decisoes-e-riscos.md#r-15--o-pipeline-de-carga-fica-fora-de-repositório--risco-aceito)). A pasta que os contém não é um repo — é só
-a convenção de tê-los lado a lado, que os caminhos citados na wiki pressupõem.
+A pasta que os contém não é um repo — é só a convenção de tê-los lado a lado, que os
+caminhos citados na wiki pressupõem. A `scraping/` foi o pipeline da fase de descoberta;
+o pipeline de verdade agora é o `API5-Pipeline`.
 
 Para montar o ambiente do zero:
 
@@ -25,10 +24,21 @@ mkdir API-5 && cd API-5
 git clone https://github.com/Concord-API/API-5.git
 git clone https://github.com/Concord-API/API5-Backend.git
 git clone https://github.com/Concord-API/API5-Frontend.git
+git clone https://github.com/Concord-API/API5-Pipeline.git
 git clone https://github.com/victorgsnogueira/API-5-docs.git Docs
 ```
 
-O protótipo só se você [precisar consultá-lo](#protótipo-antigo--só-se-você-precisar-consultá-lo).
+Vai usar um assistente de IA? O contexto pronto está em [Desenvolver com IA](../09-ia/README.md).
+
+---
+
+## Como o banco funciona agora
+
+- A **API cria o schema `dw`** sozinha, na subida, por migration (DbUp). Ninguém aplica
+  SQL à mão.
+- O **dado vem do arquivo de carga** gerado pelo `API5-Pipeline` (`TRUNCATE` + `COPY` +
+  `REFRESH`, numa transação), aplicado **depois** que a API criou o schema.
+- O banco só precisa existir, com as extensões `unaccent` e `pg_trgm` no schema `public`.
 
 ---
 
@@ -36,90 +46,66 @@ O protótipo só se você [precisar consultá-lo](#protótipo-antigo--só-se-voc
 
 ### Pré-requisitos
 
-.NET SDK 8 (10 quando o [R-14](02-decisoes-e-riscos.md#r-14--net-8-sai-de-suporte-durante-o-projeto-) for resolvido),
-Docker Desktop (os testes de integração sobem Postgres via Testcontainers). Visual Studio
-2022 ou VS Code com C# Dev Kit.
+.NET SDK 10, Docker Desktop (os testes de integração sobem Postgres via Testcontainers).
+Visual Studio 2022 ou VS Code com C# Dev Kit.
+
+### Banco local
+
+Um `postgres:16` com locale ICU `pt-BR` (igual à produção, sem pgvector):
+
+```bash
+docker run -d --name ratio-dev --restart unless-stopped -p 5433:5432 -v ratio_dev_data:/var/lib/postgresql/data -e POSTGRES_DB=ratio -e POSTGRES_USER=ratio -e POSTGRES_PASSWORD=<senha> -e POSTGRES_INITDB_ARGS="--locale-provider=icu --icu-locale=pt-BR --encoding=UTF8 --locale=C.utf8" postgres:16
+docker exec ratio-dev psql -U ratio -d ratio -c "CREATE EXTENSION IF NOT EXISTS unaccent; CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+```
 
 ### Comandos
 
 ```bash
 cd API5-Backend/Ratio
-dotnet restore
-dotnet build
-dotnet run --project Ratio.Api
-dotnet test          # o ciclo do TDD — ver 07-justificativas/03-tdd.md
+export ConnectionStrings__Ratio="Host=localhost;Port=5433;Database=ratio;Username=ratio;Password=<senha>"
+dotnet run --project Ratio.Api      # na primeira subida cria o schema dw
+dotnet test Ratio.slnx              # o ciclo do TDD — ver 07-justificativas/03-tdd.md
 ```
 
-### Banco
+**Connection string só por variável de ambiente**, nunca em `appsettings.json`
+versionado. Uma credencial só, que também migra ([D-36](02-decisoes-e-riscos.md#d-36--uma-única-credencial-para-a-api-sem-separar-migração-e-leitura)).
 
-O banco da carga roda em contêiner (Postgres 16 + pgvector, porque o NLP grava
-embeddings) com locale ICU `pt-BR`. Produção não tem pgvector — ver
-[Carga × produção](../02-arquitetura/04-data-warehouse.md#carga--produção--os-três-bancos). Inventário completo do que está instalado em
-[Data Warehouse](../02-arquitetura/04-data-warehouse.md#o-que-está-instalado-no-banco).
+Com o banco recém-criado, `/health/ready` responde `503` com `reason: sem carga
+publicada` — é o esperado até o arquivo de carga ser aplicado.
+
+### Dado para desenvolver
+
+> ⚠ **Ainda não há arquivo de carga do schema novo distribuído para o time.** O dump
+> antigo é do modelo da fase de descoberta e **não serve**: a API recusa subir num `dw`
+> que ela não criou. O primeiro arquivo sai da task `0.71` (comando do pipeline); onde
+> ele fica disponível para o time ainda será decidido. Até lá, os testes de cada
+> repositório preparam o próprio banco descartável e não precisam de carga.
+
+Quando existir, aplicar é um comando, com a API já tendo subido uma vez:
 
 ```bash
-docker run -d --name api5-dw --restart unless-stopped -p 5432:5432 -v api5_dw_data:/var/lib/postgresql/data -e POSTGRES_DB=api5_dw -e POSTGRES_USER=dw_admin -e POSTGRES_PASSWORD=<senha> -e POSTGRES_INITDB_ARGS="--locale-provider=icu --icu-locale=pt-BR --encoding=UTF8 --locale=C.utf8" pgvector/pgvector:pg16
+docker exec -i ratio-dev psql -U ratio -d ratio -v ON_ERROR_STOP=1 < ratio-load.sql
 ```
 
-Depois, aplicar as migrations (criam schemas e extensões `vector`, `pg_trgm`,
-`unaccent`):
+> **Não aponte a API nova para a homologação por enquanto.** A homologação ainda está no
+> modelo da fase de descoberta, sem o journal de migration; a API nova não sobe ali. Ela
+> é refeita no fluxo novo na task `0.53` (Sprint 2).
+
+---
+
+## Pipeline de carga
 
 ```bash
-for f in scraping/sql/0*.sql; do docker exec -i api5-dw psql -U dw_admin -d api5_dw -v ON_ERROR_STOP=1 < "$f"; done
+cd API5-Pipeline
+pip install -r requirements.txt
+ruff check .
+pytest                                # Docker ligado — os testes sobem Postgres descartável
 ```
 
-> Se já houver um Postgres instalado na máquina ocupando a 5432, publique em outra
-> porta (`-p 5433:5432`) e ajuste a connection string.
-
-Connection string para desenvolvimento:
-
-```
-Host=localhost;Port=5432;Database=api5_dw;Username=dw_admin;Password=<senha>
-```
-
-**Por variável de ambiente, nunca em `appsettings.json` versionado** — é a mesma
-disciplina que a [implantação no cliente](04-implantacao-no-cliente.md) exige — a
-configuração de produção é da máquina dele, não do build.
-
-**Banco vazio?** Ou roda a [carga manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo)
-inteira, ou restaura um dump de quem já tem a base:
-
-```bash
-docker cp dw.dump api5-dw:/tmp/dw.dump
-docker exec api5-dw pg_restore -U dw_admin -d api5_dw --clean --if-exists -n dw /tmp/dw.dump
-```
-
-### Só vai desenvolver API ou frontend?
-
-**Não precisa do banco da carga.** Aponte para a **homologação**, pela rede Tailscale do
-time, com o usuário somente leitura:
-
-```
-Host=<nome-da-máquina-na-tailnet>;Port=5433;Database=ratio;Username=ratio_api;Password=<pedir ao time>
-```
-
-É o mesmo `dw` que vai para produção, sem pgvector e sem superusuário — se a API
-funciona ali, funciona no cliente. Senha nunca vai para o repositório nem para esta wiki.
-
-Para trabalhar offline, suba um `postgres:16` local e restaure o dump do `dw` (~15 MB)
-do mesmo jeito que o [`publish_dw.sh`](../02-arquitetura/05-etl-e-nlp.md#subir-para-produção) faz.
-
-### Rodar a carga
-
-A carga não faz parte do backend. É o pipeline Python em `scraping/`, rodado à mão —
-passo a passo em [Carga manual](../02-arquitetura/05-etl-e-nlp.md#carga-manual--o-processo).
-
-Pré-requisitos: **Python 3.12** e
-
-```bash
-pip install psycopg2-binary requests beautifulsoup4 lxml sentence-transformers scikit-learn numpy
-```
-
-O `sentence-transformers` baixa o modelo (`paraphrase-multilingual-MiniLM-L12-v2`,
-~470 MB) na primeira execução e depois roda offline, em CPU.
-
-> No Windows use `python -u` nos coletores longos — sem isso a saída fica em buffer e o
-> log parece travado.
+O pipeline roda do nosso lado, nunca no cliente. Ele usa o **banco de carga** (com os
+schemas de trabalho `raw`, `staging` e `etl`), cujo `dw` é criado pela mesma API.
+Configuração só por variável de ambiente (`DATABASE_URL`). Módulos e regras em
+[`API5-Pipeline`](../09-ia/repos/API5-Pipeline.md).
 
 ---
 
@@ -174,12 +160,18 @@ cd prototipo/backend && docker compose down
 
 ## Variáveis de ambiente
 
-O que o backend .NET vai precisar. Nada disso está configurado ainda:
+Backend:
 
 | Variável | Para quê |
 |---|---|
-| `ConnectionStrings__Ratio` | Postgres — em produção, o papel **somente leitura** `ratio_api` |
+| `ConnectionStrings__Ratio` | Postgres — uma credencial só, que também migra ([D-36](02-decisoes-e-riscos.md#d-36--uma-única-credencial-para-a-api-sem-separar-migração-e-leitura)) |
 | `Cors__AllowedOrigins` | lista explícita, nunca `*` |
+
+Pipeline:
+
+| Variável | Para quê |
+|---|---|
+| `DATABASE_URL` | banco de carga |
 
 Frontend:
 
@@ -187,8 +179,8 @@ Frontend:
 |---|---|
 | `VITE_API_URL` | URL da API — embutida no build |
 
-A chave do DataJud e os parâmetros de recorte (tribunais, assuntos, teto) são do
-**pipeline de carga**, não do backend — hoje são argumentos dos scripts.
+A chave do DataJud e os parâmetros de recorte (tribunais, áreas, cotas) são do
+**pipeline de carga**, não do backend — chegam por variável de ambiente na task `0.71`.
 
 Em produção, definidas na máquina do cliente ([Implantação no cliente](04-implantacao-no-cliente.md)). **Nenhum segredo no
 repositório.**
@@ -199,12 +191,12 @@ repositório.**
 
 | Sintoma | Causa provável | Solução |
 |---|---|---|
-| API sobe mas `/health/ready` dá `503` | o campo `reason` diz qual | `sem carga publicada` → restaurar um dump; `banco inacessível` → conferir connection string e se o contêiner está de pé |
-| `docker` não conecta (`dockerDesktopLinuxEngine`) | Docker Desktop fechado | abrir o Docker Desktop e `docker start api5-dw` |
+| API sobe mas `/health/ready` dá `503` | o campo `reason` diz qual | `sem carga publicada` → aplicar o arquivo de carga; `banco inacessível` → conferir connection string e se o contêiner está de pé |
+| `docker` não conecta (`dockerDesktopLinuxEngine`) | Docker Desktop fechado | abrir o Docker Desktop e `docker start ratio-dev` |
 | Porta 5433 ocupada | outro contêiner ou Postgres local | trocar a porta publicada |
 | Frontend com erro de CORS | origem fora da lista | acrescentar em `Cors__AllowedOrigins` e reiniciar a API |
-| Migration nova não aplicou | não há controle de versão aplicada | aplicar o arquivo com `psql -v ON_ERROR_STOP=1` |
-| Busca não acha com acento | `unaccent` não instalado | conferir se a migration de extensões rodou |
+| API não sobe: log crítico de migration | o `dw` já existia sem ter sido criado pela API, ou uma migration quebrou no meio | banco novo e vazio; nunca criar o `dw` à mão |
+| API não sobe: `text search dictionary "public.unaccent" does not exist` | extensão fora do schema `public` | `CREATE EXTENSION unaccent` no `public` |
 | Coletor do DataJud falhando intermitente (504/429) | limite de taxa | esperado; o coletor tem retry com backoff — rode de novo, é idempotente |
 | Coletor parece travado no Windows | saída em buffer | `python -u` |
 | Contêiner do protótipo brigando por porta | ele ficou de pé | `docker compose down` na pasta dele |
