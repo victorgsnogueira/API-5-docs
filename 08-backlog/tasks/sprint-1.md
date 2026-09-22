@@ -40,7 +40,7 @@ Tasks técnicas sem User Story associada: 4 tasks · 168h.
 **Descrições**
 
 - **0.12**
-  - `Data:` a `V001` com dimensões, fato, pontes, configuração do score e agregados, conforme a [Modelagem dos três bancos](../../03-dados/06-modelagem-dos-bancos.md); o runner aplica na subida com lock; uma credencial para migrar e outra, só leitura, para servir
+  - `Data:` a `V001` com dimensões, fato, pontes e configuração do score, conforme a [Modelagem dos três bancos](../../03-dados/06-modelagem-dos-bancos.md); o runner aplica na subida com lock; uma única credencial, que também migra
   - `Verifies:` num Postgres vazio só com `unaccent` e `pg_trgm`, a API sobe e cria tudo; a segunda subida não aplica nada; o Testcontainers usa as mesmas migrations; `/health/ready` informa "não carregado" com banco vazio
 - **0.13**
   - `Data: repositório novo com CI e credenciais por variável de ambiente; TPU e recorte cível; coleta do DataJud (mais recente primeiro, só processos julgados, cota por área do direito); carga idempotente; polaridade e links para o tribunal; embeddings locais, curadoria e temas com chave estável; arquivo de carga com TRUNCATE, COPY e REFRESH numa transação`
