@@ -93,26 +93,27 @@ Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main
 
 **Descrições**
 
-- **1.1**
+- **1.1** · [guia](guias/1.1.md)
   - `Data:` `unaccent` aplicado antes do radical; o radical degrada (`indenização` → `indenizaca`), por isso plural e flexão ficam com a similaridade de trigramas
   - `Verifies: "inscricao indevida" e "inscrição indevida" geram o mesmo vetor de busca; palavras distintas continuam distintas`
-- **1.2** — `Data: vetor de busca e nome normalizado gerados pelo banco; índices GIN de texto e de trigrama` · [guia da task](guias/1.2.md)
-- **1.3**
+- **1.2** — `Data: vetor de busca e nome normalizado gerados pelo banco; índices GIN de texto e de trigrama` · [guia](guias/1.2.md)
+- **1.3** · [guia](guias/1.3.md)
   - `Data: corta abaixo de 0,5 de rank, medido: fora de escopo chega a 0,36 e os acertos ficam entre 0,62 e 2,65`
   - `Verifies: "contrato de arrendamento de satélite" devolve vazio; "negativacao indevda" recupera o tema por similaridade; "inscricao indevida" e "inscrição indevida" devolvem o mesmo tema`
-- **1.4**
+- **1.4** · [guia](guias/1.4.md)
   - `Data: jargão forense fora do vocabulário da TPU ("negativação" → inclusão indevida em cadastro de inadimplentes)`
   - `Verifies: uma frase em linguagem natural com o jargão acha o tema`
-- **1.5**
+- **1.5** · [guia](guias/1.5.md)
   - `Verifies: a resposta é lista de temas; nenhum número de processo aparece no resultado da busca`
   - `Data:` chave pública `themeKey` na resposta, nunca o `theme_sk`
-- **1.6** — `Message: "Digite ao menos 3 caracteres para buscar."`
-- **1.7** — `Verifies: busca vazia não é erro`
-- **1.8** — `Verifies:` tema sem desfecho apurado não aparece — regra 2 de [tema](../../01-produto/03-tema-modelo-conceitual.md)
-- **1.9** — `Data: a lista é curadoria manual, guardada no pipeline e enviada no arquivo de carga`
-- **1.10** — `Data: o placeholder mostra tema em linguagem natural, nunca número de processo`
-- **1.12** — `Verifies: recarregar a página ou abrir o link reproduz a mesma busca`
-- **1.13** — `Message: "N temas encontrados para «termo»." e "Nenhum tema encontrado para «termo» no escopo TJSP, TJRJ e TJMG."`
+- **1.6** — `Message: "Digite ao menos 3 caracteres para buscar."` · [guia](guias/1.6.md)
+- **1.7** — `Verifies: busca vazia não é erro` · [guia](guias/1.7.md)
+- **1.8** — `Verifies:` tema sem desfecho apurado não aparece — regra 2 de [tema](../../01-produto/03-tema-modelo-conceitual.md) · [guia](guias/1.8.md)
+- **1.9** — `Data: a lista é curadoria manual, guardada no pipeline e enviada no arquivo de carga` · [guia](guias/1.9.md)
+- **1.10** — `Data: o placeholder mostra tema em linguagem natural, nunca número de processo` · [guia](guias/1.10.md)
+- **1.11** · [guia](guias/1.11.md)
+- **1.12** — `Verifies: recarregar a página ou abrir o link reproduz a mesma busca` · [guia](guias/1.12.md)
+- **1.13** — `Message: "N temas encontrados para «termo»." e "Nenhum tema encontrado para «termo» no escopo TJSP, TJRJ e TJMG."` · [guia](guias/1.13.md)
 
 *13 tasks · 49h*
 
