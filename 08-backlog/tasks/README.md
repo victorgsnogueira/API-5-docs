@@ -4,10 +4,10 @@ Quebra do [Product Backlog](../product-backlog.md) em tasks, separada por sprint
 
 | Arquivo | Conteúdo |
 |---|---|
-| [`sprint-1.md`](sprint-1.md) | Sprint 1 · 07/09 a 27/09 · 9 Stories · 44 SP · 72 tasks |
+| [`sprint-1.md`](sprint-1.md) | Sprint 1 · 07/09 a 27/09 · 9 Stories · 44 SP · 74 tasks |
 | [`sprint-2.md`](sprint-2.md) | Sprint 2 · 05/10 a 25/10 · 13 Stories · 65 SP · 88 tasks |
 | [`sprint-3.md`](sprint-3.md) | Sprint 3 · 02/11 a 22/11 · 7 Stories · 40 SP · 57 tasks |
-| [`guias/`](guias/) | guia de implementação por task, com ordem e dependências — hoje cobre a US-01 |
+| [`guias/`](guias/) | guia de implementação por task, com ordem e dependências — hoje cobre a US-01 e a US-02 |
 
 ## Como ler
 
@@ -23,10 +23,10 @@ Quebra do [Product Backlog](../product-backlog.md) em tasks, separada por sprint
 
 | Sprint | Stories | SP | Tasks | Horas | Foundation | Stories (tasks) |
 |---|---:|---:|---:|---:|---:|---:|
-| Sprint 1 | 9 | 44 | 72 | 410h | 6 (177h) | 66 (233h) |
+| Sprint 1 | 9 | 44 | 74 | 414h | 8 (181h) | 66 (233h) |
 | Sprint 2 | 13 | 65 | 88 | 303h | 6 (25h) | 82 (278h) |
 | Sprint 3 | 7 | 40 | 57 | 212h | 14 (56h) | 43 (156h) |
-| **Total** | **29** | **149** | **217** | **925h** | | |
+| **Total** | **29** | **149** | **219** | **929h** | | |
 
 Horas por camada:
 
@@ -34,7 +34,7 @@ Horas por camada:
 |---|---:|---:|---:|---:|
 | Backend | 152h | 107h | 100h | 359h |
 | Frontend | 99h | 108h | 30h | 237h |
-| ETL | 144h | 41h | 2h | 187h |
+| ETL | 148h | 41h | 2h | 191h |
 | Test | 10h | 34h | 38h | 82h |
 | DevOps | 5h | 7h | 26h | 38h |
 | Docs | 0h | 6h | 16h | 22h |

@@ -12,7 +12,7 @@ substitui o `/plano-task`: ele é o que você lê **antes** de pedir o plano.
 | 1.2 | Backend | [1.2](1.2.md) | 1.1 |
 | 1.3 | Backend | [1.3](1.3.md) | 1.2 |
 | 1.4 | Backend | [1.4](1.4.md) | 1.3 |
-| 1.5 | Backend | [1.5](1.5.md) | 1.3, 2.1 |
+| 1.5 | Backend | [1.5](1.5.md) | 1.3, 2.1 (decidido: espera a 2.1) |
 | 1.6 | Backend | [1.6](1.6.md) | 1.5 |
 | 1.7 | Backend | [1.7](1.7.md) | 1.5 |
 | 1.8 | Backend | [1.8](1.8.md) | 1.3 (e 1.7 para a lista sem termo) |
@@ -27,14 +27,35 @@ então 1.6, 1.7 e 1.8. O frontend não espera o backend: trabalha contra o
 [contrato de `GET /api/themes`](../../../02-arquitetura/02-backend-dotnet.md#get-apithemes--contrato-da-sprint-1)
 com MSW, mas precisa da **0.14** (esqueleto) antes.
 
+## US-02 — ordem por força
+
+| Task | Repositório | Guia | Depende de |
+|---|---|---|---|
+| 2.1 | Backend | [2.1](2.1.md) | 0.12 (a carga real também precisa da 0.72 e da 0.73) |
+| 2.2 | Backend (testes) | [2.2](2.2.md) | 2.1 |
+| 2.3 | Backend | [2.3](2.3.md) | 1.3, 2.1 |
+| 2.4 | Backend | [2.4](2.4.md) | 2.3 |
+| 2.5 | Backend | [2.5](2.5.md) | 1.5, 2.3 |
+| 2.6 | Frontend | [2.6](2.6.md) | 1.11 |
+
+A **2.1 é o gargalo das duas US**: a 1.5, a 2.3 e a 2.5 esperam por ela. Comece por ela
+junto com a 1.2.
+
+## Pipeline — o que a carga real precisa
+
+| Task | O quê |
+|---|---|
+| [0.72](https://github.com/Concord-API/API-5/issues/139) | gravar a linha de `dw.strength_config` na carga — sem ela a nota e o piso de `n` saem vazios |
+| [0.73](https://github.com/Concord-API/API-5/issues/140) | `REFRESH` das views na ordem de dependência — em ordem alfabética a `theme_strength` quebra a carga |
+
 ## Fluxo de toda task
 
 1. Atribua a issue a você no board.
 2. Rode `/plano-task <id>` ([como instalar a skill](../../../09-ia/README.md)) e siga o
    plano aprovado.
 3. Crie a branch a partir da **`us1`** do repositório da task. O nome é o ID mais o
-   título do board com hífens, sem acento nem crase. Se a `us1` ainda não existir naquele
-   repositório, ela é criada a partir da `main`.
+   título do board com hífens, sem acento nem crase. A `us1` já existe nos três
+   repositórios; tasks `0.Y` saem da `us0`.
 4. Commits em TDD: `test:` vermelho pelo motivo certo, depois `feat:`/`fix:`. Só a linha
    do assunto, em inglês. Nenhum comentário no código, no SQL ou no teste.
 5. PR para a `us1`, só com título. O board se move sozinho.

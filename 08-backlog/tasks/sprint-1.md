@@ -1,6 +1,6 @@
 # Tasks — Sprint 1
 
-**Janela:** 07/09 a 27/09/2026 · **9 Stories · 44 SP** · 72 tasks · 410h
+**Janela:** 07/09 a 27/09/2026 · **9 Stories · 44 SP** · 74 tasks · 414h
 
 Convenções, camadas e o resumo geral em [README](README.md). O padrão da `Iteration` é `Sprint 1` em tudo o que está neste arquivo.
 
@@ -10,9 +10,9 @@ Convenções, camadas e o resumo geral em [README](README.md). O padrão da `Ite
 
 | Bloco | Tasks | Horas |
 |---|---:|---:|
-| Technical Foundation | 6 | 177h |
+| Technical Foundation | 8 | 181h |
 | Stories | 66 | 233h |
-| **Total** | **72** | **410h** |
+| **Total** | **74** | **414h** |
 
 **Já entregues antes deste arquivo** (não viram task): `0.10` Set up MSW for the frontend test suite (Test); `0.11` Run the Vitest suite in the frontend CI workflow (Frontend).
 
@@ -25,7 +25,7 @@ Issue container. Tasks sem Story-mãe, numeração `0.Y`: o que a sprint precisa
 ```
 Priority: Must
 Estimate: —
-Tasks técnicas sem User Story associada: 6 tasks · 177h.
+Tasks técnicas sem User Story associada: 8 tasks · 181h.
 ```
 
 ### Foundation
@@ -38,6 +38,8 @@ Tasks técnicas sem User Story associada: 6 tasks · 177h.
 | 0.69 | Sync the task board from branch and pull request events | DevOps | 5h |
 | 0.70 | Map verified movement codes to decision outcomes in the pipeline | ETL | 3h |
 | 0.71 | Add the pipeline command that harvests and builds the load file | ETL | 6h |
+| 0.72 | Seed the strength configuration in the load file | ETL | 2h |
+| 0.73 | Refresh the materialized views in dependency order in the load file | ETL | 2h |
 
 **Descrições**
 
@@ -59,6 +61,12 @@ Tasks técnicas sem User Story associada: 6 tasks · 177h.
 - **0.71**
   - `Data:` comando único (`python -m pipeline`) que lê a configuração do ambiente, coleta o DataJud por tribunal e área com cota, e roda transform, carga dimensional, temas e o arquivo de carga; chave pública do DataJud e caminho do arquivo por variável de ambiente
   - `Verifies:` com a coleta simulada, o comando gera o arquivo de carga; sem `DATABASE_URL` o comando falha com mensagem clara; nenhum teste faz chamada de rede
+- **0.72**
+  - `Data:` o pipeline grava a linha única de `dw.strength_config` antes de gerar o arquivo, com os valores padrão da tabela, o ano de referência do ano da carga e a versão da metodologia `1.0`. Sem ela a carga publica a tabela vazia e a nota (2.1) e o piso de `n` (1.5) não têm de onde ler
+  - `Verifies:` o arquivo de carga traz a linha; rodar duas vezes não duplica
+- **0.73**
+  - `Data:` o `REFRESH` das views materializadas segue a dependência entre elas, lida do catálogo, não a ordem alfabética. Em ordem alfabética a `theme_strength` (2.1) seria atualizada antes da `theme_summary` e a carga falharia com `materialized view "theme_summary" has not been populated` (conferido no Postgres 16)
+  - `Verifies:` uma view que lê outra é atualizada depois dela; o arquivo aplica num banco recém-migrado
 
 ---
 
@@ -139,13 +147,14 @@ Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main
 
 **Descrições**
 
-- **2.1**
+- **2.1** · [guia](guias/2.1.md)
   - `Data: concordância, volume, cobertura e recência com os pesos da configuração; a concordância nunca mistura pretensão do autor com a do recorrente`
   - `Depends: 0.12. O cálculo nasce aqui porque a ordenação precisa dele; a US-06 (Sprint 2) o valida, o expõe e o mostra`
-- **2.2** — `Verifies: a fórmula não pode mentir: o teste recalcula a soma ponderada e falha se divergir`
-- **2.3** — `Verifies: relevância textual não decide a ordem; ela só decide quem entra na lista`
-- **2.5** — `Verifies: alto volume com decisões divididas não fica no topo só pelo volume`
-- **2.6**
+- **2.2** — `Verifies: a fórmula não pode mentir: o teste recalcula a soma ponderada e falha se divergir` · [guia](guias/2.2.md)
+- **2.3** — `Verifies: relevância textual não decide a ordem; ela só decide quem entra na lista` · [guia](guias/2.3.md)
+- **2.4** · [guia](guias/2.4.md)
+- **2.5** — `Verifies: alto volume com decisões divididas não fica no topo só pelo volume` · [guia](guias/2.5.md)
+- **2.6** · [guia](guias/2.6.md)
   - `Message: rótulo "ORDENADO POR FORÇA"`
   - `Data: a linha completa do item chega na US-03; aqui basta score e volume`
 
