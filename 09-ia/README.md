@@ -20,9 +20,10 @@ PowerShell, no Windows.
 
 ### 1. GitHub CLI
 
-A skill lê a task no board com o `gh`, usando a conta de quem roda. Basta ser membro da
-org `Concord-API`; não precisa de token nem de permissão de projeto, porque quem move os
-cards é a automação.
+A skill lê a task no board com o `gh`, usando a conta de quem roda: atribui a task a você
+e move o card para `In Progress` quando o desenvolvimento começa. Basta ser membro da org
+`Concord-API` e dar ao `gh` o escopo de projetos (passo abaixo); o resto do caminho do
+card (Review e Done) é a automação que faz.
 
 ```powershell
 winget install --id GitHub.cli
@@ -36,6 +37,12 @@ gh auth login
 
 Responda **GitHub.com** → **HTTPS** → **Yes** (usar nas credenciais do git) →
 **Login with a web browser** e cole o código na página que abrir.
+
+Depois libere o escopo de projetos, para a skill conseguir mover o card:
+
+```powershell
+gh auth refresh -s project
+```
 
 Confira:
 

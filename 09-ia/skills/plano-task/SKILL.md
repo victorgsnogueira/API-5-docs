@@ -81,6 +81,15 @@ Termine com uma pergunta curta pedindo aprovação para começar pelo commit 1.
 
 ## Lembretes de implementação (para quando for aprovado)
 
+- **Assim que o usuário liberar o commit 1, mova o card para `In Progress`** antes de começar a codar. A automação do board só move no push da branch, que acontece no fim; sem este passo o card fica em `Todo` a task inteira:
+
+  ```bash
+  item=$(gh api graphql -f query='{repository(owner:"Concord-API",name:"API-5"){issue(number:<número>){projectItems(first:5){nodes{id project{number}}}}}}' -q '.data.repository.issue.projectItems.nodes[]|select(.project.number==5).id')
+  gh project item-edit --project-id PVT_kwDODACFtM4BjOFP --id "$item" --field-id PVTSSF_lADODACFtM4BjOFPzhiDQzI --single-select-option-id 47fc9ee4
+  ```
+
+  Precisa do escopo `project` no `gh` (`gh auth refresh -s project`). Se faltar, avise e siga com a task; não trave o desenvolvimento por isso.
+
 - Código sem comentários; SQL sem comentários.
 - Pendências são avisadas na conversa, nunca em comentário no código.
 - Sem push até o usuário mandar.
