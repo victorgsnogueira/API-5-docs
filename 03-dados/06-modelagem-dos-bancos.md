@@ -808,7 +808,7 @@ A busca de temas roda no próprio Postgres ([D-30](../06-operacao/02-decisoes-e-
 | Objeto | Assinatura | O que faz |
 |---|---|---|
 | `dw.pt_unaccent` | configuração de busca textual | Português com `unaccent` aplicado antes do radical. Ao tirar o acento antes, o radical degrada (`indenização` → `indenizaca`); por isso a similaridade de trigramas roda em paralelo e cobre plural e flexão |
-| `dw.expand_query` | `(p_query text)` | Aplica os sinônimos de `search_synonym` a uma consulta, palavra por palavra. |
+| `dw.expand_query` | `(p_query text)` | Aplica os sinônimos de `search_synonym` a uma consulta, palavra por palavra: normaliza com `dw.norm_pt`, quebra por espaço e troca cada palavra que tem `term` pelo `expands_to`. `null` vira texto vazio. Só a busca textual da `dw.search_themes` usa a consulta expandida. |
 | `dw.norm_pt` | `(txt text)` | Passa o texto para minúsculas e tira os acentos. É a base da busca. |
 | `dw.search_themes` | `(p_query text, p_limit integer DEFAULT 20)` | A busca de temas (US-01). Combina busca textual e similaridade de trigramas, considera só temas com pelo menos um julgado, corta abaixo de 0,5 de rank e devolve o tema, a área, o `n`, o score, o grau, o rank e o tipo de correspondência (`texto`, `similaridade` ou `texto+similaridade`). |
 | `dw.search_themes_top` | `(p_limit integer DEFAULT 20)` | A busca vazia: os temas de maior volume de julgados. |

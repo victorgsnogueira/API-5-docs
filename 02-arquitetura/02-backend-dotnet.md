@@ -165,6 +165,8 @@ Estado em 22/09/2026, na `main`:
       pontes, `strength_config`, `case_current_result` e `theme_summary`; lock de
       concorrência; journal em `migrations.schema_versions`.
 - [x] Na `us1` (US-01 em andamento): `V002`, configuração de busca `dw.pt_unaccent` (1.1).
+- [x] Na `us1`: `V006`, sinônimos de busca `dw.search_synonym` e `dw.expand_query`, com a
+      `dw.search_themes` buscando pela consulta expandida (1.4).
 
 Falta:
 

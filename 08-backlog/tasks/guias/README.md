@@ -11,7 +11,7 @@ substitui o `/plano-task`: ele é o que você lê **antes** de pedir o plano.
 | 1.1 | Backend | [1.1](1.1.md) · feita | — |
 | 1.2 | Backend | [1.2](1.2.md) | 1.1 |
 | 1.3 | Backend | [1.3](1.3.md) | 1.2 |
-| 1.4 | Backend | [1.4](1.4.md) | 1.3 |
+| 1.4 | Backend | [1.4](1.4.md) · feita | 1.3 |
 | 1.5 | Backend | [1.5](1.5.md) | 1.3, 2.1 (decidido: espera a 2.1) |
 | 1.6 | Backend | [1.6](1.6.md) | 1.5 |
 | 1.7 | Backend | [1.7](1.7.md) | 1.5 |

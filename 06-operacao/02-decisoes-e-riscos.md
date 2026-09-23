@@ -544,7 +544,9 @@ O piso de 0,5 foi **medido**: fora de escopo chega a 0,364, acertos legítimos f
   `indenizações` vira `indenizaco`. Plural e flexão ficam por conta do trigrama.
 - O cenário "negativação indevida" da US-01 **não é erro de digitação, é sinônimo**:
   "negativação" não existe no vocabulário da TPU, e o tema chama-se *Inclusão Indevida em
-  Cadastro de Inadimplentes*. Resolvido pela tabela `dw.search_synonym`.
+  Cadastro de Inadimplentes*. Resolvido pela tabela `dw.search_synonym`: a
+  `dw.expand_query` troca cada palavra da consulta pela expansão, e só a busca textual
+  usa a consulta expandida; o trigrama segue sobre o que foi digitado.
 
 **Custo.** `dw.search_synonym` é **curadoria**, hoje com quatro entradas (`negativacao`,
 `negativado`, `serasa`, `spc`). É ela que faz a busca em linguagem natural funcionar, e
