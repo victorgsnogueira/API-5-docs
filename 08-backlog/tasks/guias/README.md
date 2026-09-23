@@ -41,6 +41,45 @@ com MSW, mas precisa da **0.14** (esqueleto) antes.
 A **2.1 é o gargalo das duas US**: a 1.5, a 2.3 e a 2.5 esperam por ela. Comece por ela
 junto com a 1.2.
 
+## US-09 — entendimento em prosa
+
+A origem do texto está decidida na [D-38](../../../06-operacao/02-decisoes-e-riscos.md#d-38--origem-do-texto-do-tema-template-na-carga-curado-por-cima), e o formato da resposta, com o template e
+os segmentos, está no [contrato de `GET /api/themes/{key}`](../../../02-arquitetura/02-backend-dotnet.md#get-apithemeskey--contrato-da-sprint-1). As tasks seguem esses dois
+documentos.
+
+| Task | Repositório | Guia | Depende de |
+|---|---|---|---|
+| 9.3 | Backend | [9.3](9.3.md) | — |
+| 9.4 | Pipeline | [9.4](9.4.md) | 9.3 |
+| 9.5 | Pipeline | [9.5](9.5.md) | 9.4 |
+| 9.6 | Backend | [9.6](9.6.md) | 9.3 |
+| 9.7 | Backend | [9.7](9.7.md) | 9.6 |
+| 9.8 | Frontend | [9.8](9.8.md) | — (contra o contrato, com MSW) |
+| 9.9 | Frontend | [9.9](9.9.md) | 9.8 |
+| 9.10 | Frontend | [9.10](9.10.md) | 9.9 |
+| 9.11 | Frontend | [9.11](9.11.md) | 9.9, US-26 (26.1, 26.2, 26.4) |
+
+A **9.3 é o gargalo do Backend e do Pipeline**: a 9.4 e a 9.6 esperam pela tabela. As três
+frentes andam juntas: Backend (9.3 → 9.6 → 9.7), Pipeline (9.4 → 9.5, depois da migration da
+9.3 na `main`) e Frontend (9.8 → 9.9 → 9.10, contra o contrato com MSW, desde já). A 9.11
+espera o contrato de `unavailable` da US-26.
+
+## US-10 — distribuição em figura
+
+O tratamento da procedência em parte está decidido na [D-39](../../../06-operacao/02-decisoes-e-riscos.md#d-39--procedência-em-parte-soma-na-nota-separada-na-figura), e o campo
+`outcomeBreakdown` já está no [contrato](../../../02-arquitetura/02-backend-dotnet.md#get-apithemeskey--contrato-da-sprint-1).
+
+| Task | Repositório | Guia | Depende de |
+|---|---|---|---|
+| 10.2 | Backend | [10.2](10.2.md) | — |
+| 10.3 | Backend | [10.3](10.3.md) | 10.2, 9.6 |
+| 10.4 | Frontend | [10.4](10.4.md) | — |
+| 10.5 | Frontend | [10.5](10.5.md) | 10.4, 9.9 |
+| 10.6 | Frontend | [10.6](10.6.md) | 10.5 |
+| 10.7 | Frontend | [10.7](10.7.md) | 9.9, US-26 (26.1, 26.2, 26.4) |
+
+A **10.2 e a 10.4 não dependem de nada** e podem começar já.
+
 ## Pipeline — o que a carga real precisa
 
 | Task | O quê |
@@ -53,12 +92,14 @@ junto com a 1.2.
 1. Atribua a issue a você no board.
 2. Rode `/plano-task <id>` ([como instalar a skill](../../../09-ia/README.md)) e siga o
    plano aprovado.
-3. Crie a branch a partir da **`us1`** do repositório da task. O nome é o ID mais o
-   título do board com hífens, sem acento nem crase. A `us1` já existe nos três
-   repositórios; tasks `0.Y` saem da `us0`.
+3. Crie a branch a partir da **`usN`** da story, no repositório da task (`us9` para a
+   9.Y, `us10` para a 10.Y). O nome é o ID mais o título do board com hífens, sem acento
+   nem crase. Se a `usN` ainda não existir, ela nasce da `main`; tasks `0.Y` saem da `us0`.
 4. Commits em TDD: `test:` vermelho pelo motivo certo, depois `feat:`/`fix:`. Só a linha
    do assunto, em inglês. Nenhum comentário no código, no SQL ou no teste.
-5. PR para a `us1`, só com título. O board se move sozinho.
+5. PR para a `usN`, só com título. O board se move sozinho.
+6. Decisão ou contrato não vira task: é escrito direto nesta documentação, e as tasks
+   apontam para ele.
 
 ## Regras que valem para todas as tasks de banco
 

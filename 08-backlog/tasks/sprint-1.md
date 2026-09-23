@@ -1,6 +1,6 @@
 # Tasks — Sprint 1
 
-**Janela:** 07/09 a 27/09/2026 · **9 Stories · 44 SP** · 74 tasks · 414h
+**Janela:** 07/09 a 27/09/2026 · **9 Stories · 44 SP** · 71 tasks · 406h
 
 Convenções, camadas e o resumo geral em [README](README.md). O padrão da `Iteration` é `Sprint 1` em tudo o que está neste arquivo.
 
@@ -11,8 +11,8 @@ Convenções, camadas e o resumo geral em [README](README.md). O padrão da `Ite
 | Bloco | Tasks | Horas |
 |---|---:|---:|
 | Technical Foundation | 8 | 181h |
-| Stories | 66 | 233h |
-| **Total** | **74** | **414h** |
+| Stories | 63 | 225h |
+| **Total** | **71** | **406h** |
 
 **Já entregues antes deste arquivo** (não viram task): `0.10` Set up MSW for the frontend test suite (Test); `0.11` Run the Vitest suite in the frontend CI workflow (Frontend).
 
@@ -173,8 +173,6 @@ Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main
 
 | # | Task | Layer | Est. |
 |---|---|---|---:|
-| 9.1 | Register the decision on the source of the prose | Backend | 2h |
-| 9.2 | Define the narrative template with slots for figures and basis | Backend | 4h |
 | 9.3 | Add the theme narrative table with the text origin | Backend | 3h |
 | 9.4 | Generate the narrative from the aggregates in the load | ETL | 6h |
 | 9.5 | Write counts, not percentages, below the percentage floor | ETL | 3h |
@@ -187,10 +185,6 @@ Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main
 
 **Descrições**
 
-- **9.1**
-  - `Data: decisão 20: enquanto não há geração automática, o resumo é o texto curado, e o dado registra a origem`
-  - `Data:` a task é entregável: vira entrada em [Decisões e riscos](../../06-operacao/02-decisoes-e-riscos.md)
-- **9.2** — `Data:` o lead abre com o número que responde à pergunta, com seu `n` ("Em 82% das 12.418 decisões analisadas…")
 - **9.3** — `Data:` `text_origin` (`template` ou `curated`), versão da metodologia e data de geração
 - **9.4** — `Verifies: nenhum número do texto é produzido por modelo: todos vêm de SELECT`
 - **9.5**
@@ -201,7 +195,7 @@ Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main
 - **9.10** — `Verifies: percentual sem n não é renderizado`
 - **9.11** — `Data: citação de acórdão, botão de inteiro teor, marcadores de citação e rodapé de decisões citadas não aparecem, e o lugar deles explica por quê`
 
-*11 tasks · 42h*
+*9 tasks · 36h*
 
 ## US-10 — Como **usuário**, quero ver a distribuição de resultados do tema em uma figura com a fonte declarada, para ver de relance quanto é procedente, parcialmente procedente e improcedente
 
@@ -209,14 +203,13 @@ Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main
 Priority: Must
 Estimate: 5 SP
 Epic: E3
-State: awaiting decision 3
+State: ready
 Depends on: US-09
 Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main/Docs/Scrum/acceptance-criteria.md#us-10--see-the-outcome-distribution-as-a-figure
 ```
 
 | # | Task | Layer | Est. |
 |---|---|---|---:|
-| 10.1 | Register the decision on partially upheld claims | Backend | 2h |
 | 10.2 | Create the outcome distribution aggregate by theme and polarity | Backend | 5h |
 | 10.3 | Expose the outcome breakdown separated by category | Backend | 4h |
 | 10.4 | Build the `Figure` component requiring the source prop | Frontend | 4h |
@@ -226,7 +219,6 @@ Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main
 
 **Descrições**
 
-- **10.1** — `Data: decisão 3: o tratamento da procedência em parte é declarado onde o número é calculado`
 - **10.2**
   - `Data: o agregado do tema soma a parcial com a procedência; a figura precisa dos três desfechos separados`
   - `Verifies:` índice único no agregado, para o `REFRESH CONCURRENTLY` não bloquear a leitura
@@ -235,7 +227,7 @@ Full DoR and acceptance criteria: https://github.com/Concord-API/API-5/blob/main
 - **10.5** — `Data: barras retangulares, sem raio, sem eixo, sem grade, sem tooltip; fonte declarada abaixo`
 - **10.7** — `Verifies: a figura de valor não aparece, e o lugar dela explica por quê`
 
-*7 tasks · 24h*
+*6 tasks · 22h*
 
 ## US-21 — Como **usuário**, quero ver a doutrina relacionada ao tema, com autor, obra e link para o artigo quando houver, para saber o que citar além da jurisprudência
 

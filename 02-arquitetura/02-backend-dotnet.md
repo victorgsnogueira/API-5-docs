@@ -375,6 +375,93 @@ frontend (1.13).
 }
 ```
 
+### `GET /api/themes/{key}` — contrato da Sprint 1
+
+Painel do tema: cabeçalho, Resumo (US-09) e distribuição de desfechos (US-10). `{key}` é o
+`theme_key` (D-34). O frontend valida com `zod` e desenvolve contra este JSON com MSW
+(9.8 a 9.11, 10.5 a 10.7); **mudar um campo exige avisar as duas pontas**. Os campos
+`unavailable`, `scope` e `provenance` entram por US-26, US-24 e US-25 e não fazem parte
+deste recorte.
+
+**`200` — tema**
+
+```json
+{
+  "themeKey": 412,
+  "name": "Inscrição indevida em cadastro de inadimplentes",
+  "subjectArea": "CONSUMIDOR",
+  "strengthScore": 78,
+  "level": "Dominante",
+  "caseCount": 203,
+  "judgedCount": 144,
+  "courtCount": 3,
+  "periodStartYear": 2021,
+  "periodEndYear": 2026,
+  "lastDecisionDate": "2026-08-30",
+  "summary": {
+    "lead": [
+      { "text": "Em " },
+      { "ratio": 0.9861, "n": 144, "unit": "decisões" },
+      { "text": " julgadas, houve acolhimento da pretensão do autor." }
+    ],
+    "body": [
+      { "text": "As decisões vêm de 3 tribunais, entre 2021 e 2026." }
+    ],
+    "textOrigin": "template",
+    "methodologyVersion": "1.0",
+    "generatedAt": "2026-09-23"
+  },
+  "outcomeBreakdown": [
+    {
+      "polarityLabel": "acolhimento da pretensão do autor",
+      "judged": 144,
+      "categories": [
+        { "outcome": "Procedente", "count": 100, "ratio": 0.6944 },
+        { "outcome": "Parcialmente procedente", "count": 42, "ratio": 0.2917 },
+        { "outcome": "Improcedente", "count": 2, "ratio": 0.0139 }
+      ]
+    }
+  ],
+  "partialTreatment": "Na nota de força, a procedência em parte conta como acolhimento."
+}
+```
+
+| Campo | Regra |
+|---|---|
+| `caseCount` | processos do tema (`theme_summary.case_count`), julgados ou não |
+| `judgedCount` | o `n` da nota (`theme_strength.judged`), o mesmo da lista |
+| `courtCount`, `periodStartYear`, `periodEndYear` | `theme_summary`; a tela monta a linha de metadados, sem conta |
+| `summary` | texto de `dw.theme_narrative` ([D-38](../06-operacao/02-decisoes-e-riscos.md#d-38--origem-do-texto-do-tema-template-na-carga-curado-por-cima)); `null` quando o tema não tem texto |
+| `summary.lead`, `summary.body` | lista de **segmentos**, na ordem de leitura |
+| `textOrigin` | `template` ou `curated` |
+| `outcomeBreakdown` | uma entrada por família com julgados; mérito e recurso **nunca somados** |
+| `categories[].ratio` | `count / judged` com 4 casas; **`null` abaixo do piso de `n`** (D-32) |
+| `partialTreatment` | a declaração da [D-39](../06-operacao/02-decisoes-e-riscos.md#d-39--procedência-em-parte-soma-na-nota-separada-na-figura), mostrada junto da fonte da figura |
+
+**Segmentos do texto**
+
+| Segmento | Campos | A tela faz |
+|---|---|---|
+| texto | `text` | mostra como está |
+| proporção | `ratio`, `n`, `unit` | formata `98,6% das 144 decisões`; **`n` é obrigatório**, e sem ele o segmento não é renderizado |
+| contagem | `count`, `unit` | mostra `1 decisão`, sem `%`; é o que o template emite abaixo do piso |
+
+Nenhum número do texto é calculado na tela nem produzido por modelo: o `ratio` e o `n` vêm
+do `SELECT` da carga (9.4).
+
+**Template (9.4 e 9.5)**
+
+- **Lead:** abre com a proporção de acolhimento na família da nota e o `n` dela, seguida do
+  `polarityLabel`: *"Em {ratio} das {n} decisões julgadas, houve {polarityLabel}."* Abaixo
+  do piso: *"Há {count} decisão julgada, com {polarityLabel}."*
+- **Corpo:** tribunais (`court_count`), período (`period_start_year`–`period_end_year`),
+  última decisão e, quando há as duas famílias, mérito e recurso em frases separadas, cada
+  uma com o seu `n`. Só slots que existem nos agregados; nada sobre blocos sem fonte.
+
+**`404` — tema não encontrado** — `application/problem+json`, `detail`
+`"Tema não encontrado."` (9.7). Uma chave que não é número também responde `404`, só com o
+título.
+
 ### Campos que as telas exigem
 
 Levantados percorrendo os mockups. Nenhum é opcional se o bloco correspondente entrar

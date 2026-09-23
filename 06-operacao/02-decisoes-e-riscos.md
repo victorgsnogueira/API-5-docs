@@ -739,6 +739,60 @@ sozinha, nunca em produção.
 
 ---
 
+### D-38 · Origem do texto do tema: template na carga, curado por cima
+
+**Decisão.** *(23/09/2026 · decisão 20 do backlog)* O Resumo do tema (lead e corpo) é
+**gerado por template determinístico na carga** ([D-37](#d-37--llm-só-na-descoberta-de-temas-offline-narrativa-por-template)),
+sobre os números dos agregados, e gravado em `dw.theme_narrative` com a origem
+`template`. Um texto **curado** pode substituir o gerado de um tema; ele grava a origem
+`curated`.
+
+- **O curado não traz número digitado à mão.** Ele usa os mesmos slots do template, e os
+  números continuam vindo dos agregados a cada carga. Um número escrito à mão envelhece na
+  carga seguinte e contradiz o cabeçalho.
+- **O curado vive no pipeline**, num JSON em `pipeline/data/` chaveado por `theme_key`
+  (estável, [D-31](#d-31--chave-pública-do-tema)), como as outras curadorias. Nunca é
+  editado no banco: o `TRUNCATE` da carga apagaria a edição.
+- **Todo texto registra** `text_origin` (`template` ou `curated`), a versão da metodologia
+  (`strength_config.methodology_version`) e a data de geração. A tela pode mostrar a origem,
+  e o rodapé usa a versão e a data na proveniência.
+- **Nunca entram no texto** citação de acórdão, fundamento, valor fixado e relator: não têm
+  fonte ([R-01](#r-01--blocos-do-mockup-sem-fonte--era---reduzido-não-eliminado)).
+- **Abaixo do piso de `n`** ([D-32](#d-32--piso-de-n-para-exibir-percentual)) o template
+  escreve a contagem ("1 decisão"), nunca um percentual.
+
+**Por quê.** O critério original da US-09 ("enquanto não há geração automática, o resumo é
+o texto curado") foi escrito antes da D-37. Com o template, a geração automática existe
+desde a Sprint 1, e o curado passa a ser a exceção revisada, não a regra.
+
+**Formato na API.** Ver o [contrato de `GET /api/themes/{key}`](../02-arquitetura/02-backend-dotnet.md#get-apithemeskey--contrato-da-sprint-1).
+
+---
+
+### D-39 · Procedência em parte: soma na nota, separada na figura
+
+**Decisão.** *(23/09/2026 · decisão 3 do backlog)*
+
+- **Na nota de força**, a procedência em parte (códigos 221 e 238) **continua somando com a
+  procedência** em `claim_upheld_count` e `appeal_upheld_count`, como a `theme_summary`
+  faz desde a V001. Para quem pergunta "essa tese pega?", acolhimento parcial é
+  acolhimento.
+- **Na distribuição de desfechos (FIG. 1, US-10)**, as três categorias aparecem
+  **separadas**: procedente, parcialmente procedente e improcedente, cada família (mérito ou
+  recurso) com a sua figura.
+- **A declaração fica onde o número é calculado**, sem comentário no SQL: o agregado da
+  distribuição tem a parcial em coluna própria, com nome explícito, e a API devolve o campo
+  `partialTreatment` com o texto *"Na nota de força, a procedência em parte conta como
+  acolhimento."*, que a figura mostra junto da fonte.
+
+**Por quê.** 338 dos 1.636 julgados da carga de descoberta são parciais (21%). Mudar a nota
+agora recalcularia todas as notas às vésperas da entrega da Sprint 1. A US-06 (Sprint 2),
+que valida a nota, é o lugar para reabrir a regra se o time quiser separar a parcial também
+na nota, em especial para temas de *quantum*, em que a diferença entre integral e parcial é
+o assunto.
+
+---
+
 ## Riscos
 
 Ordenados por impacto. **Status revisado em 15/09/2026**, após a primeira carga

@@ -4,10 +4,10 @@ Quebra do [Product Backlog](../product-backlog.md) em tasks, separada por sprint
 
 | Arquivo | Conteúdo |
 |---|---|
-| [`sprint-1.md`](sprint-1.md) | Sprint 1 · 07/09 a 27/09 · 9 Stories · 44 SP · 74 tasks |
+| [`sprint-1.md`](sprint-1.md) | Sprint 1 · 07/09 a 27/09 · 9 Stories · 44 SP · 71 tasks |
 | [`sprint-2.md`](sprint-2.md) | Sprint 2 · 05/10 a 25/10 · 13 Stories · 65 SP · 88 tasks |
 | [`sprint-3.md`](sprint-3.md) | Sprint 3 · 02/11 a 22/11 · 7 Stories · 40 SP · 57 tasks |
-| [`guias/`](guias/) | guia de implementação por task, com ordem e dependências — hoje cobre a US-01 e a US-02 |
+| [`guias/`](guias/) | guia de implementação por task, com ordem e dependências — hoje cobre a US-01, a US-02, a US-09 e a US-10 |
 
 ## Como ler
 
@@ -23,16 +23,16 @@ Quebra do [Product Backlog](../product-backlog.md) em tasks, separada por sprint
 
 | Sprint | Stories | SP | Tasks | Horas | Foundation | Stories (tasks) |
 |---|---:|---:|---:|---:|---:|---:|
-| Sprint 1 | 9 | 44 | 74 | 414h | 8 (181h) | 66 (233h) |
+| Sprint 1 | 9 | 44 | 71 | 406h | 8 (181h) | 63 (225h) |
 | Sprint 2 | 13 | 65 | 88 | 303h | 6 (25h) | 82 (278h) |
 | Sprint 3 | 7 | 40 | 57 | 212h | 14 (56h) | 43 (156h) |
-| **Total** | **29** | **149** | **219** | **929h** | | |
+| **Total** | **29** | **149** | **216** | **921h** | | |
 
 Horas por camada:
 
 | Camada | Sprint 1 | Sprint 2 | Sprint 3 | Total |
 |---|---:|---:|---:|---:|
-| Backend | 152h | 107h | 100h | 359h |
+| Backend | 144h | 107h | 100h | 351h |
 | Frontend | 99h | 108h | 30h | 237h |
 | ETL | 148h | 41h | 2h | 191h |
 | Test | 10h | 34h | 38h | 82h |
@@ -65,10 +65,10 @@ O pipeline não chega pronto: cada sprint acrescenta só o que as Stories dela p
 
 A numeração é a do backlog. Cada uma tem uma task cujo entregável é escrever a decisão em [Decisões e riscos](../../06-operacao/02-decisoes-e-riscos.md).
 
+Já decididas e escritas direto em Decisões e riscos, sem task no board: a **20** (origem do texto do tema, [D-38](../../06-operacao/02-decisoes-e-riscos.md#d-38--origem-do-texto-do-tema-template-na-carga-curado-por-cima)) e a **3** (procedência em parte, [D-39](../../06-operacao/02-decisoes-e-riscos.md#d-39--procedência-em-parte-soma-na-nota-separada-na-figura)).
+
 | Decisão | O que decide | Task | Precisa estar tomada |
 |---|---|---|---|
-| 20 | fonte do texto do tema: curado, e o dado registra a origem | 9.1 | Sprint 1 |
-| 3 | tratamento da procedência em parte na figura | 10.1 | Sprint 1 |
 | 2 | STJ e STF entram no escopo? | 4.1 | planejamento da Sprint 2 (05/10) |
 | 4 | recalibração da cobertura do score | 6.1 | Sprint 2 |
 | 14 | mínimo de julgados para exibir o grau textual | 7.1 | Sprint 2 |

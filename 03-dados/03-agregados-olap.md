@@ -92,7 +92,8 @@ resultado de busca.
 | favorável / desfavorável | por categoria de resultado |
 | ano inicial / final | mín. e máx. do ano do resultado |
 
-**Decisão embutida a auditar:** *procedência em parte conta como favorável?*
+**Decisão embutida:** *procedência em parte conta como favorável?* Decidido em
+23/09/2026 ([D-39](../06-operacao/02-decisoes-e-riscos.md#d-39--procedência-em-parte-soma-na-nota-separada-na-figura)): soma na nota, separada na figura de desfechos.
 
 A proposta diz que sim — do ponto de vista de quem pergunta "essa tese pega?",
 acolhimento parcial é acolhimento. Mas isso perde nuance, e para o tema *quantum* a

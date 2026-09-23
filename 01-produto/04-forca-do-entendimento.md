@@ -48,8 +48,8 @@ Reescala de [0,5 … 1,0] para [0 … 1]: 50/50 é divergência total (0), 100/0
 unanimidade (1). Sem a reescala, uma tese empatada já começaria em 0,5 e pareceria
 meio consolidada.
 
-Procedência em parte somando com procedência é uma decisão
-[ainda em aberto](../03-dados/03-agregados-olap.md#topic_summary--resumo-por-tema).
+Procedência em parte soma com procedência na nota, e aparece separada na figura de
+desfechos ([D-39](../06-operacao/02-decisoes-e-riscos.md#d-39--procedência-em-parte-soma-na-nota-separada-na-figura)).
 
 ### Volume
 
@@ -194,7 +194,7 @@ está certo. Os que importam:
   percentual. A nota e o grau continuam sendo calculados para qualquer n.
 - A recência usa apenas o **ano** da última decisão, não a densidade recente. Um tema
   com uma decisão em 2026 e nenhuma desde 2019 pontua igual a um julgado toda semana.
-- **Novo:** "procedência em parte" está somando com procedência no
-  `claim_upheld_count`. Continua sendo
-  [decisão em aberto](../03-dados/03-agregados-olap.md#topic_summary--resumo-por-tema),
-  mas agora tem consequência medida: 338 dos 1.636 julgados são parciais (21%).
+- "Procedência em parte" soma com procedência no `claim_upheld_count`, com
+  consequência medida: 338 dos 1.636 julgados são parciais (21%). **Decidido em
+  23/09/2026 ([D-39](../06-operacao/02-decisoes-e-riscos.md#d-39--procedência-em-parte-soma-na-nota-separada-na-figura)):** continua somando na nota e aparece separada na figura; a
+  US-06 (Sprint 2) é o lugar para reabrir a regra na nota.
