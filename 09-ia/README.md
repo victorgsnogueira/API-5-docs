@@ -47,10 +47,11 @@ gh auth refresh -s project
 Confira:
 
 ```powershell
-gh issue list -R Concord-API/API-5 --search "1.2" --json number,title
+gh issue list -R Concord-API/API-5 --state all --search "1.2 in:title" --json number,title,state
 ```
 
-Tem que voltar a task 1.2. Se der erro de acesso, a conta não está na org ou o login foi
+Tem que voltar a task 1.2. Sem `--state all` o `gh` só lista issues abertas, e uma task
+já concluída não aparece. Se der erro de acesso, a conta não está na org ou o login foi
 feito com outra conta.
 
 ### 2. Esta wiki ao lado dos repositórios
