@@ -23,7 +23,7 @@ Entrega o plano de implementação de uma task **antes de tocar em qualquer arqu
    ```
 
    O `pull` é da branch em que cada repositório já está; não troque de branch. Se um repositório tiver mudança local ou o `pull` falhar (branch apagada no remoto, divergência), não force: avise no início do plano e siga com os demais.
-1. **Leia a task no board**: `gh issue list -R Concord-API/API-5 --search "<id>" --json number,title,body,labels` e o detalhe em `Docs/08-backlog/tasks/` (repo pessoal `API-5-docs`).
+1. **Leia a task no board**: `gh issue list -R Concord-API/API-5 --state all --search "<id> in:title" --json number,title,body,labels,state` e o detalhe em `Docs/08-backlog/tasks/` (repo pessoal `API-5-docs`).
 2. **Leia o guia da task**, se existir: `Docs/08-backlog/tasks/guias/<id>.md`, e o `guias/README.md` (fluxo, dependências e regras de banco). As decisões e os alertas do guia valem para o plano: não as reabra, e se o código atual contradisser o guia, aponte a divergência nos pontos para decidir. Se uma dependência listada no guia ainda não estiver mergeada, diga isso logo no início do plano.
 3. **Leia o código atual** do repositório afetado (backend `API5-Backend`, frontend `API5-Frontend` ou pipeline) — os arquivos que o plano vai tocar e os testes vizinhos. O plano descreve mudanças sobre o que existe, não sobre suposição.
 4. **Respeite decisões já tomadas** na conversa e na memória (ex.: a API não gerencia usuários nem grants do banco).
