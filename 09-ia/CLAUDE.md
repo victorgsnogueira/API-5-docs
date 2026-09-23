@@ -31,6 +31,11 @@ internet no servidor), que recebe só arquivos buildados.
   isso); daí em diante o board se move sozinho pelo nome da branch: PR aberto → Review,
   PR mergeado → Done.
 - **PR só com título**, sem descrição. Ninguém dá push direto na `main` nem nas `usX`.
+- **PR para a `main` no Backend e no Frontend exige uma label de release** (`release:none`,
+  `release:fix`, `release:us` ou `release:sprint`); sem ela o check `Release label` falha.
+  `us0` → `main` leva `release:none`. O Pipeline não tem essa regra.
+- **Não apague a `us0` nem as `usX`** no botão "Delete branch" depois do merge; só as
+  branches de task.
 
 ## Commits
 
