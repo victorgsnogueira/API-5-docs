@@ -27,8 +27,9 @@ internet no servidor), que recebe só arquivos buildados.
 - **Uma task é uma branch e um merge só**, mesmo que a implementação tenha várias
   etapas. A `usX` só vai pra `main` quando a US inteira termina; a `us0` vai quando uma
   task do Foundation termina.
-- **O board se move sozinho** pelo nome da branch: push → In Progress, PR aberto →
-  Review, PR mergeado → Done. Não mova o card na mão se a branch seguir o padrão.
+- **O card vai para In Progress quando o commit 1 é liberado** (a skill `plano-task` faz
+  isso); daí em diante o board se move sozinho pelo nome da branch: PR aberto → Review,
+  PR mergeado → Done.
 - **PR só com título**, sem descrição. Ninguém dá push direto na `main` nem nas `usX`.
 
 ## Commits
