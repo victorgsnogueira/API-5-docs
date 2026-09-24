@@ -746,7 +746,7 @@ Fonte, data de extração e volume de cada conjunto de dados, para o rodapé da 
 
 | Coluna | Tipo | Nulo? | O que guarda | Preenchimento |
 |---|---|---|---|---:|
-| `block` | `text` | sim | `casos` ou `doutrina`. | — |
+| `block` | `text` | sim | `cases` ou `doctrine`. | — |
 | `source` | `text` | sim | Fonte (`datajud`, `doaj`, `scielo`…). | — |
 | `extracted_at` | `timestamptz` | sim | Data mais recente de extração. | — |
 | `row_count` | `bigint` | sim | Quantas linhas vieram dessa fonte. | — |
@@ -795,7 +795,7 @@ Fonte, data de extração e volume por tema, separando o bloco de casos do de do
 | Coluna | Tipo | Nulo? | O que guarda | Preenchimento |
 |---|---|---|---|---:|
 | `theme_sk` | `bigint` | sim | Tema. | — |
-| `block` | `text` | sim | `casos` ou `doutrina`. | — |
+| `block` | `text` | sim | `cases` ou `doctrine`. | — |
 | `source` | `text` | sim | Fonte. | — |
 | `extracted_at` | `timestamptz` | sim | Data mais recente de extração. | — |
 | `row_count` | `bigint` | sim | Quantas linhas (processos ou artigos) sustentam o tema. | — |

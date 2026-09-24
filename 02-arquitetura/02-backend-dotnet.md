@@ -379,9 +379,10 @@ frontend (1.13).
 
 Painel do tema: cabeçalho, Resumo (US-09) e distribuição de desfechos (US-10). `{key}` é o
 `theme_key` (D-34). O frontend valida com `zod` e desenvolve contra este JSON com MSW
-(9.8 a 9.11, 10.5 a 10.7); **mudar um campo exige avisar as duas pontas**. Os campos
-`scope` e `provenance` entram pela US-24 e pela US-25 e não fazem parte deste recorte; o
-`unavailable` segue a [seção própria](#unavailable--o-que-não-existe-e-por-quê-us-26).
+(9.8 a 9.11, 10.5 a 10.7); **mudar um campo exige avisar as duas pontas**. O campo
+`scope` entra pela US-24 e não faz parte deste recorte; o `unavailable` segue a
+[seção própria](#unavailable--o-que-não-existe-e-por-quê-us-26) e o `provenance`, a
+[dele](#provenance--fonte-e-data-de-extração-us-25).
 
 **`200` — tema**
 
@@ -512,6 +513,47 @@ exemplo ([R-01](../06-operacao/02-decisoes-e-riscos.md#r-01--blocos-do-mockup-se
 
 Os textos ficam no Backend, num só lugar, e a tela os recebe prontos. Mudar um texto não
 exige mudar o frontend.
+
+**Link para a explicação (26.6).** Cada aviso leva a `/limitacoes#<âncora>` no frontend:
+a âncora é o `block` quando o motivo é `sourceUnavailable` e o próprio `reason` nos outros
+dois casos. A página tem uma seção por âncora, mais escopo e atualização. A mensagem
+continua sozinha na nota; o link fica fora dela.
+
+### `provenance` — fonte e data de extração (US-25)
+
+Vem em `GET /api/themes` (proveniência global, da `dw.data_provenance`) e em
+`GET /api/themes/{key}` (proveniência do tema, da `dw.theme_provenance`). O frontend exibe
+no rodapé de cada tela todas as fontes listadas, nunca só a principal.
+
+```json
+"provenance": {
+  "sources": [
+    {
+      "block": "cases",
+      "source": "datajud",
+      "name": "DataJud/CNJ",
+      "sourceUrl": "https://www.cnj.jus.br/sistemas/datajud/",
+      "extractedAt": "2026-08-28T13:00:00+00:00",
+      "count": 12418
+    }
+  ],
+  "methodologyVersion": "1.0"
+}
+```
+
+| Campo | Regra |
+|---|---|
+| `block` | `cases` (processos, do fato) ou `doctrine` (artigos, da `dim_doctrine`) |
+| `source` | código gravado no DW (`datajud`, `doaj`, `scielo`) |
+| `name`, `sourceUrl` | vêm do catálogo de fontes do Backend ([D-40](../06-operacao/02-decisoes-e-riscos.md#d-40--proveniência-nome-e-link-da-fonte-vêm-de-catálogo)); fonte desconhecida sai com o código como nome e `sourceUrl: null` |
+| `extractedAt` | `max(extracted_at)` do dado carregado, nunca o relógio do servidor. O frontend mostra o dia em horário de Brasília |
+| `count` | processos distintos (`cases`) ou artigos (`doctrine`) |
+| `methodologyVersion` | da `strength_config`; `null` se a configuração não foi carregada |
+
+**Bloco sem proveniência não é devolvido (25.4).** Fonte sem código, sem bloco ou sem data
+sai da lista. Tema sem proveniência de `cases` volta com `summary: null` e o `unavailable`
+de `summary` como `notLoaded`. Lista vazia de fontes faz o frontend esconder o rodapé.
+View não populada (`55000`) vira lista vazia, com aviso no log.
 
 ### Campos que as telas exigem
 

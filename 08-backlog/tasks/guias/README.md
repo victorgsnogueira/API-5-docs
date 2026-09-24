@@ -80,6 +80,20 @@ O tratamento da procedência em parte está decidido na [D-39](../../../06-opera
 
 A **10.2 e a 10.4 não dependem de nada** e podem começar já.
 
+## US-25 e US-26 — proveniência e dado indisponível
+
+Feitas sem guia: 25.1 a 25.7, 26.5 e 26.6. O contrato está em
+[`provenance`](../../../02-arquitetura/02-backend-dotnet.md#provenance--fonte-e-data-de-extração-us-25)
+e [`unavailable`](../../../02-arquitetura/02-backend-dotnet.md#unavailable--o-que-não-existe-e-por-quê-us-26),
+e a decisão de nome e link da fonte, na [D-40](../../../06-operacao/02-decisoes-e-riscos.md#d-40--proveniência-nome-e-link-da-fonte-vêm-de-catálogo).
+
+- **Migrations V012 e V013** (`data_provenance` e `theme_provenance`). A V011 é da US-10;
+  quem mergear a segunda US na `main` resolve a lista do `DatabaseMigratorTests` mantendo
+  V010, V011, V012 e V013, e a lista `MaterializedViews` com `data_provenance`.
+- **Frontend passa a exigir `provenance`** nas respostas de `/api/themes`. O Frontend da
+  `us25` só funciona contra um Backend com a `us25`: suba o Backend primeiro.
+- O pipeline não muda: a carga já faz `REFRESH` de toda view materializada do `dw`.
+
 ## Pipeline — o que a carga real precisa
 
 | Task | O quê |

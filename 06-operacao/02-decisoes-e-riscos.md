@@ -791,6 +791,22 @@ que valida a nota, é o lugar para reabrir a regra se o time quiser separar a pa
 na nota, em especial para temas de *quantum*, em que a diferença entre integral e parcial é
 o assunto.
 
+### D-40 · Proveniência: nome e link da fonte vêm de catálogo
+
+**Decisão.** *(24/09/2026 · US-25)*
+
+- O DW guarda só o **código** da fonte (`source`) e a data de extração em cada linha. O
+  **nome** exibido (*DataJud/CNJ*, *DOAJ*, *SciELO*) e o **link público** da fonte saem de
+  um catálogo no Backend (`ProvenanceCatalog`), não da coluna `source_url`.
+- Os blocos se chamam `cases` e `doctrine` no DW e na API (inglês no código).
+- `data_provenance` é view materializada (V012) e `theme_provenance` é view comum (V013).
+  Numeradas depois da V011 da US-10 para não disputar o número.
+
+**Por quê.** A `source_url` do fato é o endpoint de busca da API do DataJud, um por
+tribunal (`api_publica_tjsp/_search`): serve para auditar a coleta, não para o usuário
+clicar. O link que faz sentido numa citação é a página pública da fonte, e ele é o mesmo
+para todas as linhas de uma fonte.
+
 ---
 
 ## Riscos
