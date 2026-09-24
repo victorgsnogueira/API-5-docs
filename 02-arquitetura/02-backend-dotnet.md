@@ -380,8 +380,8 @@ frontend (1.13).
 Painel do tema: cabeçalho, Resumo (US-09) e distribuição de desfechos (US-10). `{key}` é o
 `theme_key` (D-34). O frontend valida com `zod` e desenvolve contra este JSON com MSW
 (9.8 a 9.11, 10.5 a 10.7); **mudar um campo exige avisar as duas pontas**. Os campos
-`unavailable`, `scope` e `provenance` entram por US-26, US-24 e US-25 e não fazem parte
-deste recorte.
+`scope` e `provenance` entram pela US-24 e pela US-25 e não fazem parte deste recorte; o
+`unavailable` segue a [seção própria](#unavailable--o-que-não-existe-e-por-quê-us-26).
 
 **`200` — tema**
 
@@ -422,7 +422,14 @@ deste recorte.
       ]
     }
   ],
-  "partialTreatment": "Na nota de força, a procedência em parte conta como acolhimento."
+  "partialTreatment": "Na nota de força, a procedência em parte conta como acolhimento.",
+  "unavailable": [
+    {
+      "block": "caseLawCitation",
+      "reason": "sourceUnavailable",
+      "message": "A citação de acórdão depende do inteiro teor da decisão, e os tribunais do escopo bloqueiam a coleta desse texto."
+    }
+  ]
 }
 ```
 
@@ -461,6 +468,50 @@ do `SELECT` da carga (9.4).
 **`404` — tema não encontrado** — `application/problem+json`, `detail`
 `"Tema não encontrado."` (9.7). Uma chave que não é número também responde `404`, só com o
 título.
+
+### `unavailable` — o que não existe e por quê (US-26)
+
+Todo bloco da tela que não tem dado vem na resposta como um item de `unavailable`, com o
+**motivo** e o **texto em português** que a tela mostra. O frontend nunca escreve o motivo:
+ele exibe o que veio (26.4). Um bloco que está em `unavailable` não aparece com valor, nem de
+exemplo ([R-01](../06-operacao/02-decisoes-e-riscos.md#r-01--blocos-do-mockup-sem-fonte--era---reduzido-não-eliminado)).
+
+```json
+"unavailable": [
+  {
+    "block": "caseLawCitation",
+    "reason": "sourceUnavailable",
+    "message": "A citação de acórdão depende do inteiro teor da decisão, e os tribunais do escopo bloqueiam a coleta desse texto."
+  }
+]
+```
+
+| Campo | Regra |
+|---|---|
+| `block` | chave estável do bloco, em inglês (tabela abaixo) |
+| `reason` | um dos **três** motivos; nunca um motivo genérico |
+| `message` | o texto que a tela mostra, específico do bloco e do motivo |
+
+**Os três motivos (26.1)**
+
+| `reason` | Quando |
+|---|---|
+| `sourceUnavailable` | a fonte não fornece o dado (inteiro teor bloqueado, campo que o DataJud não publica) |
+| `notLoaded` | o dado existe na fonte, mas ainda não foi carregado (a carga não rodou ou não chegou a este tema) |
+| `notApplicable` | o bloco não se aplica a este tema (por exemplo, texto do entendimento para um tema sem julgados) |
+
+**Blocos da Sprint 1 (26.2)**
+
+| `block` | Onde | Motivo | `message` |
+|---|---|---|---|
+| `caseLawCitation` | citação de acórdão e botão `Inteiro teor · PDF` (9.11) | `sourceUnavailable` | A citação de acórdão depende do inteiro teor da decisão, e os tribunais do escopo bloqueiam a coleta desse texto. |
+| `citedDecisions` | marcadores `[1]` e rodapé "Decisões citadas" (9.11) | `sourceUnavailable` | As decisões citadas dependem do inteiro teor, que os tribunais do escopo não liberam para coleta. |
+| `amountAwarded` | FIG. 2, valor fixado (10.7) | `sourceUnavailable` | O valor fixado não é campo estruturado no DataJud; ele só existe no inteiro teor da decisão. |
+| `reporterJudge` | relator, na Base analítica | `sourceUnavailable` | O DataJud não publica o relator. |
+| `summary` | texto do Resumo, quando `summary` é `null` | `notLoaded` ou `notApplicable` | `notLoaded`: O texto deste tema ainda não foi gerado; ele sai na próxima carga. `notApplicable`: Este tema não tem decisões julgadas, então não há entendimento para descrever. |
+
+Os textos ficam no Backend, num só lugar, e a tela os recebe prontos. Mudar um texto não
+exige mudar o frontend.
 
 ### Campos que as telas exigem
 
