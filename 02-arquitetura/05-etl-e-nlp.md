@@ -100,7 +100,7 @@ Resumo de tudo o que a carga faz entre o payload cru e o dado que a API lê. Cad
 | Texto | `&#8220;` / `&amp;` / espaço duplo → texto limpo | `clean()` no extrator de doutrina; `fix_html_entities.py` no dado já carregado | decodifica entidade HTML até estabilizar (há dupla codificação). ⚠ falta no extrator do DataJud |
 | Número CNJ | 20 dígitos → `NNNNNNN-DD.AAAA.J.TR.OOOO` | `012_source_links.sql` | validado por teste (malformado = falha) |
 | Data | ISO com `Z` ou `yyyyMMddHHmmss` → `dim_date` | `transform_load_datajud.py` | `dim_date` cobre 1940+; data fora do calendário não derruba a linha |
-| Grau | `G1` / `G2` / `GRAU_UNICO` → `First` / `Second` / `Superior` | `COURT_LEVEL_MAP` | código fora do mapa passa como veio — não é inventado |
+| Grau | `G1` / `G2` / `JE` / `TR` → `First` / `Second` / `SpecialCourt` / `AppealPanel` | `COURT_LEVEL_MAP` | código fora do mapa passa como veio e o `CHECK` de `dim_case` barra a carga — não é inventado |
 | Movimentação | código TPU → categoria de resultado + **polaridade** | `dim_movement` | só 6 códigos conferidos; o resto é neutro ([D-10](../06-operacao/02-decisoes-e-riscos.md#d-10--código-de-movimentação-não-conferido-não-entra-na-métrica)) |
 | Classe processual | classe → **quem propõe** (`claimant_type`) | `dim_case_class` | acusação · fazenda · credor · defesa · autor particular ([Polaridade](../03-dados/05-polaridade-do-resultado.md)) |
 | Assunto | variações de redação → **tema** | NLP Uso 1 + curadoria | "Indenização por Dano Moral" = "Indenizaçao por Dano Moral" |

@@ -25,7 +25,7 @@ Issue container. Tasks sem Story-mãe, numeração `0.Y`: o que a sprint precisa
 ```
 Priority: Must
 Estimate: —
-Tasks técnicas sem User Story associada: 13 tasks · 199h.
+Tasks técnicas sem User Story associada: 14 tasks · 200h.
 ```
 
 ### Foundation
@@ -45,6 +45,7 @@ Tasks técnicas sem User Story associada: 13 tasks · 199h.
 | 0.78 | Check the warehouse integrity before writing the load file | Test | 5h |
 | 0.79 | Build the pipeline test schema from the backend migrations | Test | 3h |
 | 0.80 | Propose subject clusters for curation with local embeddings | ETL | 5h |
+| 0.81 | Map the special court and appeal panel levels from DataJud | ETL | 1h |
 
 **Descrições**
 
@@ -87,6 +88,9 @@ Tasks técnicas sem User Story associada: 13 tasks · 199h.
 - **0.80** — *pendência da 0.13: embeddings locais*
   - `Data:` `python -m pipeline.propose` calcula embeddings locais dos nomes de assunto (`paraphrase-multilingual-MiniLM-L12-v2`, CPU), agrupa por cosseno (aglomerativo, média, corte 0,20) e lista só os grupos que a curadoria ainda não cobre, por volume de processos; a clusterização propõe, a curadoria por nome decide. Dependência do modelo em `requirements-nlp.txt`, fora do CI
   - `Verifies:` assunto novo aparece numa proposta em vez de virar tema sozinho sem ninguém ver; nenhum teste baixa modelo
+- **0.81** — *achado no teste de produção com coleta real de 24/09/2026*
+  - `Data:` o DataJud manda grau `G1`, `G2`, `JE` e `TR`; o mapa só conhecia `G1` e `G2`, e `JE`/`TR` violavam `dim_case_court_level_check`, derrubando a carga inteira. `JE` → `SpecialCourt`, `TR` → `AppealPanel`
+  - `Verifies:` numa coleta real de 3.887 processos, 654 vieram com `TR` ou `JE`; a carga passa e cada um entra no grau certo
 
 ---
 
