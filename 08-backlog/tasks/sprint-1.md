@@ -25,7 +25,7 @@ Issue container. Tasks sem Story-mãe, numeração `0.Y`: o que a sprint precisa
 ```
 Priority: Must
 Estimate: —
-Tasks técnicas sem User Story associada: 8 tasks · 181h.
+Tasks técnicas sem User Story associada: 13 tasks · 199h.
 ```
 
 ### Foundation
@@ -40,6 +40,11 @@ Tasks técnicas sem User Story associada: 8 tasks · 181h.
 | 0.71 | Add the pipeline command that harvests and builds the load file | ETL | 6h |
 | 0.72 | Seed the strength configuration in the load file | ETL | 2h |
 | 0.73 | Refresh the materialized views in dependency order in the load file | ETL | 2h |
+| 0.76 | Generate the calendar dimension in the load | ETL | 3h |
+| 0.77 | Harvest only cases with a verified decision movement | ETL | 2h |
+| 0.78 | Check the warehouse integrity before writing the load file | Test | 5h |
+| 0.79 | Build the pipeline test schema from the backend migrations | Test | 3h |
+| 0.80 | Propose subject clusters for curation with local embeddings | ETL | 5h |
 
 **Descrições**
 
@@ -67,6 +72,21 @@ Tasks técnicas sem User Story associada: 8 tasks · 181h.
 - **0.73**
   - `Data:` o `REFRESH` das views materializadas segue a dependência entre elas, lida do catálogo, não a ordem alfabética. Em ordem alfabética a `theme_strength` (2.1) seria atualizada antes da `theme_summary` e a carga falharia com `materialized view "theme_summary" has not been populated` (conferido no Postgres 16)
   - `Verifies:` uma view que lê outra é atualizada depois dela; o arquivo aplica num banco recém-migrado
+- **0.76** — *pendência da 0.13 achada na validação de 24/09/2026: ninguém gerava o calendário*
+  - `Data:` o pipeline gera `dw.dim_date` de 01/01/1940 até 31/12 do ano seguinte ao da carga (chave `AAAAMMDD`, nome do mês em inglês) antes de carregar o fato; o arquivo de carga leva o calendário
+  - `Verifies:` todo evento do fato tem `date_sk`; `theme_summary` traz período e última decisão; a recência da força deixa de ser sempre 0; rodar duas vezes não duplica dia
+- **0.77** — *pendência da 0.13: a coleta não filtrava "só processos julgados"*
+  - `Data:` a consulta ao DataJud exige um movimento conferido (219, 220, 221, 237, 238, 239), lido da mesma lista do mapa de desfechos (0.70)
+  - `Verifies:` a cota por área não é gasta com processo sem desfecho (conferido no DataJud real: sem o filtro, 4 de 20 processos da página tinham decisão; com ele, 20 de 20)
+- **0.78** — *pendência da 0.13: os testes de integridade ficaram na pasta `scraping/`, escritos para o modelo antigo*
+  - `Data:` consultas que devolvem zero linhas quando está tudo certo, rodadas no fim da carga e antes do arquivo: fato sem data, assunto penal, tema sem assunto, chave de tema fora do registro, movimento com desfecho não conferido, resumo do tema divergindo do fato, proveniência divergindo do fato e da doutrina, tema julgado sem texto
+  - `Verifies:` qualquer consulta com linha interrompe a carga com o nome da checagem e não grava o arquivo
+- **0.79**
+  - `Data:` o schema `dw` dos testes do pipeline é o que as migrations do backend criam, regenerado por `scripts/refresh_test_schema.py` a partir de um banco migrado pela API
+  - `Verifies:` os testes rodam contra `dim_doctrine`, `data_provenance`, `theme_provenance` e as funções de busca
+- **0.80** — *pendência da 0.13: embeddings locais*
+  - `Data:` `python -m pipeline.propose` calcula embeddings locais dos nomes de assunto (`paraphrase-multilingual-MiniLM-L12-v2`, CPU), agrupa por cosseno (aglomerativo, média, corte 0,20) e lista só os grupos que a curadoria ainda não cobre, por volume de processos; a clusterização propõe, a curadoria por nome decide. Dependência do modelo em `requirements-nlp.txt`, fora do CI
+  - `Verifies:` assunto novo aparece numa proposta em vez de virar tema sozinho sem ninguém ver; nenhum teste baixa modelo
 
 ---
 
