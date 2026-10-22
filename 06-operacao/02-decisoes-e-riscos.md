@@ -833,6 +833,31 @@ decisão é a que vale para quem cita a tese: é ela que o STJ deixou de pé ou 
 
 **Alternativa descartada.** Recusar a carga quando o mesmo número aparece em dois
 tribunais: com o STJ coletado, quase metade dos recursos cairia nessa regra.
+### D-42 · Órgão julgador do STJ é a turma em que o relator estava na data da decisão
+
+**Decisão.** *(22/10/2026 · 0.89)*
+
+- O DataJud do STJ não informa a turma: o órgão julgador do processo e do movimento é o
+  **gabinete do ministro** relator ("GABINETE DA MINISTRA NANCY ANDRIGHI"). A carga troca
+  o gabinete pela turma em que o ministro estava **na data da decisão**, pela composição
+  oficial do STJ (`pipeline/data/stj_panels.json`, composição de 13/10/2026, com a data de
+  ingresso de cada ministro na turma).
+- Nomes que já dizem o colegiado ("Terceira Turma", "Segunda Seção", "Corte Especial")
+  são só normalizados. Presidência, Vice-Presidência, o nome genérico do tribunal e a
+  decisão anterior ao ingresso do ministro na turma atual ficam **sem turma**, e a carga
+  conta essas decisões no manifesto (`unmapped_stj_judging_bodies`).
+- Parte dos nomes do STJ chega com acento corrompido (UTF-8 lido como Latin-1); a carga
+  corrige antes de comparar.
+
+**Medição (22/10/2026).** Em 590 decisões de recursos cíveis do STJ (consumidor e cível),
+90% caíram numa turma (Quarta 54%, Terceira 31,5%) e 10% ficaram sem turma: decisões do
+gabinete do Min. Marco Buzzi depois que ele deixou a Quarta Turma, da Presidência e da
+Vice-Presidência.
+
+**Limitação.** A composição oficial só traz a turma **atual** de cada ministro. Quem mudou
+de turma tem as decisões anteriores sem turma, em vez de atribuídas a um colegiado errado.
+Quando a composição mudar, basta atualizar o arquivo.
+
 
 ---
 
