@@ -897,8 +897,8 @@ inteira.
   recursal não são câmaras. No STJ, as turmas e as seções vêm da composição oficial
   (D-42), e o gabinete que ficou sem turma fica fora do bloco.
 - **Base da comparação.** A câmara é comparada pela **taxa de recursos providos**, em todo
-  tribunal. Câmara julga recurso: nos dados de 24/09/2026, 99% das decisões de câmara dos
-  TJs eram de provimento ou não provimento, e menos de 1% eram de mérito do pedido.
+  tribunal. Câmara julga recurso: nos dados de 24/09/2026, 95% das decisões de câmara dos
+  TJs (1.456 de 1.526) eram de provimento ou não provimento, e 5% eram de mérito do pedido.
 - **Padrão do tribunal.** É a taxa de provimento de **todos os recursos julgados no
   tribunal**, com ou sem câmara identificada. O agregado `dw.theme_by_judging_body` guarda
   todos os órgãos, e a soma dos órgãos de um tribunal fecha com o total do tribunal.
