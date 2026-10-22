@@ -858,6 +858,36 @@ Vice-Presidência.
 de turma tem as decisões anteriores sem turma, em vez de atribuídas a um colegiado errado.
 Quando a composição mudar, basta atualizar o arquivo.
 
+### D-43 · O quality gate do Sonar vale no caminho para a main
+
+**Decisão.** *(22/10/2026 · DVP-33)*
+
+- O gate do SonarQube Cloud é verificado no **PR `usX → main`** e no **push da `main`**,
+  nos três repositórios. Os rulesets da `main` exigem `Backend quality`, `Frontend quality`
+  e `Pipeline quality`. Gate vermelho no push da `main` deixa o CI vermelho, e o
+  `release.yml` não publica.
+- O gate é o **Sonar way**, o único do plano gratuito, sobre o código novo: confiabilidade,
+  segurança e manutenibilidade nota A, cobertura de pelo menos 80%, duplicação de no máximo
+  3% e todos os security hotspots revisados.
+- **Código novo.** No PR, é o diff do PR. Na `main`, Backend e Frontend usam *previous
+  version*, e o CI envia como versão a última tag `vX.Y.Z`: código novo é o que entrou
+  desde a última release. O Pipeline usa 21 dias (uma sprint), porque as tags dele
+  (`load-…`) acompanham as cargas, não os merges na `main`.
+- Sem `SONAR_TOKEN`, o job de quality **falha** no PR para a `main` e no push da `main`;
+  nos PRs de task, só avisa.
+- **Sonar fora do ar.** O check obrigatório bloqueia o merge na `main`. Se a queda passar
+  de um dia útil, um admin tira o check do ruleset e registra aqui as datas em que ele
+  saiu e voltou.
+
+**Por quê.** No plano gratuito, o Sonar analisa PR só quando o alvo é a `main`. Os PRs de
+task (alvo `us*`) aparecem no painel com base `main`, então o recorte de código novo deles
+não é o documentado, e o gate não reprovava nada no caminho para a `main`: o path
+traversal do PR `us0 → main` do Pipeline só apareceu ali.
+
+**Alternativa descartada.** Abrir o PR `usX → main` em rascunho no começo da US: cada
+merge de task rodaria a suíte inteira de novo, e o `Release label` ficaria vermelho a US
+inteira.
+
 
 ---
 
