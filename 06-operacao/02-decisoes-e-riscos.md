@@ -807,6 +807,30 @@ tribunal (`api_publica_tjsp/_search`): serve para auditar a coleta, não para o 
 clicar. O link que faz sentido numa citação é a página pública da fonte, e ele é o mesmo
 para todas as linhas de uma fonte.
 
+### D-41 · Processo julgado no TJ e no STJ conta uma vez, no tribunal da última decisão
+
+**Decisão.** *(22/10/2026 · 0.91)*
+
+- O REsp e o AREsp chegam ao DataJud do STJ com o **número CNJ de origem**: numa amostra
+  de 500 recursos cíveis do STJ (área de consumidor, 22/10/2026), 218 (43,6%) têm número
+  do TJSP, do TJRJ ou do TJMG, e esses números também estão nos índices dos TJs. Só os
+  processos que nascem no STJ (tutelas antecedentes) têm número próprio (`3.00`).
+- O processo continua **uma linha só** em `dim_case`; cada decisão fica no fato com o
+  tribunal que a proferiu. O resultado do processo é a **última decisão verificada**
+  (`case_current_result`), e é ela que define o tribunal em que o processo conta.
+- Consequência para a US-12 e a US-17: a soma por tribunal **fecha** com o total do tema.
+  "Decisões no TJSP" passa a significar "processos cuja última decisão foi no TJSP": o
+  processo do TJSP que foi julgado no STJ conta no STJ.
+- A carga mede quantos processos têm decisão em mais de um tribunal e grava no manifesto
+  (`cases_decided_in_more_than_one_court`), para o número ficar visível a cada carga.
+
+**Por quê.** Contar o processo em cada tribunal em que foi julgado faria a soma por
+tribunal passar do total do tema, e a tela teria dois números que não batem. A última
+decisão é a que vale para quem cita a tese: é ela que o STJ deixou de pé ou reformou.
+
+**Alternativa descartada.** Recusar a carga quando o mesmo número aparece em dois
+tribunais: com o STJ coletado, quase metade dos recursos cairia nessa regra.
+
 ---
 
 ## Riscos
