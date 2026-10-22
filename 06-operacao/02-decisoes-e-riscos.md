@@ -823,6 +823,9 @@ para todas as linhas de uma fonte.
   processo do TJSP que foi julgado no STJ conta no STJ.
 - A carga mede quantos processos têm decisão em mais de um tribunal e grava no manifesto
   (`cases_decided_in_more_than_one_court`), para o número ficar visível a cada carga.
+- `dim_case` guarda o tribunal e o grau de **origem**: quando o mesmo número aparece no TJ
+  e no STJ, a carga fica com o registro do TJ, e o STJ aparece só nos fatos das decisões
+  que proferiu. O STJ entra na dimensão de tribunal com UF `DF`, a da sede. *(0.90)*
 
 **Por quê.** Contar o processo em cada tribunal em que foi julgado faria a soma por
 tribunal passar do total do tema, e a tela teria dois números que não batem. A última
