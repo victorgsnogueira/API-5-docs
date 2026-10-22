@@ -888,6 +888,34 @@ traversal do PR `us0 → main` do Pipeline só apareceu ali.
 merge de task rodaria a suíte inteira de novo, e o `Release label` ficaria vermelho a US
 inteira.
 
+### D-44 · Câmara divergente: 20 pontos do próprio tribunal, a partir de 5 julgados
+
+**Decisão.** *(22/10/2026 · 17.1 e 17.2)*
+
+- **O que é câmara.** Só órgão colegiado: câmara, turma, seção, órgão especial, Corte
+  Especial e plenário. Vara, gabinete, presidência, vice-presidência, juizado e turma
+  recursal não são câmaras. No STJ, as turmas e as seções vêm da composição oficial
+  (D-42), e o gabinete que ficou sem turma fica fora do bloco.
+- **Base da comparação.** A câmara é comparada pela **taxa de recursos providos**, em todo
+  tribunal. Câmara julga recurso: nos dados de 24/09/2026, 99% das decisões de câmara dos
+  TJs eram de provimento ou não provimento, e menos de 1% eram de mérito do pedido.
+- **Padrão do tribunal.** É a taxa de provimento de **todos os recursos julgados no
+  tribunal**, com ou sem câmara identificada. O agregado `dw.theme_by_judging_body` guarda
+  todos os órgãos, e a soma dos órgãos de um tribunal fecha com o total do tribunal.
+- **Sinal de divergência.** A câmara é sinalizada quando fica a **20 pontos percentuais ou
+  mais** da taxa do próprio tribunal, para cima ou para baixo, e só a partir de **5
+  julgados** na câmara. Os dois números ficam em `dw.strength_config`
+  (`divergence_points`, `min_judged_for_divergence`).
+- Câmara com **um único julgado não aparece**: um caso isolado é ruído, não divergência.
+
+**Por quê.** Sem limiar declarado, qualquer diferença viraria "divergência", e uma câmara
+com dois ou três julgados mudaria de lado com uma decisão a mais. Vinte pontos é a
+distância em que a câmara decide de outro jeito na prática (por exemplo, 70% contra 50%).
+
+**Alternativa descartada.** Comparar as câmaras dos TJs pelo acolhimento do pedido do
+autor, a mesma base da lista por tribunal da US-12: quase nenhuma câmara teria julgado
+para mostrar.
+
 
 ---
 
