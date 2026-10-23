@@ -916,6 +916,26 @@ distância em que a câmara decide de outro jeito na prática (por exemplo, 70% 
 autor, a mesma base da lista por tribunal da US-12: quase nenhuma câmara teria julgado
 para mostrar.
 
+### D-45 · O STJ entra pelo DataJud; o STF fica fora da Sprint 2
+
+**Decisão.** *(23/10/2026 · 0.94)*
+
+- O **STJ entra** no escopo, pelo próprio DataJud (tasks 0.87 a 0.92): os recursos cíveis
+  (REsp, AREsp e agravos) com o número CNJ de origem, a turma do julgamento (D-42) e a
+  regra de contar o processo no tribunal da última decisão (D-41).
+- O **STF fica fora da Sprint 2**. O DataJud não cobre o STF, e a única fonte aberta, as
+  decisões do programa Corte Aberta, não traz o número CNJ nem o tribunal de origem
+  ([spike 0.93](../03-dados/07-fonte-stf.md)). Cada processo do STF contaria à parte, sem
+  ligação com o mesmo processo no TJ ou no STJ.
+- Se o PO quiser o STF, ele entra numa sprint seguinte como **fonte nova**: carga do CSV
+  do Corte Aberta, mapeamento do andamento para resultado e do assunto para tema.
+- Enquanto isso, a cobertura máxima de um tema é de **4 de 5** tribunais
+  (`coverage_courts = 5`), e as telas declaram o escopo como "STJ, TJMG, TJRJ e TJSP".
+
+**Por quê.** O STJ chega pela mesma fonte, com o mesmo número de processo e o mesmo
+modelo; o STF exigiria uma fonte nova inteira, sem como ligar o processo às outras
+instâncias, a três dias do fim da sprint.
+
 
 ---
 
@@ -1123,7 +1143,7 @@ dado do caso dele.
 | Pergunta | Quem decide | Bloqueia |
 |---|---|---|
 | ~~Qual o grão do fato?~~ | ✅ D-13 | — |
-| STJ e STF entram no escopo? | time + cliente | modelagem, nota de força, telas |
+| ~~STJ e STF entram no escopo?~~ | ✅ D-45: STJ sim; STF fora da Sprint 2 | — |
 | PANGEA tem API utilizável? | spike | jurisprudência qualificada |
 | De onde vem o inteiro teor — ou ele sai do escopo? | time + cliente | metade da aba Base Analítica |
 | ~~Doutrina: quais repositórios de artigo?~~ | ✅ DOAJ, SciELO, OAI-PMH | — |
