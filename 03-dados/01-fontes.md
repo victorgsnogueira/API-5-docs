@@ -13,7 +13,7 @@
 > | Repositório do TJRJ (eJURIS) | ❌ inviável | Termos de Uso proíbem raspagem |
 > | Repositório do TJMG | ❌ inviável | CAPTCHA numérico na busca |
 > | STJ (`scon.stj.jus.br`) | ❌ inviável | bloqueio de borda (403) |
-> | PANGEA | ⬜ não investigada | |
+> | PANGEA / BNP | 🟡 investigada, sem acesso | API do BNP exige credencial do CNJ; ver [spike 0.113](08-fonte-bnp.md) |
 >
 > Detalhe de cada teste nas seções correspondentes. A carga que produziu esses
 > números está em `scraping/` (spike), documentada em `scraping/README.md`.
@@ -136,6 +136,10 @@ precedentes.
 
 Essa investigação é **tarefa de spike**, com resultado escrito aqui. Enquanto não
 houver resposta, nenhum bloco de tela pode depender do PANGEA.
+
+**Resultado (16/11/2026):** respondido no [spike 0.113](08-fonte-bnp.md). A API do BNP
+exige credencial SSO da PDPJ concedida pelo CNJ, e não há termos que autorizem coletar
+pelo site público. Nenhum bloco de tela depende do PANGEA até haver acesso.
 
 ---
 
