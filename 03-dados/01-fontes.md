@@ -14,6 +14,7 @@
 > | Repositório do TJMG | ❌ inviável | CAPTCHA numérico na busca |
 > | STJ (`scon.stj.jus.br`) | ❌ inviável | bloqueio de borda (403) |
 > | PANGEA / BNP | 🟡 investigada, sem acesso | API do BNP exige credencial do CNJ; ver [spike 0.113](08-fonte-bnp.md) |
+> | Espelhos de acórdãos do STJ (dados abertos) | ✅ **em uso** (US-40) | acórdãos com ementa dos órgãos cíveis do STJ; ver [Fonte 6](#fonte-6--espelhos-de-acórdãos-do-stj-dados-abertos) |
 >
 > Detalhe de cada teste nas seções correspondentes. A carga que produziu esses
 > números está em `scraping/` (spike), documentada em `scraping/README.md`.
@@ -271,6 +272,53 @@ errar, pela mesma lógica do D-10: artigo sem tema é recuperável, artigo no te
 errado não é.
 
 Detalhes em [ETL e NLP](../02-arquitetura/05-etl-e-nlp.md#nlp--onde-o-modelo-entra).
+
+---
+
+## Fonte 6 · Espelhos de acórdãos do STJ (dados abertos)
+
+<https://dadosabertos.web.stj.jus.br/> — conjuntos `espelhos-de-acordaos-*`
+
+Escolhida no [spike 0.112](https://github.com/Concord-API/API-5/issues/332) e validada
+pelo PO e pelo Scrum Master: é a fonte automática dos **acórdãos com ementa** da US-40.
+Os repositórios dos TJs seguem fora (captcha e termos de uso; ver Fonte 4).
+
+**Como a fonte é publicada (conferido em 16/11/2026).** Um conjunto por órgão julgador,
+licença **Creative Commons Atribuição**, cada um com:
+
+- um ZIP com o histórico (o da 3ª Turma traz 37.489 acórdãos, de 1989 a 2022);
+- um JSON por mês com os acórdãos novos, até o mês anterior;
+- um dicionário de dados em CSV.
+
+Os arquivos são listados pela API CKAN do portal (`/api/3/action/package_show?id=<conjunto>`).
+O mesmo acórdão pode aparecer em mais de um arquivo: a coleta guarda um registro por `id`.
+
+**Recorte cível (D-29).** Entram a 1ª e a 2ª Seção e a 1ª, 2ª, 3ª e 4ª Turmas. Ficam fora a
+3ª Seção e a 5ª e a 6ª Turmas (matéria penal) e a Corte Especial (mistura ação penal
+originária).
+
+**Questionário de fonte nova**
+
+| Pergunta | Resposta |
+|---|---|
+| Que pergunta de tela ela responde? | "Como os tribunais decidiram este tema", com a ementa de cada acórdão (US-40) |
+| Tem API, ou é raspagem? | **Dados abertos com licença**: download dos arquivos pelo portal, sem raspagem |
+| Como se liga ao que já temos? | **Não pelo número CNJ**: o espelho traz só o número e o registro do processo no STJ. O vínculo com o tema é por similaridade, com método e limiar gravados (40.3) |
+| Frequência e custo da carga | Mensal. A primeira carga baixa os seis históricos e todos os meses; as seguintes, só os meses novos |
+| Se ela cair amanhã? | O bloco de acórdãos do tema fica sem atualização; o resto do produto não depende dela |
+
+**Campos usados.** `id`, `numeroProcesso` e `siglaClasse` (o número do processo no STJ,
+como "AgInt no REsp 1997135"), `nomeOrgaoJulgador`, `dataDecisao` e `ementa`, gravada
+**como publicada**. O inteiro teor (`decisao`) fica só na camada `raw` e nunca vai ao `dw`.
+
+**Link de cada acórdão.** O site de processos do STJ responde com verificação anti-robô a
+acesso automatizado, então o link não pôde ser conferido pela carga. O `source_url` de
+cada acórdão aponta para a página pública do conjunto de dados do órgão julgador, de onde
+o dado veio.
+
+**Onde está no pipeline.** `pipeline/stj_rulings.py` (coleta para `raw.stj_ruling`),
+`pipeline/harvest_rulings.py` (comando) e `pipeline/dw_ruling.py` (carga em
+`dw.dim_ruling`).
 
 ---
 
