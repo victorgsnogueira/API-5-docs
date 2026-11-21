@@ -80,7 +80,10 @@ consulta, não depois.
 
 ### Demais fontes
 
-Doutrina entrou (DOAJ, SciELO, OAI-PMH). Repositórios de jurisprudência dos tribunais
+Doutrina entrou (DOAJ, SciELO, OAI-PMH). Os acórdãos com ementa do STJ entraram pelos
+dados abertos de espelhos de acórdãos (`python -m pipeline.harvest_rulings`, US-40); ver
+[Fonte 6](../03-dados/01-fontes.md#fonte-6--espelhos-de-acórdãos-do-stj-dados-abertos).
+Repositórios de jurisprudência dos tribunais
 estão bloqueados por captcha/WAF — ver [Fontes](../03-dados/01-fontes.md) e
 [Limitações](../03-dados/04-limitacoes-da-fonte.md). Toda fonte nova responde ao
 questionário em [Fontes](../03-dados/01-fontes.md#fontes-ainda-não-listadas) antes de

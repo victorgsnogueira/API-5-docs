@@ -379,10 +379,10 @@ frontend (1.13).
 
 Painel do tema: cabeçalho, Resumo (US-09) e distribuição de desfechos (US-10). `{key}` é o
 `theme_key` (D-34). O frontend valida com `zod` e desenvolve contra este JSON com MSW
-(9.8 a 9.11, 10.5 a 10.7); **mudar um campo exige avisar as duas pontas**. O campo
-`scope` entra pela US-24 e não faz parte deste recorte; o `unavailable` segue a
-[seção própria](#unavailable--o-que-não-existe-e-por-quê-us-26) e o `provenance`, a
-[dele](#provenance--fonte-e-data-de-extração-us-25).
+(9.8 a 9.11, 10.5 a 10.7); **mudar um campo exige avisar as duas pontas**. O
+`unavailable` segue a [seção própria](#unavailable--o-que-não-existe-e-por-quê-us-26), o
+`provenance`, a [dele](#provenance--fonte-e-data-de-extração-us-25), e o `scope`, a
+[do escopo](#scope--escopo-declarado-us-24).
 
 **`200` — tema**
 
@@ -555,6 +555,36 @@ sai da lista. Tema sem proveniência de `cases` volta com `summary: null` e o `u
 de `summary` como `notLoaded`. Lista vazia de fontes faz o frontend esconder o rodapé.
 View não populada (`55000`) vira lista vazia, com aviso no log.
 
+### `scope` — escopo declarado (US-24)
+
+Vem em toda resposta de dados: `GET /api/themes` (busca e temas de maior volume) e
+`GET /api/themes/{key}`. Os erros `400` e `404` não trazem `scope`. O frontend mostra a
+declaração no cabeçalho dos resultados e no rodapé do detalhe, sem interação e nunca só em
+tooltip (24.3).
+
+```json
+"scope": {
+  "courts": [
+    { "code": "TJMG", "name": "Tribunal de Justiça de Minas Gerais", "state": "MG" },
+    { "code": "TJRJ", "name": "Tribunal de Justiça do Rio de Janeiro", "state": "RJ" },
+    { "code": "TJSP", "name": "Tribunal de Justiça de São Paulo", "state": "SP" }
+  ],
+  "subject": "cível",
+  "statement": "TJMG, TJRJ e TJSP"
+}
+```
+
+| Campo | Regra |
+|---|---|
+| `courts` | lidos da `dw.dim_court` ([D-03](../06-operacao/02-decisoes-e-riscos.md#d-03--escopo-territorial-tjsp-tjrj-e-tjmg)), em ordem de `code`; lista vazia antes da primeira carga |
+| `subject` | sempre `cível`: tudo o que não é penal ([D-29](../06-operacao/02-decisoes-e-riscos.md#d-29--escopo-cível-sem-o-ramo-criminal)) |
+| `statement` | as siglas de `courts`, separadas por vírgula e com "e" antes da última; `null` quando `courts` está vazia |
+
+**Fonte única (24.1).** A lista de tribunais não é texto fixo no frontend nem no Backend: ela
+vem da `dim_court`. Se o escopo mudar (decisão 2), a carga muda a dimensão e todas as telas
+acompanham, sem mudar código. A frase e a matéria são montadas num só lugar do Backend
+(`DeclaredScope`); a tela exibe o `statement` como veio.
+
 ### Campos que as telas exigem
 
 Levantados percorrendo os mockups. Nenhum é opcional se o bloco correspondente entrar
@@ -571,6 +601,7 @@ na entrega:
 | contagem por tribunal | painel de filtros |
 | `sourceLink` com o tipo do link | amostra auditável |
 | `provenance` (fonte + data de extração) | rodapé de toda tela |
+| `scope` (tribunais e matéria do escopo) | cabeçalho dos resultados e rodapé do detalhe |
 
 Esse último é novo e importante: como o produto é multifonte, **cada resposta deve
 dizer de onde o dado veio e quando foi extraído**.
